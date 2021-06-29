@@ -1,12 +1,13 @@
+//JT900H main
+//TLCS-900H based
+
 #include "jt900h.h"
 
-void TLCS900_reset( TLCS900 *tlcs ) {
-    tlcs->pc=0;
-    tlcs->RDn = 1;
-    tlcs->WRn = 1;
-    tlcs->Dout = 0;
-}
+int main(){
+    TLCS900H dut
 
-void TLCS900_clkedge( TLCS900 *tlcs ) {
-    //
+
+}
+void TLCS900H_reset(TLCS900H *regs){
+    
 }
