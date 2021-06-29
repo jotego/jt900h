@@ -22,6 +22,10 @@ void TLCS_eval(struct TLCS900 *cpu) {
         if( !cpu->pins.X1 && cpu->pins.X1_last ) { // negative edge
             cpu->pins.CLK = (~cpu->pins.CLK)&1;
         }
+        /*
+        switch( cpu->state ) {
+            case reset:
+        }*/
     }
     // Keep values
     cpu->pins.X1_last = cpu->pins.X1 & 1;

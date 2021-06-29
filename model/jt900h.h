@@ -7,7 +7,7 @@ struct TLCS900H_Pins{
     int X1, Din, WAITn, RESETn;
 
     // outputs
-    int CLK, RD, A, Dout,
+    int CLK, RDn, A, Dout,
         WRn, HWRn,  // low/high byte write
         ALE,        // Address Latch Enable
         CSn;        // CS[2:0]
