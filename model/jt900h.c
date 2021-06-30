@@ -7,7 +7,7 @@
 void TLCS_reset(struct TLCS900 *cpu){
     cpu->pins.HWRn = 1;
     cpu->pins.WRn  = 1;
-    cpu->pins.A    = 0xffff00;
+    cpu->pins.A    = 0;
     cpu->pins.RDn  = 1;
     cpu->pins.RASn = 1;
     cpu->pins.CASn = 1;
@@ -51,6 +51,8 @@ void TLCS_eval(struct TLCS900 *cpu) {
                 }
                 break;
             case normal:
+                break;
+            case irq:
                 break;
         }
     }

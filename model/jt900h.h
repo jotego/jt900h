@@ -11,7 +11,7 @@ struct TLCS900H_Pins{
         WRn, HWRn,  // low/high byte write
         ALE,        // Address Latch Enable
         CSn,        // CS[2:0]
-        RASn,       //Low Address Strobe
+        RASn,       //Row Address Strobe
         CASn;       //Column Address Strobe
 
     // last state
@@ -31,6 +31,8 @@ struct TLCS900 {
     struct TLCS900H_Registers regs;
     enum { reset=0, normal, irq } state;
     int rst_st;
+    int norm_st;
+    int irq_st;
 };
 
 void TLCS_reset(struct TLCS900 *cpu);
