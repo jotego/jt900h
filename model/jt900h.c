@@ -45,6 +45,7 @@ void TLCS_eval(struct TLCS900 *cpu) {
                     case 3:
                         cpu->regs.pc |= cpu->pins.Din<<16; // PC = PC | (Din << 16) 16 lower bits unaffected
                         cpu->state = normal;
+                        cpu->pins.RDn = 1;
                         break;
                     }
                     cpu->rst_st++;

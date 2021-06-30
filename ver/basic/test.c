@@ -22,6 +22,8 @@ int main() {
             dut.pins.Din = mem[ (dut.pins.A+1) & MAXMEM ];
             dut.pins.Din <<=8;
             dut.pins.Din |= mem[  dut.pins.A    & MAXMEM ];
+        } else {
+            dut.pins.Din = 0xFFFF;
         }
 
         TLCS_eval( &dut );
