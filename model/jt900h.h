@@ -15,7 +15,7 @@ struct TLCS900H_Pins{
         CASn;       //Column Address Strobe
 
     // last state
-    int X1_last;
+    int X1_last, CLK_last;
 };
 
 struct TLCS900H_Registers{
@@ -30,6 +30,7 @@ struct TLCS900 {
     struct TLCS900H_Pins pins;
     struct TLCS900H_Registers regs;
     enum { reset=0, normal, irq } state;
+    int rst_st;
 };
 
 void TLCS_reset(struct TLCS900 *cpu);

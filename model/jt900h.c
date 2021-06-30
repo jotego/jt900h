@@ -26,14 +26,32 @@ void TLCS_eval(struct TLCS900 *cpu) {
         cpu->pins.CASn = 1;
         cpu->regs.pc   = 0x8000;
         cpu->regs.xsp  = 0x100;
-    } else {
-        if( !cpu->pins.X1 && cpu->pins.X1_last ) { // negative edge
-            cpu->pins.CLK = (~cpu->pins.CLK)&1;
-        }
+        cpu->rst_st    = 0;
+    } else if( !cpu->pins.X1 && cpu->pins.X1_last ) { // negative edge
+        cpu->pins.CLK_last = cpu->pins.CLK;
+        cpu->pins.CLK = (~cpu->pins.CLK)&1; // generate output clock
         
         switch( cpu->state ) {
             case reset: 
-                
+                if( !cpu->pins.CLK_last && cpu->pins.CLK ) { // rise edge
+                    cpu->pins.A = cpu->rst_st>1 ? 0xffff02 : 0xffff00;
+                }
+                if( cpu->pins.CLK_last && !cpu->pins.CLK ) { // fall edge
+                    cpu->pins.RDn = 0;
+                    switch( cpu->rst_st ) {
+                    case 1:
+                        cpu->regs.pc = cpu->pins.Din;
+                        break;
+                    case 3:
+                        cpu->regs.pc |= cpu->pins.Din<<16; // PC = PC | (Din << 16) 16 lower bits unaffected
+                        cpu->state = normal;
+                        break;
+                    }
+                    cpu->rst_st++;
+                }
+                break;
+            case normal:
+                break;
         }
     }
     // Keep values
