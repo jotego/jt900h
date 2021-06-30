@@ -10,7 +10,9 @@ struct TLCS900H_Pins{
     int CLK, RDn, A, Dout,
         WRn, HWRn,  // low/high byte write
         ALE,        // Address Latch Enable
-        CSn;        // CS[2:0]
+        CSn,        // CS[2:0]
+        RASn,       //Low Address Strobe
+        CASn;       //Column Address Strobe
 
     // last state
     int X1_last;

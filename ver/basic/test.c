@@ -13,13 +13,13 @@ int main() {
     mem[0xffff01 & MAXMEM] = 0xca;
     mem[0xffff02 & MAXMEM] = 0x77;
 
-    printf("X1  RESETn CLK  \n");
+    printf("X1  RESETn  CLK     PC      XSP  \n");
     for( int k=0; k<20; k++ ) {
         dut.pins.X1 = 1-dut.pins.X1; // X1 clock
         dut.pins.RESETn = k<4 ? 0 : 1;
         TLCS_eval( &dut );
-        printf("%d     %d      %d\n",
-            dut.pins.X1, dut.pins.RESETn, dut.pins.CLK );
+        printf("%d     %d      %d       %x      %x\n",
+            dut.pins.X1, dut.pins.RESETn, dut.pins.CLK, dut.regs.pc, dut.regs.xsp );
     }
     return 0;
 }
