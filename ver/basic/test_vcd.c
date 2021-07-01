@@ -1,6 +1,22 @@
 #include "jt900h.h"
 #include <stdio.h>
-#define MAX 1000
+
+void dump_bin( int v, int w, char* symbol) {
+    int mask=1<< (w-1); // b100000000 bit w-1 = 1, others 0
+    printf("b");
+    while( w>0 ) {
+        if( v & mask ) {
+            printf("1");
+        } else {
+            printf("0");
+        }
+        v<<=1;
+        w--;
+    }
+    printf(" %s\n",symbol);
+}
+
+
 int main() {
     struct TLCS900 dut; // Device Under Test - UUT Unit Under Test
     unsigned char mem[0x400000]; // 4MB
@@ -27,9 +43,9 @@ int main() {
     printf("$var  wire 1 x	X1	 $end\n");
     printf("$var  wire 1 r	RESETn	 $end\n");
     printf("$var  wire 1 c	CLK	 $end\n");
-    printf("$var  wire 32 a A[31:0]	 $end\n");
+    printf("$var  wire 24 a A[23:0]	 $end\n");
     printf("$var  wire 32 p PC[31:0]  $end\n");
-    printf("$var  wire 32 d Din[31:0] $end\n");
+    printf("$var  wire 16 d Din[15:0] $end\n");
     printf("$upscope $end\n");
     printf("$enddefinitions $end\n");
     printf("$dumpvars\n");
@@ -43,8 +59,7 @@ int main() {
     int x = 0;
     int r = 0;
     int c = 0;
-
-    
+    int a = 0, p=0, d=0;
 
     for( int k=0; k<24; k++ ) {
 
@@ -60,10 +75,8 @@ int main() {
         }
 
         TLCS_eval( &dut );
-        
-        
+
         printf("#%d\n", k);
-        
         
         printf("%dx\n", dut.pins.X1);
         if(r != dut.pins.RESETn){
@@ -76,22 +89,21 @@ int main() {
             printf("%dc\n", dut.pins.CLK);
         }
         
+        if( a != dut.pins.A ) {
+            a = dut.pins.A;
+            dump_bin( a, 24, "a" );
+        }
 
-           
-       
-       
-        
-        //printf("%8x\n", dut.pins.A);
+        if( p!= dut.regs.pc ) {
+            p = dut.regs.pc;
+            dump_bin( p, 32, "p" );
+        }
 
-        /*printf("%d     %d     %d    %8x   %8x  %2x\n",
-            dut.pins.X1, dut.pins.RESETn, dut.pins.CLK, dut.pins.A,
-            dut.regs.pc, dut.pins.Din&0xffff );*/
-
-   
+        if( d != dut.pins.Din ) {
+            d = dut.pins.Din;
+            dump_bin( d, 16, "d" );
+        }
     }
     return 0;
-
-
- 
 }
 
