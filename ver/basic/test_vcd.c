@@ -1,6 +1,17 @@
 #include "jt900h.h"
 #include <stdio.h>
 
+/*
+
+Cambiar mem a 64kB solo (ajustar MAXMEM)
+Cargar en mem el fichero ngp_bios.ngp
+
+pasar volcado VCD a dump_vcd
+
+Secuencia de reset en NGP
+
+*/
+
 void dump_bin( int v, int w, char* symbol) {
     int mask=1<< (w-1); // b100000000 bit w-1 = 1, others 0
     printf("b");
@@ -10,7 +21,6 @@ void dump_bin( int v, int w, char* symbol) {
     }
     printf(" %s\n",symbol);
 }
-
 
 int main() {
     struct TLCS900 dut, dut_last; // Device Under Test - UUT Unit Under Test
@@ -59,14 +69,16 @@ int main() {
 
         if( !dut.pins.RDn ) {
             dut.pins.Din = mem[ (dut.pins.A+1) & MAXMEM ];
-            dut.pins.Din <<=8;
+            dut.pins.Din <<=8; // Left shift by 8 bits
             dut.pins.Din |= mem[  dut.pins.A    & MAXMEM ];
         } else {
             dut.pins.Din = 0xFFFF;
         }
 
         TLCS_eval( &dut );
+        // dump_vcd
 
+/*
         printf("#%d\n", k);
         
         printf("%dx\n", dut.pins.X1);
@@ -89,6 +101,7 @@ int main() {
         if( dut_last.pins.Din != dut.pins.Din ) {
             dump_bin( dut.pins.Din, 16, "d" );
         }
+        */
         dut_last = dut;
     }
     return 0;
