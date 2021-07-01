@@ -4,14 +4,9 @@
 void dump_bin( int v, int w, char* symbol) {
     int mask=1<< (w-1); // b100000000 bit w-1 = 1, others 0
     printf("b");
-    while( w>0 ) {
-        if( v & mask ) {
-            printf("1");
-        } else {
-            printf("0");
-        }
+    while( w-->0 ) { // w post-decrement
+        putchar( v&mask ? '1' : '0' );
         v<<=1;
-        w--;
     }
     printf(" %s\n",symbol);
 }
