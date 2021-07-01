@@ -17,6 +17,7 @@ int main() {
     unsigned char mem[0x400000]; // 4MB
     int MAXMEM=0x3FFFFF;
 
+    memset( &dut_last, 0, sizeof(dut_last) );
     TLCS_reset( &dut );
     // Reset vector falls beyond the allocated 4MB
     // so we gate the address to avoid a segment violation error
