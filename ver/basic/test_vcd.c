@@ -13,7 +13,7 @@ void dump_bin( int v, int w, char* symbol) {
 
 
 int main() {
-    struct TLCS900 dut; // Device Under Test - UUT Unit Under Test
+    struct TLCS900 dut, dut_last; // Device Under Test - UUT Unit Under Test
     unsigned char mem[0x400000]; // 4MB
     int MAXMEM=0x3FFFFF;
 
@@ -24,37 +24,32 @@ int main() {
     mem[0xffff01 & MAXMEM] = 0xca;
     mem[0xffff02 & MAXMEM] = 0x77;
 
-    printf("$date \n");
-    printf("    Date text\n");
-    printf("$end\n");
-    printf("$version\n");
-    printf("    VCD generator tool\n");
-    printf("$end\n");
-    printf("$comment\n");
-    printf("    Version from C\n");
-    printf("$end\n");
-    printf("$timescale 1ns $end\n");
-    printf("$scope module reset $end\n");
-    printf("$var  wire 1 x	X1	 $end\n");
-    printf("$var  wire 1 r	RESETn	 $end\n");
-    printf("$var  wire 1 c	CLK	 $end\n");
-    printf("$var  wire 24 a A[23:0]	 $end\n");
-    printf("$var  wire 32 p PC[31:0]  $end\n");
-    printf("$var  wire 16 d Din[15:0] $end\n");
-    printf("$upscope $end\n");
-    printf("$enddefinitions $end\n");
-    printf("$dumpvars\n");
-    printf("0x\n");
-    printf("0r\n");
-    printf("0c\n");
-    printf("bx a\n");
-    printf("b1000000000000000 p\n");
-    printf("bx d\n");
-   
-    int x = 0;
-    int r = 0;
-    int c = 0;
-    int a = 0, p=0, d=0;
+    printf("$date \n"
+    "    Date text\n"
+    "$end\n"
+    "$version\n"
+    "    VCD generator tool\n"
+    "$end\n"
+    "$comment\n"
+    "    Version from C\n"
+    "$end\n"
+    "$timescale 1ns $end\n"
+    "$scope module reset $end\n"
+    "$var  wire 1 x	X1	 $end\n"
+    "$var  wire 1 r	RESETn	 $end\n"
+    "$var  wire 1 c	CLK	 $end\n"
+    "$var  wire 24 a A[23:0]	 $end\n"
+    "$var  wire 32 p PC[31:0]  $end\n"
+    "$var  wire 16 d Din[15:0] $end\n"
+    "$upscope $end\n"
+    "$enddefinitions $end\n"
+    "$dumpvars\n"
+    "0x\n"
+    "0r\n"
+    "0c\n"
+    "bx a\n"
+    "b1000000000000000 p\n"
+    "bx d\n");
 
     for( int k=0; k<24; k++ ) {
 
@@ -74,30 +69,26 @@ int main() {
         printf("#%d\n", k);
         
         printf("%dx\n", dut.pins.X1);
-        if(r != dut.pins.RESETn){
-            r=dut.pins.RESETn;
+        if( dut_last.pins.RESETn != dut.pins.RESETn){
             printf("%dr\n", dut.pins.RESETn);
         }
           
-        if(c != dut.pins.CLK){
-            c=dut.pins.CLK;
+        if( dut_last.pins.CLK != dut.pins.CLK){
             printf("%dc\n", dut.pins.CLK);
         }
         
-        if( a != dut.pins.A ) {
-            a = dut.pins.A;
-            dump_bin( a, 24, "a" );
+        if( dut_last.pins.A != dut.pins.A ) {
+            dump_bin( dut.pins.A, 24, "a" );
         }
 
-        if( p!= dut.regs.pc ) {
-            p = dut.regs.pc;
-            dump_bin( p, 32, "p" );
+        if( dut_last.regs.pc = dut.regs.pc ) {
+            dump_bin( dut.regs.pc, 32, "p" );
         }
 
-        if( d != dut.pins.Din ) {
-            d = dut.pins.Din;
-            dump_bin( d, 16, "d" );
+        if( dut_last.pins.Din != dut.pins.Din ) {
+            dump_bin( dut.pins.Din, 16, "d" );
         }
+        dut_last = dut;
     }
     return 0;
 }
