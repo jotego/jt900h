@@ -1,15 +1,14 @@
 #include "jt900h.h"
 #include <stdio.h>
-
+#include <string.h>
+#include <stdlib.h>
 /*
 
-Cambiar mem a 64kB solo (ajustar MAXMEM)
-Cargar en mem el fichero ngp_bios.ngp
+Cargar en mem el fichero ngp_bios.ngp (terminar)
 
-pasar volcado VCD a dump_vcd
+VCD genere un archivo
 
-Secuencia de reset en NGP
-
+Movimiento de los buses en el codigo
 */
 
 void dump_bin( int v, int w, char* symbol) {
@@ -22,10 +21,55 @@ void dump_bin( int v, int w, char* symbol) {
     printf(" %s\n",symbol);
 }
 
+void dump_vcd(int k, struct TLCS900 dut, struct TLCS900 dut_last){
+    //Generate data for a .VCD file.
+
+        printf("#%d\n", k);
+        
+        printf("%dx\n", dut.pins.X1);
+        if( dut_last.pins.RESETn != dut.pins.RESETn){
+            printf("%dr\n", dut.pins.RESETn);
+        }
+          
+        if( dut_last.pins.CLK != dut.pins.CLK){
+            printf("%dc\n", dut.pins.CLK);
+        }
+        
+        if( dut_last.pins.A != dut.pins.A ) {
+            dump_bin( dut.pins.A, 24, "a" );
+        }
+
+        if( dut_last.regs.pc != dut.regs.pc ) {
+            dump_bin( dut.regs.pc, 32, "p" );
+        }
+
+        if( dut_last.pins.Din != dut.pins.Din ) {
+            dump_bin( dut.pins.Din, 16, "d" );
+        }
+        
+}
+
+void ngpbios_check(unsigned char mem[]){
+   
+    FILE *fp;
+    fp = fopen("ngp_bios.ngp","rb");
+    if(fp == NULL)
+    {
+        printf("Error opening file\n");
+        exit(1);
+    }
+    printf("Testing fread() function: \n\n");
+
+    fread(mem, 1, 65536, fp);
+        
+    printf("%x %x %x %x %x %x %x %x %x %x\n", mem[0], mem[1], mem[2], mem[3], mem[4], mem[5], mem[6],mem[7], mem[8], mem[9]);
+    fclose(fp);
+}
+
 int main() {
     struct TLCS900 dut, dut_last; // Device Under Test - UUT Unit Under Test
-    unsigned char mem[0x400000]; // 4MB
-    int MAXMEM=0x3FFFFF;
+    unsigned char mem[0x10000]; // 64kB
+    int MAXMEM=0xFFFF;
 
     memset( &dut_last, 0, sizeof(dut_last) );
     TLCS_reset( &dut );
@@ -34,6 +78,8 @@ int main() {
     mem[0xffff00 & MAXMEM] = 0xfe;
     mem[0xffff01 & MAXMEM] = 0xca;
     mem[0xffff02 & MAXMEM] = 0x77;
+
+    ngpbios_check(mem);
 
     printf("$date \n"
     "    Date text\n"
@@ -76,33 +122,10 @@ int main() {
         }
 
         TLCS_eval( &dut );
-        // dump_vcd
-
-/*
-        printf("#%d\n", k);
-        
-        printf("%dx\n", dut.pins.X1);
-        if( dut_last.pins.RESETn != dut.pins.RESETn){
-            printf("%dr\n", dut.pins.RESETn);
-        }
-          
-        if( dut_last.pins.CLK != dut.pins.CLK){
-            printf("%dc\n", dut.pins.CLK);
-        }
-        
-        if( dut_last.pins.A != dut.pins.A ) {
-            dump_bin( dut.pins.A, 24, "a" );
-        }
-
-        if( dut_last.regs.pc = dut.regs.pc ) {
-            dump_bin( dut.regs.pc, 32, "p" );
-        }
-
-        if( dut_last.pins.Din != dut.pins.Din ) {
-            dump_bin( dut.pins.Din, 16, "d" );
-        }
-        */
+        dump_vcd(k, dut, dut_last);
         dut_last = dut;
+
+
     }
     return 0;
 }
