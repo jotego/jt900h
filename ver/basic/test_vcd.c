@@ -6,64 +6,72 @@
 
 Cargar en mem el fichero ngp_bios.ngp (terminar)
 
-VCD genere un archivo
 
 Movimiento de los buses en el codigo
 */
 
-void dump_bin( int v, int w, char* symbol) {
+void dump_bin( int v, int w, char* symbol, FILE *fpvcd) {
+    
     int mask=1<< (w-1); // b100000000 bit w-1 = 1, others 0
-    printf("b");
+    fprintf(fpvcd, "b");
     while( w-->0 ) { // w post-decrement
-        putchar( v&mask ? '1' : '0' );
+        fputc(v&mask ? '1' : '0', fpvcd);
         v<<=1;
     }
-    printf(" %s\n",symbol);
+    fprintf(fpvcd, " %s\n",symbol);
 }
 
-void dump_vcd(int k, struct TLCS900 dut, struct TLCS900 dut_last){
+void dump_vcd(int k, struct TLCS900 dut, struct TLCS900 dut_last, FILE *fpvcd){
     //Generate data for a .VCD file.
 
-        printf("#%d\n", k);
+        fprintf(fpvcd, "#%d\n", k);
         
-        printf("%dx\n", dut.pins.X1);
+        fprintf(fpvcd, "%dx\n", dut.pins.X1);
+        
         if( dut_last.pins.RESETn != dut.pins.RESETn){
-            printf("%dr\n", dut.pins.RESETn);
+            fprintf(fpvcd, "%dr\n", dut.pins.RESETn);
         }
           
         if( dut_last.pins.CLK != dut.pins.CLK){
-            printf("%dc\n", dut.pins.CLK);
+            fprintf(fpvcd, "%dc\n", dut.pins.CLK);
         }
         
         if( dut_last.pins.A != dut.pins.A ) {
-            dump_bin( dut.pins.A, 24, "a" );
+            dump_bin( dut.pins.A, 24, "a", fpvcd );
         }
 
         if( dut_last.regs.pc != dut.regs.pc ) {
-            dump_bin( dut.regs.pc, 32, "p" );
+            dump_bin( dut.regs.pc, 32, "p", fpvcd );
         }
 
         if( dut_last.pins.Din != dut.pins.Din ) {
-            dump_bin( dut.pins.Din, 16, "d" );
+            dump_bin( dut.pins.Din, 16, "d", fpvcd );
         }
+        
         
 }
 
 void ngpbios_check(unsigned char mem[]){
-   
-    FILE *fp;
-    fp = fopen("ngp_bios.ngp","rb");
-    if(fp == NULL)
+    int n, ln;
+    FILE *fpbios;
+    fpbios = fopen("ngp_bios.ngp","rb");
+    if(fpbios == NULL)
     {
         printf("Error opening file\n");
         exit(1);
     }
     printf("Testing fread() function: \n\n");
 
-    fread(mem, 1, 65536, fp);
-        
-    printf("%x %x %x %x %x %x %x %x %x %x\n", mem[0], mem[1], mem[2], mem[3], mem[4], mem[5], mem[6],mem[7], mem[8], mem[9]);
-    fclose(fp);
+    for (n = 0, ln = 0; n < 16; n++, ln++){
+        fread(mem, 1, 65536, fpbios);    
+        if ( ln >= 16){
+            ln = 0;
+            printf("\n");
+        } 
+        printf("%02x ", mem[n]); 
+    }
+ 
+    fclose(fpbios);
 }
 
 int main() {
@@ -81,7 +89,10 @@ int main() {
 
     ngpbios_check(mem);
 
-    printf("$date \n"
+    FILE *fpvcd;
+    fpvcd =fopen("dump_vcd.vcd", "w");
+    
+    fprintf(fpvcd, "$date \n"
     "    Date text\n"
     "$end\n"
     "$version\n"
@@ -106,8 +117,14 @@ int main() {
     "0c\n"
     "bx a\n"
     "b1000000000000000 p\n"
-    "bx d\n");
-
+    "bx d\n"
+    "$end\n");
+           
+    if (fpvcd == NULL){
+                printf("Error opening file (write)\n");
+                exit(1);
+            }
+    
     for( int k=0; k<24; k++ ) {
 
         dut.pins.X1 = 1-dut.pins.X1; // X1 clock
@@ -122,11 +139,11 @@ int main() {
         }
 
         TLCS_eval( &dut );
-        dump_vcd(k, dut, dut_last);
+        dump_vcd(k, dut, dut_last, fpvcd);
         dut_last = dut;
 
-
     }
+    fclose(fpvcd);
     return 0;
 }
 
