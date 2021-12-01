@@ -4,36 +4,42 @@
 
 struct TLCS900H_Pins{
     // inputs
-    int X1, Din, WAITn, RESETn;
+    int clk, cen, din, rst;
 
     // outputs
-    int CLK, RDn, A, Dout,
-        WRn, HWRn,  // low/high byte write
-        ALE,        // Address Latch Enable
-        CSn,        // CS[2:0]
-        RASn,       //Row Address Strobe
-        CASn;       //Column Address Strobe
+    int cpu_cen, rd, addr, dout,
+        wr, dsn;    // low/high byte write
 
     // last state
-    int X1_last, CLK_last;
+    int clk_last;
 };
 
-struct TLCS900H_Registers{
-    uint32_t xwa[4], xbc[4], xde[4], xhl[4];
-    uint32_t dmas[4], dmad[4], dmac[4],dmam[4];
-    uint32_t xix, xiy, xiz, xsp, pc;
-    uint16_t sr, intnest;
-    uint8_t f[2];
+struct TLCS900H_Regs{
+    union {
+        uint8_t  bgr[0x40]; // general registers, banks 0-3
+        uint16_t wgr[0x20];
+        uint32_t qgr[0x10];
+    };
+    union {
+        uint8_t  bsr[0x10]; // special registers
+        uint16_t wsr[0x8];
+        uint32_t qsr[0x4];
+    };
+    uint32_t pc;
 };
 
 struct TLCS900 {
     struct TLCS900H_Pins pins;
-    struct TLCS900H_Registers regs;
+    struct TLCS900H_Regs regs;
     enum { reset=0, normal, irq } state;
+    // Pipeline registers
+    uint16_t bufin;
+
+    // clock divider
+    int cen_div;
     int rst_st;
     int norm_st;
     int irq_st;
 };
 
-void TLCS_reset(struct TLCS900 *cpu);
 void TLCS_eval(struct TLCS900 *cpu);
