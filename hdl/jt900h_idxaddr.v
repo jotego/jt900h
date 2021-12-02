@@ -21,6 +21,7 @@ module jt900h_idxaddr(
     input             clk,
 
     input      [15:0] op,
+    output reg        fetch,
     // To register bank
     // index register
     output reg [ 7:0] idx_rdreg_sel,
@@ -41,7 +42,6 @@ localparam [7:0] NULL=8'h40;
 reg  [23:0] idx_offset, aux24;
 reg  [ 1:0] ridx_mode;
 reg  [ 4:0] mode;
-reg         fetch;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
