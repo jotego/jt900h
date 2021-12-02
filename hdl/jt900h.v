@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*  This file is part of JT900H.
     JT900H program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,23 +16,68 @@
     Version: 1.0
     Date: 29-11-2021 */
 
-module jt900h;
-=======
 module jt900h(
-    input           rst,
-    input           clk,
-    input           cen,
-    output          cpu_cen,
+    input             rst,
+    input             clk,
+    input             cen
+);
 
-    input    [15:0] din,
-    output   [15:0] dout,
-    output   [23:0] addr,
-    output          rd,
-    output          wr,
-    output   [ 1:0] dsn,    // active low
+wire [ 1:0] rfp;          // register file pointer
+wire [31:0] src_out, dst_out;
+
+// Indexed memory addresser
+wire [ 7:0] idx_rdreg_sel;
+wire [ 1:0] reg_step;
+wire        reg_inc;
+wire        reg_dec;
+// offset register
+wire [ 7:0] idx_rdreg_aux;
+wire [15:0] op;
+wire        idx_fetch;
+wire        addr_ok;
+wire [23:0] idx_addr;
+
+
+jt900h_regs u_regs(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    .rfp            ( rfp               ),          // register file pointer
+    // From indexed memory addresser
+    .idx_rdreg_sel  ( idx_rdreg_sel     ),
+    .reg_step       ( reg_step          ),
+    .reg_inc        ( reg_inc           ),
+    .reg_dec        ( reg_dec           ),
+    // offset register
+    .idx_rdreg_aux  ( idx_rdreg_aux     ),
+    .src_out        ( src_out           ),
+
+    // destination register
+    .dst_out        ( dst_out           )
+);
+
+jt900h_idxaddr u_idxaddr(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    .op             ( op                ),
+    .fetch          ( idx_fetch         ),
+    // To register bank
+    // index register
+    .idx_rdreg_sel  ( idx_rdreg_sel     ),
+    .reg_step       ( reg_step          ),
+    .reg_inc        ( reg_inc           ),
+    .reg_dec        ( reg_dec           ),
+    .idx_rdreg      ( src_out           ),
+    // offset register
+    .idx_rdreg_aux  ( idx_rdreg_aux     ),
+    .idx_rdaux      ( dst_out[15:0]     ),
+
+    .addr_ok        ( addr_ok           ),
+    .idx_addr       ( idx_addr          )
 );
 
 
->>>>>>> a18573ba14e797ee7ee18980e5661fde9451b4a1
-
-endmodule
+endmodule 

@@ -19,6 +19,7 @@
 module jt900h_idxaddr(
     input             rst,
     input             clk,
+    input             cen,
 
     input      [15:0] op,
     output reg        fetch,
@@ -64,7 +65,7 @@ endfunction
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         addr_ok <= 0;
-    end else begin
+    end else if(cen) begin
         mode <= {op[6],op[3:0]};
         ridx_mode <= 0;
         reg_step <= op[9:8];

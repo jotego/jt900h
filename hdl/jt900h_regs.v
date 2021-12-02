@@ -37,8 +37,8 @@ module jt900h_regs(
     input      [31:0] din*/
 );
 
-localparam [7:0] CURBANK  = 8'he0,
-                 PREVBANK = 8'hd0;
+localparam [3:0] CURBANK  = 4'he,
+                 PREVBANK = 4'hd;
 
 // All registers
 reg [7:0] accs[0:63];
@@ -80,8 +80,8 @@ end
 
 function [7:0] simplify( input [7:0] rsel );
     simplify = {
-               rsel[7:4]==4'he ? { 2'd0, rfp } :
-               rsel[7:4]==4'hd ? { 2'd0, rfp-2'd1 } : rsel[7:4],
+               rsel[7:4]==CURBANK  ? { 2'd0, rfp } :
+               rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
                rsel[3:0] };
 endfunction
 
