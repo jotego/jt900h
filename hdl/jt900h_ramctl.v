@@ -38,22 +38,24 @@ reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
-assign ram_rdy   = ~|we_mask;
+assign ram_rdy   = &cache_ok;
 assign dout = {cache1, cache0};
 
 always @(posedge clk,posedge rst) begin
     if( rst ) begin
         ram_addr <= 0;
         cache_ok <= 0;
+        we_mask  <= 0;
+        cache_addr <= 0;
     end else if(cen) begin
         if( we_mask!=0 ) begin // assume 0 bus waits for now
-            ram_addr    <= ram_addr+24'd2;
+            ram_addr <= ram_addr+24'd2;
             if( we_mask[0] ) begin
                 cache0[7:0] <= ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[0] <= 1;
                 we_mask[0]  <= 0;
             end
-            if( we_mask[1] && !ram_addr[0] || !we_mask[0] ) begin
+            if( we_mask[1] && (!ram_addr[0] || !we_mask[0]) ) begin
                 cache0[15:8] <= !ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[1] <= 1;
                 we_mask[1]  <= 0;
@@ -69,7 +71,7 @@ always @(posedge clk,posedge rst) begin
                 we_mask[3]  <= 0;
             end
         end
-        if( req_addr != cache_addr ) begin
+        if( req_addr != cache_addr && we_mask==0) begin
             if( req_addr[23:1]==cache_addr[23:1] ) begin
                 cache_addr <= cache_addr+24'd1;
                 { cache1, cache0 } <= { 8'd0, cache1, cache0[15:8] };
@@ -90,6 +92,7 @@ always @(posedge clk,posedge rst) begin
                 cache_ok <= 4'b0001;
             end else begin
                 ram_addr <= req_addr;
+                cache_addr <= req_addr;
                 we_mask  <= 4'b1111;
                 cache_ok <= 4'b0000;
             end
