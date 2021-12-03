@@ -19,65 +19,60 @@
 module jt900h_ctrl(
     input             rst,
     input             clk,
+    input             cen,
 
-    output reg [23:0] idx_offset
+    output reg        ldram_en,
+    output reg        idx_en,
+    input             idx_ok,
+
+    input      [15:0] cur_op,
+    input             op_ok,
+
+    output reg [ 2:0] regs_we,
+    output reg [ 7:0] regs_dst
 );
 
-wire mem_idx_easy, mem_idx_off8;
-wire [15:0] cur_op;
-reg  [15:0] last_op;
+localparam FETCH=0, IDX=1, LD_RAM=2;
 
-assign cur_op = parse[1] ? last_op : op;
-assign mem_idx_easy = !op[6];
-assign mem_idx_off8 = !op[6] && op[3];
+integer    op_phase;
+reg        illegal;
+reg  [7:0] last_op;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         illegal <= 0;
-    end else begin
-        st_reg   <= streg_dly;
-        load_mem <= 0;
-        last_op  <= op;
-        if( grab_addr8 ) begin
-            idx_offset[23:8] <= { {8{op[7]}}, op };
-            grab_addr8 <= 0;
-        end
-        if( !load_mem ) begin
-            casez( cur_op[7:0] )
-                8'b10??_????,
-                8'b11??_0???: begin // LD R,(mem)
-                    if( parse[0] ) begin
-                        zz <= op[5:4];
-                        if( mem_idx_easy ) begin
-                            reg_sel0 <= idx_regsel;
-                            load_mem <= 1;
-                            if( mem_idx_off8 ) begin
-                                idx_offset <= { {16{op[15]}}, op[15:8] };
-                                parse <= 2;
-                            end else begin
-                                streg_dly <= 1;
-                                dst_sel  <= full_name( op[10:8] );
-                                illegal  <= op[15:11] != 5'b00100;
-                            end
-                        end
-                        if( mem_idx_addr )  begin
-                            reg_sel0 <= NULL;
-                            load_mem <= 1;
-                            streg_dly <= 1;
-                            idx_offset <= { {16{op[15]}}, op[15:8] };
-                            grab_addr8  <= op[1:0] == 1;
-                            grab_addr16 <= op[1:0] == 2;
-                        end
-                    end
-                    if( parse[1] ) begin
-                        streg_dly <= 1;
-                        dst_sel  <= full_name( op[2:0] );
-                        illegal  <= op[7:3] != 5'b00100;
-                    end
-                end
+        op_phase <= FETCH;
+    end else if(cen) begin
 
-            endcase
-        end
+        case( op_phase )
+            FETCH: if( op_ok ) begin
+                casez( cur_op[7:0] )
+                    8'b10??_????,8'b11??_0???: begin // start indexed addressing
+                        op_phase <= IDX;
+                        idx_en   <= 1;
+                        last_op  <= cur_op[7:0];
+                    end
+                    default:;
+                endcase
+            end
+            IDX: if( idx_ok ) begin
+                idx_en <= 0;
+                casez( cur_op[7:0] )
+                    8'b0010_0???: begin // LD R,(mem)
+                        op_phase <= LD_RAM;
+                        ldram_en <= 1;
+                        regs_we  <= last_op[5:4]==0 ? 3'd0 : last_op[5:4]==1 ? 3'd1 : 3'd2;
+                        regs_dst <= cur_op[2] ? {4'hf,cur_op[1:0],2'd0} :
+                                                {4'he, {cur_op[1:0],2'd0}  };
+                    end
+                    default:;
+                endcase
+            end
+            LD_RAM: begin
+                op_phase <= FETCH;
+            end
+            default:;
+        endcase
     end
 end
 

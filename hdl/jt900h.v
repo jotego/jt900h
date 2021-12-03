@@ -19,7 +19,10 @@
 module jt900h(
     input             rst,
     input             clk,
-    input             cen
+    input             cen,
+
+    output reg [23:1] ram_addr,
+    input      [15:0] ram_dout
 );
 
 wire [ 1:0] rfp;          // register file pointer
@@ -30,6 +33,11 @@ wire [ 7:0] idx_rdreg_sel;
 wire [ 1:0] reg_step;
 wire        reg_inc;
 wire        reg_dec;
+
+wire        idx_en;
+wire        idx_ok;
+
+// Register bank
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
@@ -37,6 +45,13 @@ wire        idx_fetch;
 wire        addr_ok;
 wire [23:0] idx_addr;
 
+wire [ 2:0] regs_we;
+wire [ 7:0] regs_dst;
+
+// Memory controller
+wire        ldram_en;
+wire        cur_op;
+wire        op_ok;
 
 jt900h_regs u_regs(
     .rst            ( rst               ),
@@ -54,6 +69,8 @@ jt900h_regs u_regs(
     .src_out        ( src_out           ),
 
     // destination register
+    .dst            ( regs_dst          ),
+    .we             ( regs_we           ),
     .dst_out        ( dst_out           )
 );
 
@@ -79,5 +96,20 @@ jt900h_idxaddr u_idxaddr(
     .idx_addr       ( idx_addr          )
 );
 
+jt900h_ctrl u_ctrl(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    .ldram_en       ( ldram_en          ),
+    .idx_en         ( idx_en            ),
+    .idx_ok         ( idx_ok            ),
+
+    .cur_op         ( cur_op            ),
+    .op_ok          ( op_ok             ),
+
+    .regs_we        ( regs_we           ),
+    .regs_dst       ( regs_dst          )
+);
 
 endmodule 
