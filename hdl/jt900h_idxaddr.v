@@ -130,7 +130,7 @@ always @* begin
                 5'h12: begin
                     nx_idx_offset[23:8] = op;
                     nx_addr_ok = 1;
-                    fetched    = 3;
+                    fetched    = 2;
                 end
                 5'h13: begin
                     fetched = 2;

@@ -42,12 +42,18 @@ wire [31:0] pc;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
-wire        idx_fetch, ctl_fetch;
+wire [ 1:0] idx_fetch, ctl_fetch;
 wire        addr_ok;
 wire [23:0] idx_addr;
 
 wire [ 2:0] regs_we;
 wire [ 7:0] regs_dst;
+
+// ALU control
+wire [31:0] alu_imm;
+wire [ 5:0] alu_op;
+wire        alu_smux;
+wire        alu_wait;
 
 // Memory controller
 wire        ldram_en;
@@ -84,7 +90,7 @@ jt900h_idxaddr u_idxaddr(
 
     .idx_en         ( idx_en            ),
     .op             ( buf_dout[15:0]    ),
-    .fetch          ( idx_fetch         ),
+    .fetched        ( idx_fetch         ),
     // To register bank
     // index register
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
@@ -105,13 +111,18 @@ jt900h_ctrl u_ctrl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    .fetch          ( ctl_fetch         ),
+    .fetched        ( ctl_fetch         ),
 
     .ldram_en       ( ldram_en          ),
     .idx_en         ( idx_en            ),
     .idx_ok         ( idx_ok            ),
 
-    .cur_op         ( buf_dout[15:0]    ),
+    .alu_imm        ( alu_imm           ),
+    .alu_op         ( alu_op            ),
+    .alu_smux       ( alu_smux          ),
+    .alu_wait       ( alu_wait          ),
+
+    .op             ( buf_dout          ),
     .op_ok          ( buf_rdy           ),
 
     .regs_we        ( regs_we           ),
@@ -139,8 +150,9 @@ jt900h_pc u_pc(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    .idx_fetch      ( idx_fetch         ),
-    .ctl_fetch      ( ctl_fetch         ),
+    .idx_en         ( idx_en            ),
+    .idx_fetched    ( idx_fetch         ),
+    .ctl_fetched    ( ctl_fetch         ),
 
     .pc             ( pc                )
 );

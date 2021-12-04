@@ -28,12 +28,12 @@ module jt900h_ctrl(
     input             idx_ok,
 
     // ALU control
-    output reg        alu_imm,
-    output reg        alu_op,
+    output reg [31:0] alu_imm,
+    output reg [ 5:0] alu_op,
     output reg        alu_smux,
     output reg        alu_wait,
 
-    input      [15:0] op,
+    input      [31:0] op,
     input             op_ok,
 
     output reg [ 2:0] regs_we,
@@ -46,14 +46,19 @@ localparam [4:0] FETCH    = 5'd0,
                  EXEC     = 5'd3,
                  FILL_IMM = 5'd4;
 
+localparam [5:0] ALU_NOP  = 6'd0,
+                 ALU_MOVE = 6'd1;
+
 reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
 wire [2:0] expand_zz;
-reg  [7:0] regs_src, nx_src, regs_dst, nx_dst;
+reg  [7:0] regs_src, nx_src, nx_dst;
 reg  [2:0] nx_regs_we;
-reg        nx_alu_imm, nx_alu_op, nx_alu_smux, nx_alu_wait,
-           nx_ldram_en;
+reg        nx_alu_smux, nx_alu_wait,
+           nx_ldram_en, nx_idx_en;
+reg [31:0] nx_alu_imm;
+reg  [5:0] nx_alu_op;
 
 reg  [1:0] op_zz, nx_op_zz;
 
@@ -79,10 +84,11 @@ always @* begin
     nx_op_zz    = op_zz;
     if(op_ok) case( nx_phase )
         FETCH: begin
+            nx_alu_op = ALU_NOP;
             casez( op[7:0] )
                 8'b10??_????,
                 8'b11??_00??,
-                8'b11??_010?,: begin // start indexed addressing
+                8'b11??_010?: begin // start indexed addressing
                     nx_phase = IDX;
                     nx_idx_en= 1;
                 end
@@ -90,12 +96,12 @@ always @* begin
                     nx_dst   = expand_reg(op[ 2:0]);
                     nx_op_zz = op[5:4];
                     nx_phase = EXEC;
-                    fetched    = 1;
+                    fetched  = 1;
                 end
                 8'b11??_0111: begin // two operand, r with arbitraty register
                     nx_op_zz = op[5:4];
                     nx_dst   = op[15:8];
-                    fetched    = 2;
+                    fetched  = 2;
                     nx_phase = EXEC;
                 end
                 default:;
@@ -118,6 +124,7 @@ always @* begin
             fetched    = 1;
         end
         EXEC: begin // second half of op-code decoding
+            nx_phase = FETCH;
             casez( op[7:0] )
                 8'b1000_1???: begin // LD R,r
                     nx_src = regs_dst;
@@ -133,12 +140,12 @@ always @* begin
                 8'b1010_1???: begin
                     nx_alu_imm  = {29'd0,op[2:0]};
                     nx_alu_op   = ALU_MOVE;
-                    nx_alu_smux = ALU_MUX_IMM;
+                    nx_alu_smux = 1;
                     fetched = 1;
                 end
                 8'b0000_0011: begin // LD r,#
                     nx_alu_op   = ALU_MOVE;
-                    nx_alu_smux = ALU_MUX_IMM;
+                    nx_alu_smux = 1;
                     fetched     = 2;
                     if( nx_op_zz==0 ) begin
                         nx_alu_imm = {24'd0,op[15:8]};
@@ -149,10 +156,12 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
+                default:;
             endcase
         end
         FILL_IMM: begin
             nx_alu_wait = 0;
+            nx_phase = FETCH;
             if( nx_op_zz == 1 ) begin
                 nx_alu_imm[31:16] = 0;
                 nx_alu_imm[15:8] = op[7:0];

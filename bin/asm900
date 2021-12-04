@@ -1,0 +1,23 @@
+#!/bin/bash
+if [ $# -ne 1 ]; then
+    echo "Use the filename to assemble as the sole argument"
+    exit 1
+fi
+
+FILENAME=$1
+REL=$(basename $FILENAME .asm).rel
+ABS=$(basename $FILENAME .asm).abs
+BIN=$(basename $FILENAME .asm).bin
+rm -f $REL
+wine /opt/T900/bin/asm900.exe -O1 -Nb2 -l $*
+if [ -e $REL ]; then
+    rm -f $ABS
+    wine /opt/T900/bin/tulink.exe $REL
+    if [ -e $ABS ]; then
+        # Remove the header
+        # The last byte will be wrong, but I don't care about it
+        dd if=$ABS of=$BIN ibs=1 skip=$(printf "%dc" 0x125)
+        exit 0
+    fi
+fi
+exit 1
