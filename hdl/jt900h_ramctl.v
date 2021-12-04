@@ -75,20 +75,20 @@ always @(posedge clk,posedge rst) begin
                 we_mask[3]  <= 0;
             end
         end
-        if( req_addr != cache_addr && we_mask==0) begin
-            if( req_addr[23:1]==cache_addr[23:1] ) begin
+        if( (req_addr != cache_addr || cache_ok!=4'hf) && we_mask==0) begin
+            if( req_addr[23:1]==cache_addr[23:1] && cache_ok[3:1]==3'b111 ) begin
                 cache_addr <= cache_addr+24'd1;
                 { cache1, cache0 } <= { 8'd0, cache1, cache0[15:8] };
                 ram_addr <= req_addr + 24'd2;
                 we_mask  <= 4'b1000;
                 cache_ok <= 4'b0111;
-            end else if( req_addr==cache_addr+24'd2 ) begin
+            end else if( req_addr==cache_addr+24'd2 && cache_ok[3:2]==2'b11 ) begin
                 cache_addr <= cache_addr+24'd2;
                 cache0 <= cache1;
                 ram_addr <= req_addr + 24'd2;
                 we_mask  <= 4'b1100;
                 cache_ok <= 4'b0011;
-            end else if( req_addr==cache_addr+24'd3 ) begin
+            end else if( req_addr==cache_addr+24'd3 && cache_ok[3] ) begin
                 cache_addr <= cache_addr+24'd3;
                 cache0[7:0] <= cache1[15:8];
                 ram_addr <= req_addr + 24'd3;

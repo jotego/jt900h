@@ -21,7 +21,7 @@ module jt900h(
     input             clk,
     input             cen,
 
-    output reg [23:0] ram_addr,
+    output     [23:0] ram_addr,
     input      [15:0] ram_dout
 );
 

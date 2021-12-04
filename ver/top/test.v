@@ -4,14 +4,17 @@ module test;
 
 reg         rst, clk;
 wire        cen;
-reg  [23:0] req_addr;
 wire [23:0] ram_addr;
 wire [15:0] ram_dout;
-wire [31:0] dout;
 wire        ram_rdy;
+reg  [15:0] mem[0:1023];
+
+initial begin
+    $readmemh("test.hex",mem);
+end
 
 assign cen = 1;
-assign ram_dout = { ram_addr[7:1],1'b1, ram_addr[7:1],1'b0 };
+assign ram_dout = mem[ram_addr[9:1]];
 
 initial begin
     $dumpfile("test.lxt");
@@ -26,15 +29,8 @@ end
 
 initial begin
     rst=1;
-    req_addr = 24'hcafe;
     #100 rst=0;
-    #100000 $finish;
-end
-
-always @(posedge clk) begin
-    if( ram_rdy ) begin
-        req_addr <= { ~req_addr[0]^req_addr[23]^req_addr[15],req_addr[23:1] };
-    end
+    #10000 $finish;
 end
 
 jt900h uut(

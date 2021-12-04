@@ -104,6 +104,20 @@ always @* begin
                     fetched  = 2;
                     nx_phase = EXEC;
                 end
+                8'b0???_0???: begin // LD R,# 0zzz_0RRR, register and immediate value
+                    nx_dst      = expand_reg(op[ 2:0]);
+                    nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
+                    nx_alu_imm  = { 24'd0, op[15:8] };
+                    nx_alu_op   = ALU_MOVE;
+                    nx_alu_smux = 1;
+                    fetched     = 2;
+                    if( nx_op_zz!=0 ) begin
+                        nx_phase = FILL_IMM;
+                        nx_alu_wait = 1;
+                    end else begin
+                        nx_phase = FETCH;
+                    end
+                end
                 default:;
             endcase
         end
@@ -162,7 +176,7 @@ always @* begin
         FILL_IMM: begin
             nx_alu_wait = 0;
             nx_phase = FETCH;
-            if( nx_op_zz == 1 ) begin
+            if( op_zz == 1 ) begin
                 nx_alu_imm[31:16] = 0;
                 nx_alu_imm[15:8] = op[7:0];
                 fetched = 1;
