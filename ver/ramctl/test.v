@@ -42,7 +42,9 @@ jt900h_ramctl uut(
     .clk            ( clk       ),
     .cen            ( cen       ),
 
-    .req_addr       ( req_addr  ),
+    .ldram_en       ( 1'b0      ),
+    .idx_addr       ( 24'd0     ),
+    .pc             ( req_addr  ),
     .ram_addr       ( ram_addr  ),
     .ram_dout       ( ram_dout  ),
     .dout           ( dout      ),

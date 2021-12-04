@@ -21,7 +21,7 @@ module jt900h(
     input             clk,
     input             cen,
 
-    output reg [23:1] ram_addr,
+    output reg [23:0] ram_addr,
     input      [15:0] ram_dout
 );
 
@@ -38,10 +38,11 @@ wire        idx_en;
 wire        idx_ok;
 
 // Register bank
+wire [31:0] pc;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
-wire        idx_fetch;
+wire        idx_fetch, ctl_fetch;
 wire        addr_ok;
 wire [23:0] idx_addr;
 
@@ -51,7 +52,8 @@ wire [ 7:0] regs_dst;
 // Memory controller
 wire        ldram_en;
 wire        cur_op;
-wire        op_ok;
+wire [31:0] buf_dout;
+wire        buf_rdy;
 
 jt900h_regs u_regs(
     .rst            ( rst               ),
@@ -59,6 +61,7 @@ jt900h_regs u_regs(
     .cen            ( cen               ),
 
     .rfp            ( rfp               ),          // register file pointer
+    .mem_dout       ( buf_dout          ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .reg_step       ( reg_step          ),
@@ -79,7 +82,8 @@ jt900h_idxaddr u_idxaddr(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    .op             ( op                ),
+    .idx_en         ( idx_en            ),
+    .op             ( buf_dout[15:0]    ),
     .fetch          ( idx_fetch         ),
     // To register bank
     // index register
@@ -101,15 +105,44 @@ jt900h_ctrl u_ctrl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
+    .fetch          ( ctl_fetch         ),
+
     .ldram_en       ( ldram_en          ),
     .idx_en         ( idx_en            ),
     .idx_ok         ( idx_ok            ),
 
-    .cur_op         ( cur_op            ),
-    .op_ok          ( op_ok             ),
+    .cur_op         ( buf_dout[15:0]    ),
+    .op_ok          ( buf_rdy           ),
 
     .regs_we        ( regs_we           ),
     .regs_dst       ( regs_dst          )
+);
+
+jt900h_ramctl u_ramctl(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    //input      [ 2:0] regs_we,
+    .ldram_en       ( ldram_en          ),
+    .pc             ( pc[23:0]          ),
+    .idx_addr       ( idx_addr          ),
+
+    .ram_addr       ( ram_addr          ),
+    .ram_dout       ( ram_dout          ),
+    .dout           ( buf_dout          ),
+    .ram_rdy        ( buf_rdy           )
+);
+
+jt900h_pc u_pc(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    .idx_fetch      ( idx_fetch         ),
+    .ctl_fetch      ( ctl_fetch         ),
+
+    .pc             ( pc                )
 );
 
 endmodule 

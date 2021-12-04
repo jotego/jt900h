@@ -22,7 +22,8 @@ module jt900h_idxaddr(
     input             cen,
 
     input      [15:0] op,
-    output reg        fetch,
+    input             idx_en,
+    output reg [ 1:0] fetched,
     // To register bank
     // index register
     output reg [ 7:0] idx_rdreg_sel,
@@ -40,9 +41,13 @@ module jt900h_idxaddr(
 
 localparam [7:0] NULL=8'h40;
 
-reg  [23:0] idx_offset, aux24;
-reg  [ 1:0] ridx_mode;
-reg  [ 4:0] mode;
+reg  [23:0] nx_idx_offset, idx_offset, aux24;
+reg  [ 1:0] ridx_mode, nx_ridx_mode,
+            nx_reg_step;
+reg  [ 4:0] mode, nx_mode;
+reg  [ 7:0] nx_idx_rdreg_sel, nx_idx_rdreg_aux;
+reg         nx_reg_dec, nx_reg_inc;
+reg         phase, nx_phase, nx_addr_ok;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
@@ -60,84 +65,111 @@ function [7:0] fullreg( input [2:0] rcode );
                          8'hfc;  // XSP
 endfunction
 
-
-
-always @(posedge clk, posedge rst) begin
-    if( rst ) begin
-        addr_ok <= 0;
-    end else if(cen) begin
-        mode <= {op[6],op[3:0]};
-        ridx_mode <= 0;
-        reg_step <= op[9:8];
-        reg_inc <= 0;
-        reg_dec <= 0;
-        fetch   <= 0;
-        if( fetch ) begin
-            case(mode)
-                5'h11: begin
-                    idx_offset[23:8] <= { {8{op[7]}}, op[7:0] };
-                    addr_ok <= 1;
-                end
-                5'h12: begin
-                    idx_offset[23:8] <= op;
-                    addr_ok <= 1;
-                end
-                5'h13: begin
-                    if( !ridx_mode[1] ) begin
-                        idx_offset <= { {8{op[15]}}, op };
-                        addr_ok <= 1;
-                    end else begin
-                       idx_rdreg_sel <= op[7:0];
-                       idx_rdreg_aux <= op[15:8];
-                       addr_ok <= 1;
-                    end
-                end
-                default:;
-            endcase
-        end else begin
+always @* begin
+    fetched      = 0;
+    nx_mode      = {op[6],op[3:0]};
+    nx_ridx_mode = 0;
+    nx_reg_step  = op[9:8];
+    nx_reg_inc   = 0;
+    nx_reg_dec   = 0;
+    nx_idx_offset= idx_offset;
+    nx_phase     = 0;
+    if( idx_en ) begin
+        nx_addr_ok = 0;
+        if( !phase ) begin
+            fetched    = 2;
             casez( {op[6],op[3:0]} )
                 5'b0_????: begin
-                    idx_rdreg_sel <= fullreg(op[2:0]);
-                    idx_offset <= op[3] ? { {16{op[15]}}, op[15:8] } : 0;
-                    addr_ok <= 1;
+                    nx_idx_rdreg_sel = fullreg(op[2:0]);
+                    nx_idx_offset = op[3] ? { {16{op[15]}}, op[15:8] } : 0;
+                    nx_addr_ok = 1;
+                    fetched    = op[3] ? 2'd2: 2'd1;
                 end
                 5'b1_0000: begin
-                    idx_rdreg_sel <= NULL;
-                    idx_offset <= { 16'd0, op[15:8] };
-                    addr_ok <= 1;
+                    nx_idx_rdreg_sel = NULL;
+                    nx_idx_offset = { 16'd0, op[15:8] };
+                    nx_addr_ok = 1;
                 end
                 5'h11, 5'h12: begin
-                    idx_rdreg_sel <= NULL;
-                    idx_offset <= { 16'd0, op[15:8] };
-                    addr_ok <= 0;
-                    fetch <= 1;
+                    nx_idx_rdreg_sel = NULL;
+                    nx_idx_offset = { 16'd0, op[15:8] };
+                    nx_addr_ok = 0;
                 end
                 5'h13: begin // (r32) (r32+d16) (r32+r8) (r32+r16)
-                    idx_rdreg_sel <= {op[15:10],2'd0};
-                    idx_offset <= 0;
+                    nx_idx_rdreg_sel = {op[15:10],2'd0};
+                    nx_idx_offset = 0;
                     case( op[9:8] )
-                        0: addr_ok <= 1;
+                        0: nx_addr_ok = 1;
                         1: begin
-                            addr_ok <= 0;
-                            fetch <= 1;
+                            nx_addr_ok = 0;
+                            nx_phase   = 1;
                         end
                         2: begin
-                            addr_ok <= 0;
-                            fetch <= 1;
-                            ridx_mode <= { 1'b1, op[10] };
+                            nx_addr_ok = 0;
+                            nx_phase   = 1;
+                            nx_ridx_mode = { 1'b1, op[10] };
                         end
                     endcase
                 end
                 5'h14,5'h15: begin // (-r32) (r32+)
-                    idx_rdreg_sel <= {op[15:10],2'd0};
-                    idx_offset <= 0;
-                    reg_dec <= !op[0];
-                    reg_inc <=  op[0];
-                    addr_ok <= 1;
+                    nx_idx_rdreg_sel = {op[15:10],2'd0};
+                    nx_idx_offset = 0;
+                    nx_reg_dec = !op[0];
+                    nx_reg_inc =  op[0];
+                    nx_addr_ok = 1;
+                end
+                default:;
+            endcase
+        end else begin
+            case(mode)
+                5'h11: begin
+                    nx_idx_offset[23:8] = { {8{op[7]}}, op[7:0] };
+                    nx_addr_ok = 1;
+                    fetched    = 1;
+                end
+                5'h12: begin
+                    nx_idx_offset[23:8] = op;
+                    nx_addr_ok = 1;
+                    fetched    = 3;
+                end
+                5'h13: begin
+                    fetched = 2;
+                    if( !ridx_mode[1] ) begin
+                        nx_idx_offset = { {8{op[15]}}, op };
+                        nx_addr_ok = 1;
+                    end else begin
+                        nx_idx_rdreg_sel = op[7:0];
+                        nx_idx_rdreg_aux = op[15:8];
+                        nx_addr_ok = 1;
+                    end
                 end
                 default:;
             endcase
         end
+    end
+end
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        addr_ok   <= 0;
+        mode      <= 0;
+        ridx_mode <= 0;
+        reg_step  <= 0;
+        reg_inc   <= 0;
+        reg_dec   <= 0;
+        phase     <= 0;
+        idx_rdreg_sel <= 0;
+        idx_rdreg_aux <= 0;
+    end else if(cen) begin
+        phase     <= nx_phase;
+        mode      <= nx_mode;
+        ridx_mode <= nx_ridx_mode;
+        reg_step  <= nx_reg_step;
+        reg_inc   <= nx_reg_inc;
+        reg_dec   <= nx_reg_dec;
+        addr_ok   <= nx_addr_ok;
+        idx_rdreg_sel <= nx_idx_rdreg_sel;
+        idx_rdreg_aux <= nx_idx_rdreg_aux;
     end
 end
 

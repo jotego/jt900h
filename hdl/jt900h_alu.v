@@ -16,11 +16,13 @@
     Version: 1.0
     Date: 30-11-2021 */
 
-module jt900h_dau(
+module jt900h_alu(
     input             rst,
     input             clk,
     input      [31:0] op0,
     input      [31:0] op1,
+    input      [31:0] imm,
+    input             opmux,
     input      [ 2:0] w,        // operation width
     input      [ 5:0] sel,      // operation selection
     output reg        carry,
@@ -29,39 +31,42 @@ module jt900h_dau(
 );
 
 reg [15:0] stcf;
+reg [31:0] op2;
 
 always @* begin
     stcf = op1;
     stcf[op0[3:0]] = carry;
+
+    op2 = opmux ? imm : op1;
 end
 
 always @(posedge clk) begin
     case( sel )
-        ADD: dout <= op0+op1;   // also INC, also MULA
-        SUB: dout <= op0-op1;   // also DEC and CP
-        ADC: dout <= op0+op1+carry;
-        SBC: dout <= op0-op1-carry;
-        AND: dout <= op0&op1; // use it for RES bit,dst too?
-        OR:  dout <= op0|op1; // use it for SET bit,dst too?
-        XOR: dout <= op0^op1; // use it for CHG bit,dst too?
-        // Control unit should set op1 so MINC1,MINC2,MINC4 and MDEC1/2/4
+        ADD: dout <= op0+op2;   // also INC, also MULA
+        SUB: dout <= op0-op2;   // also DEC and CP
+        ADC: dout <= op0+op2+carry;
+        SBC: dout <= op0-op2-carry;
+        AND: dout <= op0&op2; // use it for RES bit,dst too?
+        OR:  dout <= op0|op2; // use it for SET bit,dst too?
+        XOR: dout <= op0^op2; // use it for CHG bit,dst too?
+        // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
-        MODULO: dout <= op0[15:0]==op1[15:0] ? 0 : {16'd0,op0[15:0]+op1[15:0]};
+        MODULO: dout <= op0[15:0]==op2[15:0] ? 0 : {16'd0,op0[15:0]+op2[15:0]};
         NEG: dout <= -op0;
         CPL: dout <= ~op0;
         EXTZ: dout <= w[1] ? {24'd0,op0[7:0]} : {16'd0,op0[15:0]};
         EXTS: dout <= w[1] ? {16'd0,{8{op0[7]}}, op0[7:0]} : {{16{op0[15]}},op0[15:0]};
         PAA: dout <= op0[0] ? op0+1'd1 : op0;
         // MUL, MULS, DIV, DIVS
-        LDCF: carry <= op1[ op0[3:0] ];
+        LDCF: carry <= op2[ op0[3:0] ];
         STCF: dout <= stcf;
-        ANDCF: carry <= carry & op1[ op0[3:0] ]; // reuse for RCF - reset carry
-        ORCF:  carry <= carry | op1[ op0[3:0] ]; // reuse for SCF - set carry
-        XORCF: carry <= carry ^ op1[ op0[3:0] ];
+        ANDCF: carry <= carry & op2[ op0[3:0] ]; // reuse for RCF - reset carry
+        ORCF:  carry <= carry | op2[ op0[3:0] ]; // reuse for SCF - set carry
+        XORCF: carry <= carry ^ op2[ op0[3:0] ];
         CCF:   carry <= ~carry;
         ZCF:   carry <= ~zero;
         TSET: begin // reuse for BIT
-            zero <= ~op1[op0[3:0]];
+            zero <= ~op2[op0[3:0]];
             dout <= op0 | (16'd1<<op0[3:0]);
         end
         MIRR: dout <= {

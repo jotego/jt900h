@@ -21,10 +21,10 @@ module jt900h_ramctl(
     input             clk,
     input             cen,
 
-    //output reg        ldram_en,
-    //input      [23:0] idx_addr,
     //input      [ 2:0] regs_we,
-    input      [23:0] req_addr,
+    input             ldram_en,
+    input      [23:0] idx_addr,
+    input      [23:0] pc,
 
     output reg [23:0] ram_addr,
     input      [15:0] ram_dout,
@@ -37,8 +37,12 @@ reg  [15:0] cache0, cache1; // always keep 4 bytes of data
 reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
+wire [23:0] req_addr;
+
+
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
-assign ram_rdy   = &cache_ok;
+assign req_addr = ldram_en ? idx_addr : pc;
+assign ram_rdy  = &cache_ok;
 assign dout = {cache1, cache0};
 
 always @(posedge clk,posedge rst) begin
