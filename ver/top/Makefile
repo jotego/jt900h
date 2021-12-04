@@ -3,3 +3,6 @@ test.hex: test.bin
 
 test.bin: test.asm
 	asm900 test.asm
+
+clean:
+	rm test.bin

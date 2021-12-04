@@ -16,7 +16,7 @@ if [ -e $REL ]; then
     if [ -e $ABS ]; then
         # Remove the header
         # The last byte will be wrong, but I don't care about it
-        dd if=$ABS of=$BIN ibs=1 skip=$(printf "%dc" 0x125)
+        go run /home/$USER/git/jt900h/bin/rm900hdr.go $ABS
         exit 0
     fi
 fi
