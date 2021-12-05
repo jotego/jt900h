@@ -10,12 +10,16 @@ wire [15:0] ram_dout;
 wire [31:0] dout, expected;
 wire        ram_rdy;
 reg  [ 7:0] buffer[0:1023];
+wire        match, mismatch;
 
 assign cen = 1;
-assign ram_dout = { buffer[ {ram_addr[7:1],1'b1} ], buffer[ {ram_addr[7:1],1'b0} ] };
+assign ram_dout = { buffer[ {ram_addr[23:1],1'b1} ], buffer[ {ram_addr[23:1],1'b0} ] };
 assign expected = {
         buffer[req_addr+3], buffer[req_addr+2],
         buffer[req_addr+1], buffer[req_addr]    };
+
+assign match = ram_rdy && dout == expected;
+assign mismatch = ram_rdy && dout != expected;
 
 initial begin
     $readmemh("test.hex",buffer);
@@ -46,8 +50,13 @@ always @(posedge clk) begin
             $display("FAIL");
             #50 $finish;
         end else begin
-            req_addr <= req_addr + $random %5;
+            //req_addr <= req_addr + $random %5;
+            req_addr <= req_addr + 4;
         end
+    end
+    if( req_addr > 24'd1020 ) begin
+        $display("PASS");
+        $finish;
     end
 end
 
