@@ -166,7 +166,6 @@ always @* begin
                     if( nx_op_zz==0 ) begin
                         nx_alu_imm = {24'd0,op[15:8]};
                     end else begin
-                        fetched = 1;
                         nx_alu_imm[7:0] = op[15:8];
                         nx_alu_wait = 1;
                         nx_phase = FILL_IMM;

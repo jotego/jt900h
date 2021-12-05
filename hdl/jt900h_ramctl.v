@@ -42,7 +42,7 @@ wire [23:0] req_addr;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
 assign req_addr = ldram_en ? idx_addr : pc;
-assign ram_rdy  = &cache_ok;
+assign ram_rdy  = &cache_ok && cache_addr==req_addr;
 assign dout = {cache1, cache0};
 
 always @(posedge clk,posedge rst) begin
