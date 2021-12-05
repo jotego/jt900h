@@ -61,6 +61,7 @@ reg [31:0] nx_alu_imm;
 reg  [5:0] nx_alu_op;
 
 reg  [1:0] op_zz, nx_op_zz;
+reg        ram_wait;
 
 assign expand_zz = last_op[5:4]==0 ? 3'd0 : last_op[5:4]==1 ? 3'd1 : 3'd2;
 
@@ -71,7 +72,7 @@ endfunction
 
 // Memory fetched requests
 always @* begin
-    fetched = 0;
+    fetched     = 0;
     nx_phase    = op_phase;
     nx_idx_en   = idx_en;
     nx_src      = regs_src;
@@ -82,10 +83,11 @@ always @* begin
     nx_alu_wait = alu_wait;
     nx_ldram_en = ldram_en;
     nx_op_zz    = op_zz;
-    if(op_ok) case( nx_phase )
+    if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             nx_alu_op = ALU_NOP;
             casez( op[7:0] )
+                8'h0: fetched = 1; // NOP
                 8'b10??_????,
                 8'b11??_00??,
                 8'b11??_010?: begin // start indexed addressing
@@ -203,6 +205,7 @@ always @(posedge clk, posedge rst) begin
         ldram_en <= 0;
         op_zz    <= 0;
         regs_we  <= 0;
+        ram_wait <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -215,6 +218,7 @@ always @(posedge clk, posedge rst) begin
         ldram_en <= nx_ldram_en;
         op_zz    <= nx_op_zz;
         regs_we  <= nx_regs_we;
+        ram_wait <= fetched!=0;
     end
 end
 

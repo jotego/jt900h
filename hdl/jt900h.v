@@ -150,6 +150,7 @@ jt900h_pc u_pc(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
+    .op_ok          ( buf_rdy           ),
     .idx_en         ( idx_en            ),
     .idx_fetched    ( idx_fetch         ),
     .ctl_fetched    ( ctl_fetch         ),

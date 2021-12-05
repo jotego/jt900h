@@ -30,7 +30,7 @@ end
 initial begin
     rst=1;
     #100 rst=0;
-    #10000 $finish;
+    #100_000 $finish;
 end
 
 jt900h uut(
