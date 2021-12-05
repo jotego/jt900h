@@ -64,7 +64,8 @@ always @(posedge clk,posedge rst) begin
                 cache_ok[1] <= 1;
                 we_mask[1]  <= 0;
             end
-            if( we_mask[2] && !we_mask[0] && ( !req_addr[0] || we_mask[1] ) ) begin
+            //if( we_mask[2] && !we_mask[0] && ( !req_addr[0] || we_mask[1] ) ) begin
+            if( we_mask[2] && !we_mask[0] && ( !we_mask[1] || req_addr[0] ) ) begin
                 cache1[7:0] <= req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[2] <= 1;
                 we_mask[2]  <= 0;

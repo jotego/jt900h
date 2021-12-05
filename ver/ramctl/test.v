@@ -50,9 +50,7 @@ always @(posedge clk) begin
             $display("FAIL");
             #50 $finish;
         end else begin
-            //req_addr <= req_addr + $random %5;
-            //req_addr <= req_addr + 4;
-            req_addr <= req_addr + 3;
+            req_addr <= req_addr + $random %5; // test all fetch possibilities from 1 to 4
         end
     end
     if( req_addr > 24'd1020 ) begin
