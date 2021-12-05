@@ -55,22 +55,22 @@ always @(posedge clk,posedge rst) begin
         if( we_mask!=0 ) begin // assume 0 bus waits for now
             ram_addr <= ram_addr+24'd2;
             if( we_mask[0] ) begin
-                cache0[7:0] <= ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+                cache0[7:0] <= req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[0] <= 1;
                 we_mask[0]  <= 0;
             end
-            if( we_mask[1] && (!ram_addr[0] || !we_mask[0]) ) begin
-                cache0[15:8] <= !ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+            if( we_mask[1] && (!req_addr[0] || !we_mask[0]) ) begin
+                cache0[15:8] <= !req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[1] <= 1;
                 we_mask[1]  <= 0;
             end
-            if( we_mask[2] && !we_mask[0] && ( !ram_addr[0] || we_mask[1] ) ) begin
-                cache1[7:0] <= ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+            if( we_mask[2] && !we_mask[0] && ( !req_addr[0] || we_mask[1] ) ) begin
+                cache1[7:0] <= req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[2] <= 1;
                 we_mask[2]  <= 0;
             end
-            if( we_mask[3] && !we_mask[1] && (!ram_addr[0] || !we_mask[2]) ) begin
-                cache1[15:8] <= !ram_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+            if( we_mask[3] && !we_mask[1] && (!req_addr[0] || !we_mask[2]) ) begin
+                cache1[15:8] <= !req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                 cache_ok[3] <= 1;
                 we_mask[3]  <= 0;
             end
@@ -79,7 +79,7 @@ always @(posedge clk,posedge rst) begin
             if( req_addr==cache_addr+24'd1 && cache_ok[3:1]==3'b111 ) begin
                 cache_addr <= cache_addr+24'd1;
                 { cache1, cache0 } <= { 8'd0, cache1, cache0[15:8] };
-                ram_addr <= ram_addr + 24'd1;
+                ram_addr <= req_addr + 24'd3;
                 we_mask  <= 4'b1000;
                 cache_ok <= 4'b0111;
             end else if( req_addr==cache_addr+24'd2 && cache_ok[3:2]==2'b11 ) begin
@@ -91,7 +91,7 @@ always @(posedge clk,posedge rst) begin
             end else if( req_addr==cache_addr+24'd3 && cache_ok[3] ) begin
                 cache_addr <= cache_addr+24'd3;
                 cache0[7:0] <= cache1[15:8];
-                ram_addr <= ram_addr + 24'd3;
+                ram_addr <= req_addr + req_addr[0];
                 we_mask  <= 4'b1110;
                 cache_ok <= 4'b0001;
             end else begin

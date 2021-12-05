@@ -52,6 +52,7 @@ always @(posedge clk) begin
         end else begin
             //req_addr <= req_addr + $random %5;
             req_addr <= req_addr + 4;
+            //req_addr <= req_addr + 3;
         end
     end
     if( req_addr > 24'd1020 ) begin
