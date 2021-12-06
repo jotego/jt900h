@@ -1,14 +1,14 @@
     main section code
     org 0
-    ; check register addressing
-    ld a,0xe0
-    ld w,0xe1
-    ld c,0xe4
-    ld b,0xe5
-    ld e,0xe8
-    ld d,0xe9
-    ld l,0xec
-    ld h,0xed
+    ; check register in previous bank
+    ld a',0xe0
+    ld w',0xe1
+    ld c',0xe4
+    ld b',0xe5
+    ld e',0xe8
+    ld d',0xe9
+    ld l',0xec
+    ld h',0xed
 
     ld ixl,0xf0
     ld ixh,0xf1

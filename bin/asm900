@@ -20,9 +20,12 @@ if [ -e $REL ]; then
         # part of the header that is dependent on the file name
         # relies on having the code section called "main"
         FULLPATH=$(pwd)/$BIN/${BIN}$(basename $FILENAME .asm)$BIN
-        LEN=${#FULLPATH}
-        #echo $LEN
-        dd bs=1 if=$ABS of=$BIN skip=$((LEN+235))
+        HEADER=${#FULLPATH}
+        HEADER=$((HEADER+235))
+        LEN=$(cat $ABS | wc -c)
+        LEN=$((LEN-HEADER))
+        # the last byte is some kind of marker, I remove it
+        dd bs=1 if=$ABS of=$BIN skip=$HEADER count=$((LEN-1))
         exit 0
     fi
 fi

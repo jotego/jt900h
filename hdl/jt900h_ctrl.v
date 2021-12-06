@@ -91,6 +91,7 @@ always @* begin
             nx_alu_op   = ALU_NOP;
             nx_alu_smux = 0;
             nx_alu_wait = 0;
+            nx_regs_we  = 0;
             casez( op[7:0] )
                 8'h0: fetched = 1; // NOP
                 8'b10??_????,
@@ -169,6 +170,7 @@ always @* begin
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
                     fetched     = 2;
+                    nx_regs_we  = expand_zz( op_zz );
                     if( nx_op_zz==0 ) begin
                         nx_alu_imm = {24'd0,op[15:8]};
                     end else begin
