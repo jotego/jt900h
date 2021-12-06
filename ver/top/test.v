@@ -41,7 +41,7 @@ initial begin
     $finish;
 end
 
-integer cnt;
+integer cnt,file;
 function [31:0] xreg( input [7:0] a );
     xreg = { dmp_buf[a+3], dmp_buf[a+2], dmp_buf[a+1], dmp_buf[a] };
 endfunction
@@ -49,15 +49,17 @@ endfunction
 always @(posedge clk) begin
     if (ram_addr>=`END_RAM) begin
         dmp_addr <= dmp_addr+1'd1;
-        dmp_buf[ dmp_addr ] <= dmp_din;
+        dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;
-        if( dmp_addr==80 ) begin
+        if( dmp_addr==81 ) begin
+            file=$fopen("test.out","w");
             for( cnt=0; cnt<16; cnt=cnt+4 ) begin
-                $display("%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
+                $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
                                                       xreg(cnt+32), xreg(cnt+48) );
             end
-            $display("%08X - %08X - %08X - %08X", xreg(64), xreg(68),
+            $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
                                                   xreg(72), xreg(76) );
+            $fclose(file);
             $finish;
         end
     end
