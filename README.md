@@ -1,6 +1,6 @@
 # JT900H
 
-Verilog module compatible with Toshiba TLCS900/H CPU, including an accurate DPI simulation model.
+Verilog module compatible with Toshiba TLCS900/H CPU.
 
 (c) Jose Tejada 2021
 
