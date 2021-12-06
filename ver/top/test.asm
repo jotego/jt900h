@@ -38,4 +38,6 @@
     ld izh,0xf9
     ld spl,0xfc
     ;ld sph,0xfd
+    nop
+    nop
     end

@@ -52,7 +52,6 @@ localparam [5:0] ALU_NOP  = 6'd0,
 reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
-wire [2:0] expand_zz;
 reg  [7:0] regs_src, nx_src, nx_dst;
 reg  [2:0] nx_regs_we;
 reg        nx_alu_smux, nx_alu_wait,
@@ -63,7 +62,9 @@ reg  [5:0] nx_alu_op;
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait;
 
-assign expand_zz = last_op[5:4]==0 ? 3'd0 : last_op[5:4]==1 ? 3'd1 : 3'd2;
+function [2:0] expand_zz(input [1:0] zz);
+    expand_zz = zz==0 ? 3'b001 : zz==1 ? 3'b010 : 3'b100;
+endfunction
 
 function [7:0] expand_reg(input [2:0] short_reg, input [1:0] zz );
     expand_reg = zz==0 ?       {4'he, short_reg[2:1], 1'b0, ~short_reg[0]} :
@@ -84,6 +85,7 @@ always @* begin
     nx_alu_wait = alu_wait;
     nx_ldram_en = ldram_en;
     nx_op_zz    = op_zz;
+    nx_regs_we  = regs_we;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             nx_alu_op   = ALU_NOP;
@@ -115,6 +117,7 @@ always @* begin
                     nx_alu_imm  = { 24'd0, op[15:8] };
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
+                    nx_regs_we  = expand_zz( nx_op_zz );
                     fetched     = 2;
                     if( nx_op_zz!=0 ) begin
                         nx_phase = FILL_IMM;
@@ -132,7 +135,7 @@ always @* begin
                 8'b0010_0???: begin // LD R,(mem)
                     nx_phase    = LD_RAM;
                     nx_ldram_en = 1;
-                    nx_regs_we  = expand_zz;
+                    nx_regs_we  = expand_zz( op_zz );
                     nx_dst      = expand_reg(op[2:0],op_zz);
                 end
                 default:;

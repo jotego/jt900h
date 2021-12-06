@@ -22,7 +22,10 @@ module jt900h(
     input             cen,
 
     output     [23:0] ram_addr,
-    input      [15:0] ram_dout
+    input      [15:0] ram_dout,
+    // Register dump
+    input      [7:0] dmp_addr,
+    output     [7:0] dmp_din
 );
 
 wire [ 1:0] rfp;          // register file pointer
@@ -61,13 +64,15 @@ wire        cur_op;
 wire [31:0] buf_dout;
 wire        buf_rdy;
 
+assign rfp=0;
+
 jt900h_regs u_regs(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
 
     .rfp            ( rfp               ),          // register file pointer
-    .mem_dout       ( buf_dout          ),
+    .imm_data       ( alu_imm           ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .reg_step       ( reg_step          ),
@@ -80,7 +85,10 @@ jt900h_regs u_regs(
     // destination register
     .dst            ( regs_dst          ),
     .we             ( regs_we           ),
-    .dst_out        ( dst_out           )
+    .dst_out        ( dst_out           ),
+    // Register dump
+    .dmp_addr       ( dmp_addr          ),
+    .dmp_din        ( dmp_din           )
 );
 
 jt900h_idxaddr u_idxaddr(
