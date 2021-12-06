@@ -16,7 +16,13 @@ if [ -e $REL ]; then
     if [ -e $ABS ]; then
         # Remove the header
         # The last byte will be wrong, but I don't care about it
-        go run /home/$USER/git/jt900h/bin/rm900hdr.go $ABS
+        # go run /home/$USER/git/jt900h/bin/rm900hdr.go $ABS
+        # part of the header that is dependent on the file name
+        # relies on having the code section called "main"
+        FULLPATH=$(pwd)/$BIN/${BIN}$(basename $FILENAME .asm)$BIN
+        LEN=${#FULLPATH}
+        #echo $LEN
+        dd bs=1 if=$ABS of=$BIN skip=$((LEN+235))
         exit 0
     fi
 fi

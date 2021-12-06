@@ -65,9 +65,10 @@ reg        ram_wait;
 
 assign expand_zz = last_op[5:4]==0 ? 3'd0 : last_op[5:4]==1 ? 3'd1 : 3'd2;
 
-function [7:0] expand_reg(input [2:0] short_reg );
-    expand_reg = short_reg[2] ? {4'hf,  short_reg[1:0],2'd0  } :
-                                {4'he, {short_reg[1:0],2'd0} };
+function [7:0] expand_reg(input [2:0] short_reg, input [1:0] zz );
+    expand_reg = zz==0 ?       {4'he, short_reg[2:1], 1'b0, ~short_reg[0]} :
+                short_reg[2] ? {4'hf,  short_reg[1:0],2'd0  } :
+                               {4'he, {short_reg[1:0],2'd0} };
 endfunction
 
 // Memory fetched requests
@@ -85,7 +86,9 @@ always @* begin
     nx_op_zz    = op_zz;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
-            nx_alu_op = ALU_NOP;
+            nx_alu_op   = ALU_NOP;
+            nx_alu_smux = 0;
+            nx_alu_wait = 0;
             casez( op[7:0] )
                 8'h0: fetched = 1; // NOP
                 8'b10??_????,
@@ -95,8 +98,8 @@ always @* begin
                     nx_idx_en= 1;
                 end
                 8'b11??_1???: begin // two register operand instruction, r part
-                    nx_dst   = expand_reg(op[ 2:0]);
                     nx_op_zz = op[5:4];
+                    nx_dst   = expand_reg(op[2:0], nx_op_zz);
                     nx_phase = EXEC;
                     fetched  = 1;
                 end
@@ -107,8 +110,8 @@ always @* begin
                     nx_phase = EXEC;
                 end
                 8'b0???_0???: begin // LD R,# 0zzz_0RRR, register and immediate value
-                    nx_dst      = expand_reg(op[ 2:0]);
                     nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
+                    nx_dst      = expand_reg(op[2:0], nx_op_zz);
                     nx_alu_imm  = { 24'd0, op[15:8] };
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
@@ -130,7 +133,7 @@ always @* begin
                     nx_phase    = LD_RAM;
                     nx_ldram_en = 1;
                     nx_regs_we  = expand_zz;
-                    nx_dst      = expand_reg(op[2:0]);
+                    nx_dst      = expand_reg(op[2:0],op_zz);
                 end
                 default:;
             endcase
@@ -144,12 +147,12 @@ always @* begin
             casez( op[7:0] )
                 8'b1000_1???: begin // LD R,r
                     nx_src = regs_dst;
-                    nx_dst = expand_reg(op[2:0]);
+                    nx_dst = expand_reg(op[2:0],op_zz);
                     nx_alu_op   = ALU_MOVE;
                     fetched = 1;
                 end
                 8'b1001_1???: begin // LD r,R
-                    nx_src = expand_reg(op[2:0]);
+                    nx_src = expand_reg(op[2:0],op_zz);
                     nx_alu_op   = ALU_MOVE;
                     fetched = 1;
                 end

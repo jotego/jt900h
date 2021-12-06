@@ -1,24 +1,41 @@
     main section code
     org 0
-    ld w,0xf0
-    ld a,0xf1
-    ld b,0xf2
-    ld c,0xf3
-    ld d,0xf4
-    ld e,0xf5
-    ld h,0xf6
-    ld l,0xf7
-    nop
-    ld ixl,0xbe
-    nop
-    ld a,b
-    ld ra2,b
-    nop
-    ld a,0xff
-    ld wa,0x1234
-    ld xwa,0x12345678
-    nop
-    ld ra0,0xff
-    ld rwa0,0x1234
-    ld xwa0,0x12345678
+    ; check register addressing
+    ld a,0xe0
+    ld w,0xe1
+    ld c,0xe4
+    ld b,0xe5
+    ld e,0xe8
+    ld d,0xe9
+    ld l,0xec
+    ld h,0xed
+
+    ld wa,0xe0
+    ld bc,0xe4
+    ld de,0xe8
+    ld hl,0xec
+
+    ld ix,0xf0
+    ld iy,0xf4
+    ld iz,0xf8
+    ld sp,0xfc
+
+    ld xwa,0xe0
+    ld xbc,0xe4
+    ld xde,0xe8
+    ld xhl,0xec
+
+    ld xix,0xf0
+    ld xiy,0xf4
+    ld xiz,0xf8
+    ld xsp,0xfc
+
+    ld ixl,0xf0
+    ld ixh,0xf1
+    ld iyl,0xf4
+    ld iyh,0xf5
+    ld izl,0xf8
+    ld izh,0xf9
+    ld spl,0xfc
+    ;ld sph,0xfd
     end

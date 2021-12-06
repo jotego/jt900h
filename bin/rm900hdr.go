@@ -23,7 +23,7 @@ func main() {
 	n, _ := fin.Read(buf)
 	if n != 0 {
 		k := 0
-		fnd_ed := false
+		matched := 0
 		for k = 0; k < n; k++ {
 			if fnd_ed && buf[k] == 0x37 {
 				k++
