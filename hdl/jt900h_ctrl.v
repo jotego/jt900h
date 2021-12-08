@@ -105,7 +105,9 @@ always @* begin
                 8'b11??_00??,
                 8'b11??_010?: begin // start indexed addressing
                     nx_phase = IDX;
+                    nx_op_zz = op[5:4];
                     nx_idx_en= 1;
+                    fetched  = 0; // let the indexation module take control
                 end
                 8'b11??_1???: begin // two register operand instruction, r part
                     nx_op_zz = op[5:4];
@@ -139,11 +141,13 @@ always @* begin
         end
         IDX: if( idx_ok ) begin
             nx_idx_en = 0;
+            if( op[5:4]!=2'b11 ) begin
+                nx_phase    = LD_RAM;
+                nx_ldram_en = 1;
+                nx_regs_we  = expand_zz( op_zz );
+            end
             casez( op[7:0] )
                 8'b0010_0???: begin // LD R,(mem)
-                    nx_phase    = LD_RAM;
-                    nx_ldram_en = 1;
-                    nx_regs_we  = expand_zz( op_zz );
                     nx_dst      = expand_reg(op[2:0],op_zz);
                 end
                 default:;
@@ -151,7 +155,9 @@ always @* begin
         end
         LD_RAM: begin
             nx_phase = FETCH;
-            fetched    = 1;
+            nx_ldram_en = 0;
+            nx_alu_imm = op; // copy the RAM output
+            fetched    = 1; // this will set the RAM wait flag too
         end
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;

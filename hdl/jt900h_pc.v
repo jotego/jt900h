@@ -21,7 +21,7 @@ module jt900h_pc(
     input             clk,
     input             cen,
 
-    input      [ 1:0] idx_fetched,
+    input      [ 2:0] idx_fetched,
     input             idx_en,
     input             op_ok,
     input      [ 1:0] ctl_fetched,
@@ -34,7 +34,7 @@ always @(posedge clk, posedge rst) begin
         pc <= 0;
     end else if(cen) begin
         if( op_ok )
-            pc <= pc + {30'd0, idx_en ? idx_fetched : ctl_fetched};
+            pc <= pc + {29'd0, idx_en ? idx_fetched : {1'b0,ctl_fetched}};
     end
 end
 

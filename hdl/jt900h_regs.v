@@ -87,7 +87,8 @@ assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 // gigantic multiplexer:
 always @* begin
     r0sel   = simplify(idx_rdreg_sel);
-    src_out = r0sel[7] ?
+    src_out =
+        r0sel[7:4]==4 ? 32'd0 : r0sel[7] ?
         {   ptrs[ {r0sel[3:2],2'b11} ], ptrs[ {r0sel[3:2],2'b10} ],
             ptrs[ {r0sel[3:1],1'b1}  ], ptrs[ r0sel[3:0] ] } :
         {   accs[ {r0sel[5:2],2'b11} ], accs[ {r0sel[5:2],2'b10} ],

@@ -45,8 +45,8 @@ wire [31:0] pc;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
-wire [ 1:0] idx_fetch, ctl_fetch;
-wire        addr_ok;
+wire [ 1:0] ctl_fetch;
+wire [ 2:0] idx_fetch;
 wire [23:0] idx_addr;
 
 wire [ 2:0] regs_we;
@@ -97,7 +97,7 @@ jt900h_idxaddr u_idxaddr(
     .cen            ( cen               ),
 
     .idx_en         ( idx_en            ),
-    .op             ( buf_dout[15:0]    ),
+    .op             ( buf_dout          ),
     .fetched        ( idx_fetch         ),
     // To register bank
     // index register
@@ -110,7 +110,7 @@ jt900h_idxaddr u_idxaddr(
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
     .idx_rdaux      ( dst_out[15:0]     ),
 
-    .addr_ok        ( addr_ok           ),
+    .idx_ok         ( idx_ok            ),
     .idx_addr       ( idx_addr          )
 );
 
