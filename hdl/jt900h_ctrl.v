@@ -44,7 +44,8 @@ localparam [4:0] FETCH    = 5'd0,
                  IDX      = 5'd1,
                  LD_RAM   = 5'd2,
                  EXEC     = 5'd3,
-                 FILL_IMM = 5'd4;
+                 FILL_IMM = 5'd4,
+                 ILLEGAL  = 5'd31;
 
 localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_MOVE = 6'd1;
@@ -60,7 +61,7 @@ reg [31:0] nx_alu_imm;
 reg  [5:0] nx_alu_op;
 
 reg  [1:0] op_zz, nx_op_zz;
-reg        ram_wait;
+reg        ram_wait, latch_op;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -90,6 +91,7 @@ always @* begin
     nx_ldram_en = ldram_en;
     nx_op_zz    = op_zz;
     nx_regs_we  = regs_we;
+    latch_op    = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -104,6 +106,7 @@ always @* begin
                 8'b10??_????,
                 8'b11??_00??,
                 8'b11??_010?: begin // start indexed addressing
+                    latch_op = 1;
                     nx_phase = IDX;
                     nx_op_zz = op[5:4];
                     nx_idx_en= 1;
@@ -141,23 +144,23 @@ always @* begin
         end
         IDX: if( idx_ok ) begin
             nx_idx_en = 0;
-            if( op[5:4]!=2'b11 ) begin
-                nx_phase    = LD_RAM;
-                nx_ldram_en = 1;
-                nx_regs_we  = expand_zz( op_zz );
-            end
+            // leave the fetched update to the next state
+            // either LD_RAM or ST_RAM
             casez( op[7:0] )
                 8'b0010_0???: begin // LD R,(mem)
+                    nx_phase    = LD_RAM;
                     nx_dst      = expand_reg(op[2:0],op_zz);
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_ldram_en = 1;
                 end
-                default:;
+                default: nx_phase = ILLEGAL;
             endcase
         end
         LD_RAM: begin
             nx_phase = FETCH;
             nx_ldram_en = 0;
             nx_alu_imm = op; // copy the RAM output
-            fetched    = 1; // this will set the RAM wait flag too
+            fetched    = 1;  // this will set the RAM wait flag too
         end
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
@@ -207,7 +210,7 @@ always @* begin
                 fetched = 3;
             end
         end
-        default:;
+        default: nx_phase=ILLEGAL;
     endcase
 end
 
@@ -226,6 +229,7 @@ always @(posedge clk, posedge rst) begin
         op_zz    <= 0;
         regs_we  <= 0;
         ram_wait <= 0;
+        last_op  <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -239,6 +243,7 @@ always @(posedge clk, posedge rst) begin
         op_zz    <= nx_op_zz;
         regs_we  <= nx_regs_we;
         ram_wait <= fetched!=0;
+        if( latch_op ) last_op <= op[7:0];
     end
 end
 

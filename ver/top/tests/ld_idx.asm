@@ -12,6 +12,8 @@
     nop
     nop
     nop
+forever:
+    jp forever
 data:
     dw 0xcafe,0xbeef,0x1234,0x6789,0xabcd
     end

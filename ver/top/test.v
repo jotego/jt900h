@@ -12,11 +12,11 @@ reg  [15:0] mem[0:1023];
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_din;
 reg  [7:0] dmp_buf[0:79];
-reg        dump_registers;
+reg        dump_rdout, dump_2file;
 
 
 initial begin
-    $readmemh("test.hex",mem);
+    $readmemh("test.hex",mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
 end
 
 assign ram_dout = mem[ram_addr[9:1]];
@@ -32,7 +32,7 @@ function [31:0] xreg( input [7:0] a );
     xreg = { dmp_buf[a+3], dmp_buf[a+2], dmp_buf[a+1], dmp_buf[a] };
 endfunction
 
-always @(posedge dump_registers) begin
+always @(posedge dump_2file) begin
     file=$fopen("test.out","w");
     for( cnt=0; cnt<16; cnt=cnt+4 ) begin
         $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
@@ -53,22 +53,22 @@ initial begin
     rst=1;
     cen=1;
     dmp_addr = 0;
-    dump_registers=0;
+    dump_rdout=0;
     $display("Simulating up to RAM address %X",`END_RAM);
     #100 rst=0;
     #1000_000
     $display("Time over");
-    dump_registers=1;
+    dump_rdout=1;
 end
 
 
 always @(posedge clk) begin
-    if (ram_addr>=`END_RAM) begin
+    if (ram_addr>=`END_RAM || dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
         dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;
         if( dmp_addr==81 ) begin
-            dump_registers=1;
+            dump_2file=1;
         end
     end
 end
