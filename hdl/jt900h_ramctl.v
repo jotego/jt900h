@@ -68,6 +68,7 @@ always @(posedge clk,posedge rst) begin
     end else if(cen) begin
         idx_wr_l <= idx_wr;
         wrbusy   <= 0;
+        ram_we   <= 0;
         if( idx_wr ) begin // Write access
             if( !idx_wr_l ) begin
                 ram_addr <= idx_addr;

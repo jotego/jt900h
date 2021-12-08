@@ -44,6 +44,12 @@ always @(posedge dump_2file) begin
     $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
                                           xreg(72), xreg(76) );
     $fclose(file);
+    // Dump the memory too
+    file=$fopen("mem.bin","wb");
+    for( cnt=0; cnt<1024; cnt=cnt+2) begin
+        $fwrite(file,"%u",{mem[cnt+1],mem[cnt]});
+    end
+    $fclose(file);
     $finish;
 end
 
