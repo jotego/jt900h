@@ -47,7 +47,7 @@ func find_first( finame string ) []byte {
 }
 
 func main() {
-	verbose = true
+	verbose = false
 	fi_name := ""
 	if len(os.Args) == 2 {
 		fi_name = os.Args[1]

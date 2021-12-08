@@ -23,6 +23,8 @@ module jt900h(
 
     output     [23:0] ram_addr,
     input      [15:0] ram_dout,
+    output     [15:0] ram_din,
+    output     [ 1:0] ram_we,
     // Register dump
     input      [7:0] dmp_addr,
     output     [7:0] dmp_din
@@ -38,7 +40,7 @@ wire        reg_inc;
 wire        reg_dec;
 
 wire        idx_en;
-wire        idx_ok;
+wire        idx_ok, idx_wr;
 
 // Register bank
 wire [31:0] pc;
@@ -49,7 +51,7 @@ wire [ 1:0] ctl_fetch;
 wire [ 2:0] idx_fetch;
 wire [23:0] idx_addr;
 
-wire [ 2:0] regs_we;
+wire [ 2:0] regs_we, idx_len;
 wire [ 7:0] regs_dst;
 
 // ALU control
@@ -122,8 +124,10 @@ jt900h_ctrl u_ctrl(
     .fetched        ( ctl_fetch         ),
 
     .ldram_en       ( ldram_en          ),
+    .stram_en       ( idx_wr            ),
     .idx_en         ( idx_en            ),
     .idx_ok         ( idx_ok            ),
+    .idx_len        ( idx_len           ),
 
     .alu_imm        ( alu_imm           ),
     .alu_op         ( alu_op            ),
@@ -142,13 +146,19 @@ jt900h_ramctl u_ramctl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    //input      [ 2:0] regs_we,
-    .ldram_en       ( ldram_en          ),
     .pc             ( pc[23:0]          ),
-    .idx_addr       ( idx_addr          ),
 
+    .ldram_en       ( ldram_en          ),
+    .idx_addr       ( idx_addr          ),
+    .reg_dout       ( src_out           ),
+    .idx_wr         ( idx_wr            ),
+    .len            ( idx_len           ),
+    // RAM interface
     .ram_addr       ( ram_addr          ),
     .ram_dout       ( ram_dout          ),
+    .ram_din        ( ram_din           ),
+    .ram_we         ( ram_we            ),
+
     .dout           ( buf_dout          ),
     .ram_rdy        ( buf_rdy           )
 );

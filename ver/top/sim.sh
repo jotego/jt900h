@@ -19,7 +19,7 @@ fi
 cp tests/${TEST}.asm test.asm
 rm -f test.out
 
-make || exit $?
+make --silent || exit $?
 
 CODELEN=$(cat test.bin|wc -c)
 # The last bytes are NOPs

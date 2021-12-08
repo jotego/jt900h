@@ -24,8 +24,10 @@ module jt900h_ctrl(
     output reg [ 1:0] fetched,    // number of bytes consumed
 
     output reg        ldram_en,
+    output reg        stram_en,
     output reg        idx_en,
     input             idx_ok,
+    output reg [ 2:0] idx_len,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -45,6 +47,7 @@ localparam [4:0] FETCH    = 5'd0,
                  LD_RAM   = 5'd2,
                  EXEC     = 5'd3,
                  FILL_IMM = 5'd4,
+                 ST_RAM   = 5'd5,
                  ILLEGAL  = 5'd31;
 
 localparam [5:0] ALU_NOP  = 6'd0,
@@ -54,9 +57,10 @@ reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
 reg  [7:0] regs_src, nx_src, nx_dst;
-reg  [2:0] nx_regs_we;
+reg  [2:0] nx_regs_we, nx_idx_len;
 reg        nx_alu_smux, nx_alu_wait,
-           nx_ldram_en, nx_idx_en;
+           nx_ldram_en, nx_stram_en,
+           nx_idx_en;
 reg [31:0] nx_alu_imm;
 reg  [5:0] nx_alu_op;
 
@@ -89,18 +93,20 @@ always @* begin
     nx_alu_smux = alu_smux;
     nx_alu_wait = alu_wait;
     nx_ldram_en = ldram_en;
+    nx_stram_en = stram_en;
     nx_op_zz    = op_zz;
     nx_regs_we  = regs_we;
     latch_op    = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
-            $display("Fetched %04X_%04X", {op[7:0],op[15:8]},{op[23:16],op[31:24]});
+            //$display("Fetched %04X_%04X", {op[7:0],op[15:8]},{op[23:16],op[31:24]});
             `endif
             nx_alu_op   = ALU_NOP;
             nx_alu_smux = 0;
             nx_alu_wait = 0;
             nx_regs_we  = 0;
+            nx_idx_len  = 0;
             casez( op[7:0] )
                 8'h0: fetched = 1; // NOP
                 8'b10??_????,
@@ -153,14 +159,27 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     nx_ldram_en = 1;
                 end
+                8'b01??_0???: begin // LD (mem),R
+                    nx_phase    = ST_RAM;
+                    nx_op_zz    = op[5:4];
+                    nx_src      = expand_reg(op[2:0],nx_op_zz);
+                    nx_idx_len  = expand_zz( nx_op_zz );
+                    nx_stram_en = 1;
+                end
                 default: nx_phase = ILLEGAL;
             endcase
         end
         LD_RAM: begin
-            nx_phase = FETCH;
+            nx_phase    = FETCH;
             nx_ldram_en = 0;
-            nx_alu_imm = op; // copy the RAM output
-            fetched    = 1;  // this will set the RAM wait flag too
+            nx_alu_imm  = op; // copy the RAM output
+            fetched     = 1;  // this will set the RAM wait flag too
+        end
+        ST_RAM: begin
+            nx_phase    = FETCH;
+            nx_stram_en = 0;
+            nx_idx_len  = 0;
+            fetched     = 1;  // this will set the RAM wait flag too
         end
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
@@ -230,6 +249,8 @@ always @(posedge clk, posedge rst) begin
         regs_we  <= 0;
         ram_wait <= 0;
         last_op  <= 0;
+        stram_en <= 0;
+        idx_len  <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -240,9 +261,11 @@ always @(posedge clk, posedge rst) begin
         alu_smux <= nx_alu_smux;
         alu_wait <= nx_alu_wait;
         ldram_en <= nx_ldram_en;
+        stram_en <= nx_stram_en;
         op_zz    <= nx_op_zz;
         regs_we  <= nx_regs_we;
         ram_wait <= fetched!=0;
+        idx_len  <= nx_idx_len;
         if( latch_op ) last_op <= op[7:0];
     end
 end

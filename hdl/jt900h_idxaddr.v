@@ -93,17 +93,14 @@ always @* begin
                         0: begin
                             nx_idx_offset = { 16'd0, op[15:8] };
                             fetched = 2;
-                            $display("\tsoy 0");
                         end
                         1: begin
                             nx_idx_offset = {  8'd0, op[23:8] };
                             fetched = 3;
-                            $display("\tsoy 1");
                         end
                         default: begin
                             nx_idx_offset = op[31:8];
                             fetched = 4;
-                            $display("\tsoy def (%X)",fetched);
                         end
                     endcase
                     nx_idx_ok = 1;
@@ -160,7 +157,6 @@ always @* begin
             endcase
         end
     end
-    $display("\tfetched = %X",fetched);
 end
 
 always @(posedge clk, posedge rst) begin

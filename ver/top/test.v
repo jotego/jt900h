@@ -5,7 +5,8 @@ module test;
 reg         rst, clk;
 reg         cen;
 wire [23:0] ram_addr;
-wire [15:0] ram_dout;
+wire [15:0] ram_dout, ram_din, ram_win;
+wire [ 1:0] ram_we;
 wire        ram_rdy;
 reg  [15:0] mem[0:1023];
 
@@ -20,6 +21,8 @@ initial begin
 end
 
 assign ram_dout = mem[ram_addr[9:1]];
+assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
+                    ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
 
 initial begin
     $dumpfile("test.lxt");
@@ -61,6 +64,10 @@ initial begin
     dump_rdout=1;
 end
 
+always @(posedge clk) begin
+    if( ram_we !=0 )
+        mem[ ram_addr ] <= ram_win;
+end
 
 always @(posedge clk) begin
     if (ram_addr>=`END_RAM || dump_rdout ) begin
@@ -80,6 +87,9 @@ jt900h uut(
 
     .ram_addr   ( ram_addr  ),
     .ram_dout   ( ram_dout  ),
+    .ram_din    ( ram_din   ),
+    .ram_we     ( ram_we    ),
+
     .dmp_addr   ( dmp_addr  ),
     .dmp_din    ( dmp_din   )
 );
