@@ -21,13 +21,18 @@ rm -f test.out
 
 make || exit $?
 
-iverilog test.v -f files.f -o sim -DSIMULATION -DEND_RAM=$(cat test.bin|wc -c) && ./sim -lxt
+CODELEN=$(cat test.bin|wc -c)
+# The last bytes are NOPs
+CODELEN=$((CODELEN-8))
+
+iverilog test.v -f files.f -o sim -DSIMULATION -DEND_RAM=$CODELEN && ./sim -lxt
 rm -f sim
 
 CMPFILE=tests/$(basename $TEST .asm).out
 
 if [ ! -e $CMPFILE ]; then
-    echo Missing compare file $CMPFILE
+    echo Missing compare file. Run:
+    echo -e \\tcp test.out $CMPFILE
     cat test.out
     echo FAIL
     exit 1

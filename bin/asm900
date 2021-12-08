@@ -9,23 +9,12 @@ REL=$(basename $FILENAME .asm).rel
 ABS=$(basename $FILENAME .asm).abs
 BIN=$(basename $FILENAME .asm).bin
 rm -f $REL
-wine /opt/T900/bin/asm900.exe -O1 -Nb2 -l $*
+wine /opt/T900/bin/asm900.exe -Nb2 -l $*
 if [ -e $REL ]; then
     rm -f $ABS
     wine /opt/T900/bin/tulink.exe $REL
     if [ -e $ABS ]; then
-        # Remove the header
-        # The last byte will be wrong, but I don't care about it
-        # go run /home/$USER/git/jt900h/bin/rm900hdr.go $ABS
-        # part of the header that is dependent on the file name
-        # relies on having the code section called "main"
-        FULLPATH=$(pwd)/$BIN/${BIN}$(basename $FILENAME .asm)$BIN
-        HEADER=${#FULLPATH}
-        HEADER=$((HEADER+235))
-        LEN=$(cat $ABS | wc -c)
-        LEN=$((LEN-HEADER))
-        # the last byte is some kind of marker, I remove it
-        dd bs=1 if=$ABS of=$BIN skip=$HEADER count=$((LEN-1))
+        go run $HOME/git/jt900h/bin/rm900hdr.go $ABS
         exit 0
     fi
 fi

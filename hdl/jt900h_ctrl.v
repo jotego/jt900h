@@ -62,6 +62,10 @@ reg  [5:0] nx_alu_op;
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait;
 
+`ifdef SIMULATION
+wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
+`endif
+
 function [2:0] expand_zz(input [1:0] zz);
     expand_zz = zz==0 ? 3'b001 : zz==1 ? 3'b010 : 3'b100;
 endfunction
@@ -88,6 +92,9 @@ always @* begin
     nx_regs_we  = regs_we;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
+            `ifdef SIMULATION
+            $display("Fetched %04X_%04X", {op[7:0],op[15:8]},{op[23:16],op[31:24]});
+            `endif
             nx_alu_op   = ALU_NOP;
             nx_alu_smux = 0;
             nx_alu_wait = 0;

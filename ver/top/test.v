@@ -12,6 +12,7 @@ reg  [15:0] mem[0:1023];
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_din;
 reg  [7:0] dmp_buf[0:79];
+reg        dump_registers;
 
 
 initial begin
@@ -26,6 +27,23 @@ initial begin
     $dumpon;
 end
 
+integer cnt,file;
+function [31:0] xreg( input [7:0] a );
+    xreg = { dmp_buf[a+3], dmp_buf[a+2], dmp_buf[a+1], dmp_buf[a] };
+endfunction
+
+always @(posedge dump_registers) begin
+    file=$fopen("test.out","w");
+    for( cnt=0; cnt<16; cnt=cnt+4 ) begin
+        $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
+                                              xreg(cnt+32), xreg(cnt+48) );
+    end
+    $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
+                                          xreg(72), xreg(76) );
+    $fclose(file);
+    $finish;
+end
+
 initial begin
     clk=0;
     forever #5 clk=~clk;
@@ -35,16 +53,14 @@ initial begin
     rst=1;
     cen=1;
     dmp_addr = 0;
+    dump_registers=0;
+    $display("Simulating up to RAM address %X",`END_RAM);
     #100 rst=0;
     #1000_000
     $display("Time over");
-    $finish;
+    dump_registers=1;
 end
 
-integer cnt,file;
-function [31:0] xreg( input [7:0] a );
-    xreg = { dmp_buf[a+3], dmp_buf[a+2], dmp_buf[a+1], dmp_buf[a] };
-endfunction
 
 always @(posedge clk) begin
     if (ram_addr>=`END_RAM) begin
@@ -52,15 +68,7 @@ always @(posedge clk) begin
         dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;
         if( dmp_addr==81 ) begin
-            file=$fopen("test.out","w");
-            for( cnt=0; cnt<16; cnt=cnt+4 ) begin
-                $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
-                                                      xreg(cnt+32), xreg(cnt+48) );
-            end
-            $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
-                                                  xreg(72), xreg(76) );
-            $fclose(file);
-            $finish;
+            dump_registers=1;
         end
     end
 end
