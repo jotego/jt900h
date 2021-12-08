@@ -79,6 +79,7 @@ always @(posedge clk,posedge rst) begin
                 if( (idx_addr[0] && len[1]) || len[2] ) wron <= 1;
             end else if( wron!=0 ) begin
                 ram_addr <= ram_addr+2'd2;
+                wrbusy <= 1;
                 if( wron==2 ) begin
                     ram_din <= {2{reg_dout[31:24]}};
                     ram_we  <= 2'b01;
@@ -89,11 +90,11 @@ always @(posedge clk,posedge rst) begin
                                   reg_dout[23:8];
                         if( len[2] ) begin
                             wron <= 2;
-                            wrbusy <= 1;
                         end
                         ram_we <= len[1] ? 2'b01 : 2'b11;
                     end else begin // even
                         ram_din <= reg_dout[31:16];
+                        ram_we  <= 2'b11;
                         wron <= 0;
                     end
                 end

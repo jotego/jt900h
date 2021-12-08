@@ -39,7 +39,8 @@ module jt900h_ctrl(
     input             op_ok,
 
     output reg [ 2:0] regs_we,
-    output reg [ 7:0] regs_dst
+    output reg [ 7:0] regs_dst,
+    output reg [ 7:0] regs_src
 );
 
 localparam [4:0] FETCH    = 5'd0,
@@ -56,7 +57,7 @@ localparam [5:0] ALU_NOP  = 6'd0,
 reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
-reg  [7:0] regs_src, nx_src, nx_dst;
+reg  [7:0] nx_src, nx_dst;
 reg  [2:0] nx_regs_we, nx_idx_len;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ldram_en, nx_stram_en,
@@ -65,7 +66,7 @@ reg [31:0] nx_alu_imm;
 reg  [5:0] nx_alu_op;
 
 reg  [1:0] op_zz, nx_op_zz;
-reg        ram_wait, latch_op;
+reg        ram_wait, nx_ram_wait, latch_op, req_wait;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -97,6 +98,7 @@ always @* begin
     nx_op_zz    = op_zz;
     nx_regs_we  = regs_we;
     latch_op    = 0;
+    req_wait    = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -165,6 +167,7 @@ always @* begin
                     nx_src      = expand_reg(op[2:0],nx_op_zz);
                     nx_idx_len  = expand_zz( nx_op_zz );
                     nx_stram_en = 1;
+                    req_wait    = 1;
                 end
                 default: nx_phase = ILLEGAL;
             endcase
@@ -231,6 +234,8 @@ always @* begin
         end
         default: nx_phase=ILLEGAL;
     endcase
+    // leave this at the bottom
+    nx_ram_wait = fetched!=0 || req_wait;
 end
 
 always @(posedge clk, posedge rst) begin
@@ -264,7 +269,7 @@ always @(posedge clk, posedge rst) begin
         stram_en <= nx_stram_en;
         op_zz    <= nx_op_zz;
         regs_we  <= nx_regs_we;
-        ram_wait <= fetched!=0;
+        ram_wait <= nx_ram_wait;
         idx_len  <= nx_idx_len;
         if( latch_op ) last_op <= op[7:0];
     end

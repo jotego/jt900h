@@ -52,7 +52,7 @@ wire [ 2:0] idx_fetch;
 wire [23:0] idx_addr;
 
 wire [ 2:0] regs_we, idx_len;
-wire [ 7:0] regs_dst;
+wire [ 7:0] regs_src, regs_dst;
 
 // ALU control
 wire [31:0] alu_imm;
@@ -81,9 +81,12 @@ jt900h_regs u_regs(
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
     // offset register
+    .idx_en         ( idx_en            ),
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
     .src_out        ( src_out           ),
 
+    // source register
+    .src            ( regs_src          ),
     // destination register
     .dst            ( regs_dst          ),
     .we             ( regs_we           ),
@@ -138,7 +141,8 @@ jt900h_ctrl u_ctrl(
     .op_ok          ( buf_rdy           ),
 
     .regs_we        ( regs_we           ),
-    .regs_dst       ( regs_dst          )
+    .regs_dst       ( regs_dst          ),
+    .regs_src       ( regs_src          )
 );
 
 jt900h_ramctl u_ramctl(

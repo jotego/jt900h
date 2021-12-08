@@ -1,13 +1,21 @@
 #!/bin/bash
-TEST=ld_8bit_imm
 
-if [ $# = 1 ]; then
+TEST=ld_8bit_imm
+EXTRA=
+
+if [ $# -ge 1 ]; then
     TEST=$1
-    echo test: $1
-elif [ $# -gt 1 ]; then
-    echo Only the test name can be used as argument
-    exit 1
+    echo test: $TEST
+    shift
 fi
+
+while [ $# -gt 1 ]; do
+    case $1 in
+        -nodump) EXTRA="$EXTRA -DNODUMP";;
+        *) echo "Unsupported argument $1"; exit 1;;
+    esac
+    shift
+done
 
 TEST=$(basename $TEST .asm)
 
@@ -25,7 +33,7 @@ CODELEN=$(cat test.bin|wc -c)
 # The last bytes are NOPs
 CODELEN=$((CODELEN-8))
 
-iverilog test.v -f files.f -o sim -DSIMULATION \
+iverilog test.v -f files.f -o sim -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat test.hex|wc -l) || exit $?
 ./sim -lxt
 rm -f sim

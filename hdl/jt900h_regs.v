@@ -31,17 +31,14 @@ module jt900h_regs(
     input             reg_dec,
     // offset register
     input      [ 7:0] idx_rdreg_aux,
+    input             idx_en,
 
     // from the memory
     input      [31:0] imm_data,
-/*
     // read operands
-    input       [1:0] zsel,   // length selection
+    // input       [1:0] zsel,   // length selection
     // source register
-    input       [7:0] lsrc,   // long format
-    input       [2:0] ssrc,   // short format
-    input             sln,    // short format (high) - long (low)
-    */
+    input       [7:0] src,
     output reg [31:0] src_out,
 
     // destination register
@@ -86,7 +83,7 @@ assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 
 // gigantic multiplexer:
 always @* begin
-    r0sel   = simplify(idx_rdreg_sel);
+    r0sel   = idx_en ? simplify(idx_rdreg_sel) : simplify(src);
     src_out =
         r0sel[7:4]==4 ? 32'd0 : r0sel[7] ?
         {   ptrs[ {r0sel[3:2],2'b11} ], ptrs[ {r0sel[3:2],2'b10} ],

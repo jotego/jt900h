@@ -24,11 +24,13 @@ assign ram_dout = mem[ram_addr[9:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
 
+`ifndef NODUMP
 initial begin
     $dumpfile("test.lxt");
     $dumpvars;
     $dumpon;
 end
+`endif
 
 integer cnt,file;
 function [31:0] xreg( input [7:0] a );
@@ -72,7 +74,7 @@ end
 
 always @(posedge clk) begin
     if( ram_we !=0 )
-        mem[ ram_addr ] <= ram_win;
+        mem[ ram_addr>>1 ] <= ram_win;
 end
 
 always @(posedge clk) begin
