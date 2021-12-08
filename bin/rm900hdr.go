@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var verbose bool
+
 func find_first( finame string ) []byte {
 	fin, err_fin := os.Open(finame+".lst")
 	if err_fin != nil {
@@ -22,15 +24,21 @@ func find_first( finame string ) []byte {
 			val := strings.TrimSpace(split[1])
 			if split[0]=="00000000" && len(val)>0 {
 				lenb := len(val)>>1
-				fmt.Printf("->%s<- bytes = %d\n",val,lenb)
+				if verbose {
+					fmt.Printf("->%s<- bytes = %d\n",val,lenb)
+				}
 				bytearr := make( []byte, lenb )
 				for k:=0;k<lenb;k=k+1 {
 					i,_ := strconv.ParseInt(val[0:2],16,32)
-					fmt.Printf("%s -> %02X\n",val[0:2],i)
+					if verbose {
+						fmt.Printf("%s -> %02X\n",val[0:2],i)
+					}
 					val = val[2:]
 					bytearr[k] = byte(i)
 				}
-				fmt.Println()
+				if verbose {
+					fmt.Println()
+				}
 				return bytearr
 			}
 		}
@@ -39,6 +47,7 @@ func find_first( finame string ) []byte {
 }
 
 func main() {
+	verbose = true
 	fi_name := ""
 	if len(os.Args) == 2 {
 		fi_name = os.Args[1]
@@ -75,11 +84,14 @@ func main() {
 					break
 				}
 			} else {
+				// if verbose {
+				// 	fmt.Printf("%02X <> %02X\n",buf[k],first[matched])
+				// }
 				matched=0
 			}
 		}
 		if offset == 0 {
-			fmt.Println("Cannot find the first instruction in ",fi_name,".abs")
+			fmt.Printf("Cannot find the first instruction in %s.abs\n",fi_name)
 			os.Exit(1)
 		}
 		fo_name := fi_name + ".bin"
