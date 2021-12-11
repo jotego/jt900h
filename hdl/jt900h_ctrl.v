@@ -27,6 +27,7 @@ module jt900h_ctrl(
     output reg        stram_en,
     output reg        idx_en,
     input             idx_ok,
+    input      [23:0] idx_addr,
     output reg [ 2:0] idx_len,
 
     // ALU control
@@ -49,6 +50,7 @@ localparam [4:0] FETCH    = 5'd0,
                  EXEC     = 5'd3,
                  FILL_IMM = 5'd4,
                  ST_RAM   = 5'd5,
+                 DUMMY    = 5'd6,
                  ILLEGAL  = 5'd31;
 
 localparam [5:0] ALU_NOP  = 6'd0,
@@ -169,8 +171,19 @@ always @* begin
                     nx_stram_en = 1;
                     req_wait    = 1;
                 end
+                8'b001?_0???: begin // LDA dst, src -- load address
+                    nx_regs_we  = op[4] ? 3'b100 : 3'b010;
+                    nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
+                    nx_alu_imm  = { 8'd0, idx_addr };
+                    nx_alu_op   = ALU_MOVE;
+                    nx_phase    = DUMMY;
+                end
                 default: nx_phase = ILLEGAL;
             endcase
+        end
+        DUMMY: begin
+            fetched  = 1;
+            nx_phase = FETCH;
         end
         LD_RAM: begin
             nx_phase    = FETCH;

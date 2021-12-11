@@ -60,7 +60,7 @@ func main() {
 	}
 	first := find_first( fi_name )
 	if first == nil {
-		fmt.Println("Cannot identify the first instruction")
+		fmt.Println("Cannot identify the first instruction. Did you use a label in it?")
 		os.Exit(1)
 	}
 	// Find the first instruction

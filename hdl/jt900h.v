@@ -131,6 +131,7 @@ jt900h_ctrl u_ctrl(
     .idx_en         ( idx_en            ),
     .idx_ok         ( idx_ok            ),
     .idx_len        ( idx_len           ),
+    .idx_addr       ( idx_addr          ),
 
     .alu_imm        ( alu_imm           ),
     .alu_op         ( alu_op            ),
