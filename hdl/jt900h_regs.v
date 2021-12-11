@@ -34,7 +34,9 @@ module jt900h_regs(
     input             idx_en,
 
     // from the memory
-    input      [31:0] imm_data,
+    input      [31:0] alu_dout,
+    input      [31:0] ram_dout,
+    input             data_sel,
     // read operands
     // input       [1:0] zsel,   // length selection
     // source register
@@ -62,7 +64,7 @@ reg [7:0] accs[0:63];
 reg [7:0] ptrs[0:15];
 reg [7:0] r0sel, r1sel;
 
-wire [31:0] full_step;
+wire [31:0] full_step, data_mux;
 wire [31:0] xix, xiy, xiz, xsp;
 
 `ifdef SIMULATION
@@ -78,6 +80,7 @@ assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
 assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
 assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
+assign data_mux = data_sel ? ram_dout : alu_dout;
 
 assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 
@@ -121,23 +124,23 @@ always @(posedge clk, posedge rst) begin
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= dst_out;
         if( we[0] ) begin
             if( r1sel[7] )
-                ptrs[r1sel[3:0]] <= imm_data[7:0];
+                ptrs[r1sel[3:0]] <= data_mux[7:0];
             else
-                accs[r1sel[5:0]] <= imm_data[7:0];
+                accs[r1sel[5:0]] <= data_mux[7:0];
         end
         if( we[1] ) begin
             if( r1sel[7] )
-                { ptrs[{r1sel[3:1],1'b1}], ptrs[r1sel[3:0]] } <= imm_data[15:0];
+                { ptrs[{r1sel[3:1],1'b1}], ptrs[r1sel[3:0]] } <= data_mux[15:0];
             else
-                { accs[{r1sel[5:1],1'b1}], accs[r1sel[5:0]] } <= imm_data[15:0];
+                { accs[{r1sel[5:1],1'b1}], accs[r1sel[5:0]] } <= data_mux[15:0];
         end
         if( we[2] ) begin
             if( r1sel[7] )
                 { ptrs[{r1sel[3:2],2'd3}], ptrs[{r1sel[3:2],2'd2}],
-                  ptrs[{r1sel[3:2],2'd1}], ptrs[{r1sel[3:2],2'd0}] } <= imm_data;
+                  ptrs[{r1sel[3:2],2'd1}], ptrs[{r1sel[3:2],2'd0}] } <= data_mux;
             else
                 { accs[{r1sel[5:2],2'd3}], accs[{r1sel[5:2],2'd2}],
-                  accs[{r1sel[5:2],2'd1}], accs[{r1sel[5:2],2'd0}] } <= imm_data;
+                  accs[{r1sel[5:2],2'd1}], accs[{r1sel[5:2],2'd0}] } <= data_mux;
         end
     end
 end

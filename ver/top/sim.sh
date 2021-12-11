@@ -34,7 +34,8 @@ CODELEN=$(cat test.bin|wc -c)
 CODELEN=$((CODELEN-8))
 
 iverilog test.v -f files.f -o sim -DSIMULATION $EXTRA \
-    -DEND_RAM=$CODELEN -DHEXLEN=$(cat test.hex|wc -l) || exit $?
+    -DEND_RAM=$CODELEN -DHEXLEN=$(cat test.hex|wc -l) \
+    -I../../hdl || exit $?
 ./sim -lxt
 rm -f sim
 

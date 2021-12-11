@@ -19,6 +19,7 @@
 module jt900h_alu(
     input             rst,
     input             clk,
+    input             cen,
     input      [31:0] op0,
     input      [31:0] op1,
     input      [31:0] imm,
@@ -30,6 +31,8 @@ module jt900h_alu(
     output reg [31:0] dout
 );
 
+`include "jt900h.inc"
+
 reg [15:0] stcf;
 reg [31:0] op2;
 
@@ -40,17 +43,19 @@ always @* begin
     op2 = opmux ? imm : op1;
 end
 
-always @(posedge clk) begin
+always @(posedge clk) if(cen) begin
     case( sel )
-        ADD: dout <= op0+op2;   // also INC, also MULA
-        SUB: dout <= op0-op2;   // also DEC and CP
-        ADC: dout <= op0+op2+carry;
-        SBC: dout <= op0-op2-carry;
-        AND: dout <= op0&op2; // use it for RES bit,dst too?
-        OR:  dout <= op0|op2; // use it for SET bit,dst too?
-        XOR: dout <= op0^op2; // use it for CHG bit,dst too?
+        ALU_MOVE: dout <= imm;
+        ALU_ADD: dout <= op0+op2;   // also INC, also MULA
+        // ALU_SUB: dout <= op0-op2;   // also DEC and CP
+        // ALU_ADC: dout <= op0+op2+carry;
+        // ALU_SBC: dout <= op0-op2-carry;
+        // ALU_AND: dout <= op0&op2; // use it for RES bit,dst too?
+        // ALU_OR:  dout <= op0|op2; // use it for SET bit,dst too?
+        // ALU_XOR: dout <= op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
+        /*
         MODULO: dout <= op0[15:0]==op2[15:0] ? 0 : {16'd0,op0[15:0]+op2[15:0]};
         NEG: dout <= -op0;
         CPL: dout <= ~op0;
@@ -111,6 +116,7 @@ always @(posedge clk) begin
                 16'b????_????_????_???1: dout<=1;
                 default: dout<=0;
             endcase
+            */
         endcase
 end
 

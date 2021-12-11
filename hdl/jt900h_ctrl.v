@@ -29,6 +29,9 @@ module jt900h_ctrl(
     input             idx_ok,
     input      [23:0] idx_addr,
     output reg [ 2:0] idx_len,
+    output reg        data_sel,
+
+    output reg [31:0] data_latch,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -53,8 +56,7 @@ localparam [4:0] FETCH    = 5'd0,
                  DUMMY    = 5'd6,
                  ILLEGAL  = 5'd31;
 
-localparam [5:0] ALU_NOP  = 6'd0,
-                 ALU_MOVE = 6'd1;
+`include "jt900h.inc"
 
 reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
@@ -63,8 +65,8 @@ reg  [7:0] nx_src, nx_dst;
 reg  [2:0] nx_regs_we, nx_idx_len;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ldram_en, nx_stram_en,
-           nx_idx_en;
-reg [31:0] nx_alu_imm;
+           nx_idx_en, nx_data_sel;
+reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
 
 reg  [1:0] op_zz, nx_op_zz;
@@ -101,6 +103,7 @@ always @* begin
     nx_regs_we  = regs_we;
     latch_op    = 0;
     req_wait    = 0;
+    nx_data_latch = data_latch;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -111,6 +114,7 @@ always @* begin
             nx_alu_wait = 0;
             nx_regs_we  = 0;
             nx_idx_len  = 0;
+            nx_data_sel = 0;
             casez( op[7:0] )
                 8'h0: fetched = 1; // NOP
                 8'b10??_????,
@@ -178,6 +182,12 @@ always @* begin
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = DUMMY;
                 end
+                8'b1000_0???: begin // ADD R,r
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_dst      = expand_reg(op[2:0],op_zz);
+                    nx_alu_op   = ALU_ADD;
+                    nx_phase    = DUMMY;
+                end
                 default: nx_phase = ILLEGAL;
             endcase
         end
@@ -188,7 +198,8 @@ always @* begin
         LD_RAM: begin
             nx_phase    = FETCH;
             nx_ldram_en = 0;
-            nx_alu_imm  = op; // copy the RAM output
+            nx_data_sel = 1; // copy the RAM output
+            nx_data_latch = op;
             fetched     = 1;  // this will set the RAM wait flag too
         end
         ST_RAM: begin
@@ -269,6 +280,8 @@ always @(posedge clk, posedge rst) begin
         last_op  <= 0;
         stram_en <= 0;
         idx_len  <= 0;
+        data_sel <= 0;
+        data_latch <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -284,6 +297,8 @@ always @(posedge clk, posedge rst) begin
         regs_we  <= nx_regs_we;
         ram_wait <= nx_ram_wait;
         idx_len  <= nx_idx_len;
+        data_sel <= nx_data_sel;
+        data_latch <= nx_data_latch;
         if( latch_op ) last_op <= op[7:0];
     end
 end

@@ -40,7 +40,7 @@ wire        reg_inc;
 wire        reg_dec;
 
 wire        idx_en;
-wire        idx_ok, idx_wr;
+wire        idx_ok, idx_wr, data_sel;
 
 // Register bank
 wire [31:0] pc;
@@ -53,12 +53,14 @@ wire [23:0] idx_addr;
 
 wire [ 2:0] regs_we, idx_len;
 wire [ 7:0] regs_src, regs_dst;
+wire [31:0] data_latch;
 
 // ALU control
-wire [31:0] alu_imm;
+wire [31:0] alu_imm, alu_dout;
 wire [ 5:0] alu_op;
 wire        alu_smux;
 wire        alu_wait;
+wire        c_carry, c_zero;
 
 // Memory controller
 wire        ldram_en;
@@ -74,9 +76,11 @@ jt900h_regs u_regs(
     .cen            ( cen               ),
 
     .rfp            ( rfp               ),          // register file pointer
-    .imm_data       ( alu_imm           ),
+    .alu_dout       ( alu_dout          ),
+    .ram_dout       ( data_latch        ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
+    .data_sel       ( data_sel          ),
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
@@ -119,6 +123,21 @@ jt900h_idxaddr u_idxaddr(
     .idx_addr       ( idx_addr          )
 );
 
+jt900h_alu u_alu(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+    .op0            ( src_out           ),
+    .op1            ( dst_out           ),
+    .imm            ( alu_imm           ),
+    .opmux          ( 1'b0              ),
+    .w              ( regs_we           ),        // operation width
+    .sel            ( alu_op            ),      // operation selection
+    .carry          ( c_carry           ),
+    .zero           ( c_zero            ),
+    .dout           ( alu_dout          )
+);
+
 jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
     .clk            ( clk               ),
@@ -132,6 +151,8 @@ jt900h_ctrl u_ctrl(
     .idx_ok         ( idx_ok            ),
     .idx_len        ( idx_len           ),
     .idx_addr       ( idx_addr          ),
+    .data_sel       ( data_sel          ),
+    .data_latch     ( data_latch        ),
 
     .alu_imm        ( alu_imm           ),
     .alu_op         ( alu_op            ),
