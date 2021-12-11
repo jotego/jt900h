@@ -58,9 +58,9 @@ wire [31:0] data_latch;
 // ALU control
 wire [31:0] alu_imm, alu_dout;
 wire [ 5:0] alu_op;
+wire [ 7:0] flags;
 wire        alu_smux;
 wire        alu_wait;
-wire        c_carry, c_zero;
 
 // Memory controller
 wire        ldram_en;
@@ -133,8 +133,7 @@ jt900h_alu u_alu(
     .opmux          ( 1'b0              ),
     .w              ( regs_we           ),        // operation width
     .sel            ( alu_op            ),      // operation selection
-    .carry          ( c_carry           ),
-    .zero           ( c_zero            ),
+    .flags          ( flags             ),
     .dout           ( alu_dout          )
 );
 
