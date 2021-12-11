@@ -23,7 +23,9 @@ module jt900h_regs(
 
     // input             src_mux,
     // input             aux_mux,
-    input      [ 1:0] rfp,          // register file pointer
+    output reg [ 1:0] rfp,          // register file pointer
+    input             inc_rfp,
+    input             dec_rfp,
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
     input      [ 1:0] reg_step,
@@ -151,6 +153,15 @@ function [7:0] simplify( input [7:0] rsel );
                rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
                rsel[3:0] };
 endfunction
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        rfp <= 0;
+    end else if(cen) begin
+        if( inc_rfp ) rfp<=rfp+2'd1;
+        if( dec_rfp ) rfp<=rfp-2'd1;
+    end
+end
 
 // Status dump
 always @(posedge clk) begin

@@ -56,8 +56,8 @@ end
 always @* begin
     case( sel )
         ALU_MOVE: rslt = imm;
-        ALU_ADD: begin    // also INC, also MULA
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op1[3:0]};
+        ALU_ADD, ALU_ADC: begin    // also INC, also MULA
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op1[3:0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
@@ -68,7 +68,6 @@ always @* begin
             nx_v = nx_s ^ op0_s ^ op1_s;
         end
         // ALU_SUB: rslt = op0-op2;   // also DEC and CP
-        // ALU_ADC: rslt = op0+op2+carry;
         // ALU_SBC: rslt = op0-op2-carry;
         // ALU_AND: rslt = op0&op2; // use it for RES bit,dst too?
         // ALU_OR:  rslt = op0|op2; // use it for SET bit,dst too?

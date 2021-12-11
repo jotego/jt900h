@@ -30,7 +30,8 @@ module jt900h(
     output     [7:0] dmp_din
 );
 
-wire [ 1:0] rfp;          // register file pointer
+wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
+wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out;
 
 // Indexed memory addresser
@@ -68,14 +69,15 @@ wire        cur_op;
 wire [31:0] buf_dout;
 wire        buf_rdy;
 
-assign rfp=0;
-
 jt900h_regs u_regs(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
 
     .rfp            ( rfp               ),          // register file pointer
+    .inc_rfp        ( inc_rfp           ),
+    .dec_rfp        ( dec_rfp           ),
+
     .alu_dout       ( alu_dout          ),
     .ram_dout       ( data_latch        ),
     // From indexed memory addresser
@@ -130,7 +132,7 @@ jt900h_alu u_alu(
     .op0            ( src_out           ),
     .op1            ( dst_out           ),
     .imm            ( alu_imm           ),
-    .opmux          ( 1'b0              ),
+    .opmux          ( alu_smux          ),
     .w              ( regs_we           ),        // operation width
     .sel            ( alu_op            ),      // operation selection
     .flags          ( flags             ),
@@ -141,6 +143,9 @@ jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
+
+    .inc_rfp        ( inc_rfp           ),
+    .dec_rfp        ( dec_rfp           ),
 
     .fetched        ( ctl_fetch         ),
 

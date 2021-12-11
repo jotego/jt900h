@@ -33,6 +33,10 @@ module jt900h_ctrl(
 
     output reg [31:0] data_latch,
 
+    // RFP
+    output reg        inc_rfp,
+    output reg        dec_rfp,
+
     // ALU control
     output reg [31:0] alu_imm,
     output reg [ 5:0] alu_op,
@@ -68,6 +72,7 @@ reg        nx_alu_smux, nx_alu_wait,
            nx_idx_en, nx_data_sel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
+reg        nx_inc_rfp, nx_dec_rfp;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -104,6 +109,8 @@ always @* begin
     latch_op    = 0;
     req_wait    = 0;
     nx_data_latch = data_latch;
+    nx_inc_rfp  = 0;
+    nx_dec_rfp  = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -152,6 +159,14 @@ always @* begin
                     end else begin
                         nx_phase = FETCH;
                     end
+                end
+                8'b0000_1100: begin
+                    nx_inc_rfp = 1;
+                    fetched = 1;
+                end
+                8'b0000_1101: begin
+                    nx_dec_rfp = 1;
+                    fetched = 1;
                 end
                 default:;
             endcase
@@ -227,7 +242,9 @@ always @* begin
                     nx_alu_imm  = {29'd0,op[2:0]};
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
-                    fetched = 1;
+                    fetched     = 1;
+                    nx_regs_we  = expand_zz( op_zz );
+                    // nx_phase    = DUMMY;
                 end
                 8'b0000_0011: begin // LD r,#
                     nx_alu_op   = ALU_MOVE;
@@ -242,11 +259,11 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
-                8'b1000_0???: begin // ADD R,r
+                8'b100?_0???: begin // ADD R,r
                     nx_regs_we  = expand_zz( op_zz );
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
-                    nx_alu_op   = ALU_ADD;
+                    nx_alu_op   = op[4] ? ALU_ADC : ALU_ADD;
                     nx_phase    = DUMMY;
                 end
                 default:;
@@ -307,6 +324,8 @@ always @(posedge clk, posedge rst) begin
         idx_len  <= nx_idx_len;
         data_sel <= nx_data_sel;
         data_latch <= nx_data_latch;
+        inc_rfp  <= nx_inc_rfp;
+        dec_rfp  <= nx_dec_rfp;
         if( latch_op ) last_op <= op[7:0];
     end
 end
