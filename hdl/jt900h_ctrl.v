@@ -182,17 +182,18 @@ always @* begin
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = DUMMY;
                 end
-                8'b1000_0???: begin // ADD R,r
-                    nx_regs_we  = expand_zz( op_zz );
-                    nx_dst      = expand_reg(op[2:0],op_zz);
-                    nx_alu_op   = ALU_ADD;
-                    nx_phase    = DUMMY;
-                end
+                //8'b1000_0???: begin // ADD R,r
+                //    nx_regs_we  = expand_zz( op_zz );
+                //    nx_dst      = expand_reg(op[2:0],op_zz);
+                //    nx_alu_op   = ALU_ADD;
+                //    nx_phase    = DUMMY;
+                //end
                 default: nx_phase = ILLEGAL;
             endcase
         end
         DUMMY: begin
             fetched  = 1;
+            alu_op   = ALU_NOP;
             nx_phase = FETCH;
         end
         LD_RAM: begin
@@ -240,6 +241,13 @@ always @* begin
                         nx_alu_wait = 1;
                         nx_phase = FILL_IMM;
                     end
+                end
+                8'b1000_0???: begin // ADD R,r
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_src      = regs_dst; // swap R, r
+                    nx_dst      = expand_reg(op[2:0],op_zz);
+                    nx_alu_op   = ALU_ADD;
+                    nx_phase    = DUMMY;
                 end
                 default:;
             endcase
