@@ -15,7 +15,7 @@ if [ -e $REL ]; then
     wine /opt/T900/bin/tulink.exe $REL
     if [ -e $ABS ]; then
         go run $HOME/git/jt900h/bin/rm900hdr.go $ABS
-        exit 0
+        exit $?
     fi
 fi
 exit 1

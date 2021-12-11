@@ -50,8 +50,8 @@ module jt900h_regs(
     output reg [31:0] dst_out,
 
     // write result
-    //input       [2:0] wdst,
-    input       [2:0] we,
+    input       [2:0] ram_we,
+    input       [2:0] alu_we,
     //input      [31:0] din
     // Register dump
     input      [7:0] dmp_addr,
@@ -68,6 +68,7 @@ reg [7:0] r0sel, r1sel;
 
 wire [31:0] full_step, data_mux;
 wire [31:0] xix, xiy, xiz, xsp;
+wire [ 2:0] we;
 
 `ifdef SIMULATION
     wire [31:0] cur_xwa, cur_xbc, cur_xde, cur_xhl;
@@ -83,6 +84,7 @@ assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
 assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 assign data_mux = data_sel ? ram_dout : alu_dout;
+assign we       = data_sel ? ram_we : alu_we;
 
 assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 

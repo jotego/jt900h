@@ -60,6 +60,7 @@ wire [31:0] data_latch;
 wire [31:0] alu_imm, alu_dout;
 wire [ 5:0] alu_op;
 wire [ 7:0] flags;
+wire [ 2:0] alu_we;
 wire        alu_smux;
 wire        alu_wait;
 
@@ -95,7 +96,8 @@ jt900h_regs u_regs(
     .src            ( regs_src          ),
     // destination register
     .dst            ( regs_dst          ),
-    .we             ( regs_we           ),
+    .ram_we         ( regs_we           ),
+    .alu_we         ( alu_we            ),
     .dst_out        ( dst_out           ),
     // Register dump
     .dmp_addr       ( dmp_addr          ),
@@ -133,7 +135,8 @@ jt900h_alu u_alu(
     .op1            ( dst_out           ),
     .imm            ( alu_imm           ),
     .opmux          ( alu_smux          ),
-    .w              ( regs_we           ),        // operation width
+    .w              ( regs_we           ),      // operation width
+    .alu_we         ( alu_we            ),      // delayed version of regs_we
     .sel            ( alu_op            ),      // operation selection
     .flags          ( flags             ),
     .dout           ( alu_dout          )

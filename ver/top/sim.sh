@@ -3,6 +3,11 @@
 TEST=ld_8bit_imm
 EXTRA=
 
+# Try linting the code first
+cd ../../hdl
+verilator --lint-only jt900h.v || exit $?
+cd -
+
 if [ $# -ge 1 ]; then
     TEST=$1
     echo test: $TEST

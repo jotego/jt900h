@@ -91,7 +91,11 @@ func main() {
 			}
 		}
 		if offset == 0 {
-			fmt.Printf("Cannot find the first instruction in %s.abs\n",fi_name)
+			fmt.Printf("Cannot find the first instruction in %s.abs\nLooking for: ",fi_name)
+			for k=0;k<len(first);k++ {
+				fmt.Printf("%02X ",first[k])
+			}
+			fmt.Println()
 			os.Exit(1)
 		}
 		fo_name := fi_name + ".bin"

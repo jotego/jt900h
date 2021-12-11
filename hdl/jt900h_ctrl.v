@@ -66,7 +66,8 @@ reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
 reg  [7:0] nx_src, nx_dst;
-reg  [2:0] nx_regs_we, nx_idx_len;
+reg  [2:0] nx_regs_we, nx_idx_len,
+           nx_keep_we, keep_we;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ldram_en, nx_stram_en,
            nx_idx_en, nx_data_sel;
@@ -105,7 +106,8 @@ always @* begin
     nx_ldram_en = ldram_en;
     nx_stram_en = stram_en;
     nx_op_zz    = op_zz;
-    nx_regs_we  = regs_we;
+    nx_regs_we  = 0;
+    nx_keep_we  = keep_we;
     latch_op    = 0;
     req_wait    = 0;
     nx_data_latch = data_latch;
@@ -122,8 +124,8 @@ always @* begin
             nx_regs_we  = 0;
             nx_idx_len  = 0;
             nx_data_sel = 0;
+            nx_keep_we  = 0;
             casez( op[7:0] )
-                8'h0: fetched = 1; // NOP
                 8'b10??_????,
                 8'b11??_00??,
                 8'b11??_010?: begin // start indexed addressing
@@ -146,18 +148,23 @@ always @* begin
                     nx_phase = EXEC;
                 end
                 8'b0???_0???: begin // LD R,# 0zzz_0RRR, register and immediate value
-                    nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
-                    nx_dst      = expand_reg(op[2:0], nx_op_zz);
-                    nx_alu_imm  = { 24'd0, op[15:8] };
-                    nx_alu_op   = ALU_MOVE;
-                    nx_alu_smux = 1;
-                    nx_regs_we  = expand_zz( nx_op_zz );
-                    fetched     = 2;
-                    if( nx_op_zz!=0 ) begin
-                        nx_phase = FILL_IMM;
-                        nx_alu_wait = 1;
+                    if( op[7:0]==0 ) begin
+                        fetched = 1; // NOP
                     end else begin
-                        nx_phase = FETCH;
+                        nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
+                        nx_dst      = expand_reg(op[2:0], nx_op_zz);
+                        nx_alu_imm  = { 24'd0, op[15:8] };
+                        nx_alu_op   = ALU_MOVE;
+                        nx_alu_smux = 1;
+                        fetched     = 2;
+                        if( nx_op_zz!=0 ) begin
+                            nx_phase = FILL_IMM;
+                            nx_alu_wait = 1;
+                            nx_keep_we  = expand_zz( nx_op_zz );
+                        end else begin
+                            nx_regs_we  = expand_zz( nx_op_zz );
+                            nx_phase = FETCH;
+                        end
                     end
                 end
                 8'b0000_1100: begin
@@ -207,9 +214,10 @@ always @* begin
             endcase
         end
         DUMMY: begin
-            fetched  = 1;
-            alu_op   = ALU_NOP;
-            nx_phase = FETCH;
+            fetched    = 1;
+            nx_alu_op  = ALU_NOP;
+            nx_regs_we = keep_we;
+            nx_phase   = FETCH;
         end
         LD_RAM: begin
             nx_phase    = FETCH;
@@ -250,7 +258,7 @@ always @* begin
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
                     fetched     = 2;
-                    nx_regs_we  = expand_zz( op_zz );
+                    nx_keep_we  = expand_zz( op_zz );
                     if( nx_op_zz==0 ) begin
                         nx_alu_imm = {24'd0,op[15:8]};
                     end else begin
@@ -260,7 +268,7 @@ always @* begin
                     end
                 end
                 8'b100?_0???: begin // ADD R,r
-                    nx_regs_we  = expand_zz( op_zz );
+                    nx_keep_we  = expand_zz( op_zz );
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   = op[4] ? ALU_ADC : ALU_ADD;
@@ -272,6 +280,7 @@ always @* begin
         FILL_IMM: begin
             nx_alu_wait = 0;
             nx_phase = FETCH;
+            nx_regs_we = keep_we;
             if( op_zz == 1 ) begin
                 nx_alu_imm[31:16] = 0;
                 nx_alu_imm[15:8] = op[7:0];
@@ -301,6 +310,7 @@ always @(posedge clk, posedge rst) begin
         ldram_en <= 0;
         op_zz    <= 0;
         regs_we  <= 0;
+        keep_we  <= 0;
         ram_wait <= 0;
         last_op  <= 0;
         stram_en <= 0;
@@ -326,6 +336,7 @@ always @(posedge clk, posedge rst) begin
         data_latch <= nx_data_latch;
         inc_rfp  <= nx_inc_rfp;
         dec_rfp  <= nx_dec_rfp;
+        keep_we  <= nx_keep_we;
         if( latch_op ) last_op <= op[7:0];
     end
 end

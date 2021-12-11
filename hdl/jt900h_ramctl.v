@@ -78,7 +78,7 @@ always @(posedge clk,posedge rst) begin
                 wrbusy   <= 1;
                 if( (idx_addr[0] && len[1]) || len[2] ) wron <= 1;
             end else if( wron!=0 ) begin
-                ram_addr <= ram_addr+2'd2;
+                ram_addr <= ram_addr+24'd2;
                 wrbusy <= 1;
                 if( wron==2 ) begin
                     ram_din <= {2{reg_dout[31:24]}};
@@ -140,7 +140,7 @@ always @(posedge clk,posedge rst) begin
                 end else if( req_addr==cache_addr+24'd3 && cache_ok[3] ) begin
                     cache_addr <= cache_addr+24'd3;
                     cache0[7:0] <= cache1[15:8];
-                    ram_addr <= req_addr + req_addr[0];
+                    ram_addr <= req_addr + {23'd0,req_addr[0]};
                     we_mask  <= 4'b1110;
                     cache_ok <= 4'b0001;
                 end else begin

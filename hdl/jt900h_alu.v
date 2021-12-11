@@ -25,6 +25,7 @@ module jt900h_alu(
     input      [31:0] imm,
     input             opmux,
     input      [ 2:0] w,        // operation width
+    output reg [ 2:0] alu_we,
     input      [ 5:0] sel,      // operation selection
     output     [ 7:0] flags,
     output reg [31:0] dout
@@ -37,7 +38,7 @@ reg [31:0] op2, rslt;
 reg        sign, zero, halfc, overflow, negative, carry;
 reg        nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
 reg [ 2:0] cc;
-wire       is_zero, rslt_sign, op0_s, op1_s;
+wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c;
 
 assign flags   = {sign, zero, 1'b0, halfc, 1'b0, overflow, negative, carry};
 assign is_zero = w[0] ? rslt[7:0]==0 : w[1] ? rslt[15:0]==0 : rslt[31:0]==0;
@@ -47,14 +48,23 @@ assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
 
 always @* begin
-    stcf = op1;
-    stcf[op0[3:0]] = carry;
-
+//    stcf = op1;
+//    stcf[op0[3:0]] = carry;
+//
     op2 = opmux ? imm : op1;
 end
 
 always @* begin
+    nx_s = sign;
+    nx_z = zero;
+    nx_h = halfc;
+    nx_v = overflow;
+    nx_n = negative;
+    nx_c = carry;
+    rslt = 0;
+
     case( sel )
+        default:;
         ALU_MOVE: rslt = imm;
         ALU_ADD, ALU_ADC: begin    // also INC, also MULA
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op1[3:0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
@@ -147,6 +157,7 @@ always @(posedge clk) if(cen) begin
     overflow <= nx_v;
     negative <= nx_n;
     carry    <= nx_c;
+    alu_we   <= w;
 end
 
 

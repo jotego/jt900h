@@ -86,7 +86,7 @@ always @* begin
                     nx_idx_rdreg_sel = fullreg(op[2:0]);
                     nx_idx_offset = op[3] ? { {16{op[15]}}, op[15:8] } : 0;
                     nx_pre_ok = 1;
-                    fetched = op[3] ? 2'd2: 2'd1;
+                    fetched = op[3] ? 3'd2: 3'd1;
                 end
                 5'h10,5'h11,5'h12: begin // memory address as immediate data
                     nx_idx_rdreg_sel = NULL;
@@ -139,14 +139,14 @@ always @* begin
                     fetched    = 1;
                 end
                 5'h12: begin
-                    nx_idx_offset[23:8] = op;
+                    nx_idx_offset[23:8] = op[15:0];
                     nx_pre_ok = 1;
                     fetched    = 2;
                 end
                 5'h13: begin
                     fetched = 2;
                     if( !ridx_mode[1] ) begin
-                        nx_idx_offset = { {8{op[15]}}, op };
+                        nx_idx_offset = { {8{op[15]}}, op[15:0] };
                         nx_pre_ok = 1;
                     end else begin
                         nx_idx_rdreg_sel = op[7:0];
