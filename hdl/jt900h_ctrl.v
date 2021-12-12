@@ -145,6 +145,7 @@ always @* begin
                 8'b11??_1???: begin // two register operand instruction, r part
                     nx_op_zz = op[5:4];
                     nx_dst   = expand_reg(op[2:0], nx_op_zz);
+                    nx_src   = nx_dst;
                     nx_phase = EXEC;
                     fetched  = 1;
                 end
@@ -219,6 +220,8 @@ always @* begin
                     nx_phase  = LD_RAM;
                     nx_ldram_en = 1;
                     nx_goexec = 1;
+                    nx_dst    = expand_reg(op[2:0],op_zz);
+                    nx_src    = nx_dst;
                 end
                 default: nx_phase = ILLEGAL;
             endcase
