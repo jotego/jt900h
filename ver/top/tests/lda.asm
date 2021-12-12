@@ -1,4 +1,4 @@
-    ; Some indexed addressing storing to RAM
+    ; Some indexed addressing fetching from RAM
     main section code
     org 0
     ld  hl,0x5005

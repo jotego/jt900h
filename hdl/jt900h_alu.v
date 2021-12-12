@@ -66,7 +66,7 @@ always @* begin
 
     case( sel )
         default:;
-        ALU_MOVE: rslt = imm;
+        ALU_MOVE: rslt = sel_imm ? imm : op0;
         ALU_ADD, ALU_ADC: // also INC, also MULA
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op2[3:0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
@@ -88,6 +88,12 @@ always @* begin
             nx_n = 0;
             nx_c = 0;
         end
+        ALU_MDEC1: begin
+            if( (op0[15:0] & op2[15:0]) ==0 )
+                rslt[15:0] = (op0[15:0] & ~op2[15:0]) | op2[15:0];
+            else
+                rslt[15:0] = op0[15:0]-16'd1;
+        end
         // ALU_SUB: rslt = op0-op2;   // also DEC and CP
         // ALU_SBC: rslt = op0-op2-carry;
         // ALU_OR:  rslt = op0|op2; // use it for SET bit,dst too?
@@ -95,7 +101,6 @@ always @* begin
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
         /*
-        MODULO: rslt = op0[15:0]==op2[15:0] ? 0 : {16'd0,op0[15:0]+op2[15:0]};
         NEG: rslt = -op0;
         CPL: rslt = ~op0;
         EXTZ: rslt = w[1] ? {24'd0,op0[7:0]} : {16'd0,op0[15:0]};

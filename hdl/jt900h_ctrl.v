@@ -199,6 +199,7 @@ always @* begin
                         nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
                         nx_alu_imm  = { 8'd0, idx_addr };
                         nx_alu_op   = ALU_MOVE;
+                        nx_alu_smux = 1;
                         nx_phase    = DUMMY;
                     end else begin // LD
                         nx_phase    = LD_RAM;
@@ -264,6 +265,7 @@ always @* begin
                     nx_src = regs_dst;
                     nx_dst = expand_reg(op[2:0],op_zz);
                     nx_alu_op   = ALU_MOVE;
+                    nx_regs_we  = expand_zz( op_zz );
                     fetched = 1;
                 end
                 8'b1001_1???: begin // LD r,R
@@ -279,8 +281,12 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     // nx_phase    = DUMMY;
                 end
-                8'b0000_0011: begin // LD r,#
-                    nx_alu_op   = ALU_MOVE;
+                8'b0011_1100, // MDEC1
+                8'b0000_0011: // LD r,#
+                begin
+                    nx_alu_op   = op[7:0] == 8'b0000_0011 ? ALU_MOVE  :
+                                  op[7:0] == 8'b0011_1100 ? ALU_MDEC1 :
+                                  ALU_NOP;
                     nx_alu_smux = 1;
                     fetched     = 2;
                     if( op_zz==0 ) begin
