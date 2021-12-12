@@ -213,7 +213,9 @@ always @* begin
                     nx_stram_en = 1;
                     req_wait    = 1;
                 end
-                8'b100?_0???: begin // ADD R,(mem) - ADC R,(mem)
+                8'b100?_0???, // ADD R,(mem) - ADC R,(mem)
+                8'b1100_0???: // AND R,(mem)
+                begin
                     nx_phase  = LD_RAM;
                     nx_ldram_en = 1;
                     nx_goexec = 1;
@@ -288,18 +290,27 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
-                8'b100?_0???: begin // ADD R,r
+                8'b100?_0???, // ADD R,r
+                8'b1100_0???: // AND R,r
+                begin
                     nx_keep_we  = expand_zz( op_zz );
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
-                    nx_alu_op   = op[4] ? ALU_ADC : ALU_ADD;
+                    nx_alu_op   =
+                        op[7:3] == 5'b1000_0 ? ALU_ADD :
+                        op[7:3] == 5'b1001_0 ? ALU_ADC :
+                        op[7:3] == 5'b1100_0 ? ALU_AND :
+                        ALU_NOP;
                     nx_regs_we  = expand_zz( op_zz );
                     nx_phase    = DUMMY;
                     if( exec_imm )
                         nx_alu_smux = 1;
                 end
-                8'b1100_1000: begin // ADD r,#
-                    nx_alu_op   = ALU_ADD;
+                8'b1100_1000, // ADD r,#
+                8'b1100_1100: // AND r,#
+                begin
+                    nx_alu_op   = op[7:0]==8'b1100_1000 ? ALU_ADD :
+                                  ALU_AND;
                     nx_alu_smux = 1;
                     fetched     = 2;
                     if( op_zz==0 ) begin

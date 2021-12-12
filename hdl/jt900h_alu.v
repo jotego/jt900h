@@ -38,12 +38,13 @@ reg [31:0] op2, rslt;
 reg        sign, zero, halfc, overflow, negative, carry;
 reg        nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
 reg [ 2:0] cc;
-wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c;
+wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v;
 
 assign flags   = {sign, zero, 1'b0, halfc, 1'b0, overflow, negative, carry};
 assign is_zero = w[0] ? rslt[7:0]==0 : w[1] ? rslt[15:0]==0 : rslt[31:0]==0;
 assign rslt_sign = w[0] ? rslt[7] : w[1] ? rslt[15] : rslt[31];
 assign rslt_c  = w[0] ? cc[0] : w[1] ? cc[1] : cc[2];
+assign rslt_v  = nx_s ^ op0_s ^ op1_s;
 assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
 
@@ -72,15 +73,23 @@ always @* begin
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
+            nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 0;
-            nx_s = rslt_sign;
             nx_c = rslt_c;
-            nx_v = nx_s ^ op0_s ^ op1_s;
+            nx_v = rslt_v;
+        end
+        ALU_AND: begin // use it for RES bit,dst too?
+            rslt = op0 & op2;
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_h = 1;
+            nx_v = rslt_v;
+            nx_n = 0;
+            nx_c = 0;
         end
         // ALU_SUB: rslt = op0-op2;   // also DEC and CP
         // ALU_SBC: rslt = op0-op2-carry;
-        // ALU_AND: rslt = op0&op2; // use it for RES bit,dst too?
         // ALU_OR:  rslt = op0|op2; // use it for SET bit,dst too?
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
