@@ -61,7 +61,7 @@ CMPFILE=tests/$(basename $TEST .asm).out
 
 if [ -n "$ACCEPT"  ]; then
     cp test.out $CMPFILE
-    git add $CMPFILE
+    git add $CMPFILE tests/${TEST}.asm
     cat test.out
     echo $CMPFILE updated
     exit 0

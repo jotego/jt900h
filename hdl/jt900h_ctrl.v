@@ -73,7 +73,8 @@ reg        nx_alu_smux, nx_alu_wait,
            nx_idx_en, nx_data_sel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
-reg        nx_inc_rfp, nx_dec_rfp;
+reg        nx_inc_rfp, nx_dec_rfp,
+           nx_nodummy_fetch, nodummy_fetch;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -113,6 +114,7 @@ always @* begin
     nx_data_latch = data_latch;
     nx_inc_rfp  = 0;
     nx_dec_rfp  = 0;
+    nx_nodummy_fetch = nodummy_fetch;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -216,7 +218,8 @@ always @* begin
             endcase
         end
         DUMMY: begin
-            fetched    = 1;
+            if( !nodummy_fetch ) fetched = 1;
+            nx_nodummy_fetch = 0;
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             nx_phase   = FETCH;
@@ -280,6 +283,22 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     nx_phase    = DUMMY;
                 end
+                8'b1100_1000: begin // ADD r,#
+                    nx_alu_op   = ALU_ADD;
+                    nx_alu_smux = 1;
+                    fetched     = 2;
+                    if( op_zz==0 ) begin
+                        nx_alu_imm = {24'd0,op[15:8]};
+                        nx_regs_we = expand_zz( op_zz );
+                        nx_nodummy_fetch = 1;
+                        nx_phase   = DUMMY;
+                    end else begin
+                        nx_alu_imm[7:0] = op[15:8];
+                        nx_alu_wait = 1;
+                        nx_keep_we  = expand_zz( op_zz );
+                        nx_phase = FILL_IMM;
+                    end
+                end
                 default:;
             endcase
         end
@@ -323,6 +342,7 @@ always @(posedge clk, posedge rst) begin
         idx_len  <= 0;
         data_sel <= 0;
         data_latch <= 0;
+        nodummy_fetch <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -343,6 +363,7 @@ always @(posedge clk, posedge rst) begin
         inc_rfp  <= nx_inc_rfp;
         dec_rfp  <= nx_dec_rfp;
         keep_we  <= nx_keep_we;
+        nodummy_fetch <= nx_nodummy_fetch;
         if( latch_op ) last_op <= op[7:0];
     end
 end

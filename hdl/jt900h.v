@@ -134,7 +134,7 @@ jt900h_alu u_alu(
     .op0            ( src_out           ),
     .op1            ( dst_out           ),
     .imm            ( alu_imm           ),
-    .opmux          ( alu_smux          ),
+    .sel_imm        ( alu_smux          ),
     .w              ( regs_we           ),      // operation width
     .alu_we         ( alu_we            ),      // delayed version of regs_we
     .sel            ( alu_op            ),      // operation selection
