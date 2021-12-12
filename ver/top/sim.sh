@@ -2,6 +2,7 @@
 
 TEST=ld_8bit_imm
 EXTRA=
+ACCEPT=
 
 # Try linting the code first
 cd ../../hdl
@@ -14,9 +15,21 @@ if [ $# -ge 1 ]; then
     shift
 fi
 
-while [ $# -gt 1 ]; do
+function show_help() {
+    cat << EOF
+sim.sh <test name> [-nodump] [-accept]
+
+-nodump     Do not dump waveforms
+-accept     Update the valid output file, used for comparisons
+            It will also add it to git
+EOF
+}
+
+while [ $# -gt 0 ]; do
     case $1 in
         -nodump) EXTRA="$EXTRA -DNODUMP";;
+        -accept|-a) ACCEPT=1;;
+        -help) show_help; exit 0;;
         *) echo "Unsupported argument $1"; exit 1;;
     esac
     shift
@@ -45,6 +58,14 @@ iverilog test.v -f files.f -o sim -DSIMULATION $EXTRA \
 rm -f sim
 
 CMPFILE=tests/$(basename $TEST .asm).out
+
+if [ -n "$ACCEPT"  ]; then
+    cp test.out $CMPFILE
+    git add $CMPFILE
+    cat test.out
+    echo $CMPFILE updated
+    exit 0
+fi
 
 if [ ! -e $CMPFILE ]; then
     echo Missing compare file. Run:

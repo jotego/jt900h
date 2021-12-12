@@ -61,7 +61,7 @@ always @* begin
     nx_v = overflow;
     nx_n = negative;
     nx_c = carry;
-    rslt = 0;
+    rslt = dout;
 
     case( sel )
         default:;

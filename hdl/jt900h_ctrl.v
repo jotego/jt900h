@@ -277,6 +277,7 @@ always @* begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   = op[4] ? ALU_ADC : ALU_ADD;
+                    nx_regs_we  = expand_zz( op_zz );
                     nx_phase    = DUMMY;
                 end
                 default:;
