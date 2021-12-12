@@ -152,6 +152,7 @@ always @* begin
                 8'b11??_0111: begin // two operand, r with arbitraty register
                     nx_op_zz = op[5:4];
                     nx_dst   = op[15:8];
+                    nx_src   = nx_dst;
                     fetched  = 2;
                     nx_phase = EXEC;
                 end
