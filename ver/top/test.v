@@ -73,6 +73,9 @@ initial begin
 end
 
 always @(posedge clk) begin
+    `ifdef USECEN
+    cen<=~cen;
+    `endif
     if( ram_we !=0 )
         mem[ ram_addr>>1 ] <= ram_win;
 end

@@ -17,11 +17,12 @@ fi
 
 function show_help() {
     cat << EOF
-sim.sh <test name> [-nodump] [-accept]
+sim.sh <test name> [options]
 
 -nodump     Do not dump waveforms
 -accept     Update the valid output file, used for comparisons
             It will also add it to git
+-cen        Set cen to 50% (default 100%)
 EOF
 }
 
@@ -29,6 +30,7 @@ while [ $# -gt 0 ]; do
     case $1 in
         -nodump) EXTRA="$EXTRA -DNODUMP";;
         -accept|-a) ACCEPT=1;;
+        -cen) EXTRA="$EXTRA -DUSECEN";;
         -help) show_help; exit 0;;
         *) echo "Unsupported argument $1"; exit 1;;
     esac
