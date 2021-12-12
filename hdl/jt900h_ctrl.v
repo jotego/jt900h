@@ -306,10 +306,11 @@ always @* begin
                     if( exec_imm )
                         nx_alu_smux = 1;
                 end
-                8'b1100_1000, // ADD r,#
+                8'b1100_100?, // ADD r,# - ADC r,#
                 8'b1100_1100: // AND r,#
                 begin
                     nx_alu_op   = op[7:0]==8'b1100_1000 ? ALU_ADD :
+                                  op[7:0]==8'b1100_1001 ? ALU_ADC :
                                   ALU_AND;
                     nx_alu_smux = 1;
                     fetched     = 2;
