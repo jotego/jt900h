@@ -74,7 +74,8 @@ reg        nx_alu_smux, nx_alu_wait,
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
 reg        nx_inc_rfp, nx_dec_rfp,
-           nx_nodummy_fetch, nodummy_fetch;
+           nx_nodummy_fetch, nodummy_fetch,
+           nx_goexec, goxec;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -115,6 +116,7 @@ always @* begin
     nx_inc_rfp  = 0;
     nx_dec_rfp  = 0;
     nx_nodummy_fetch = nodummy_fetch;
+    nx_goexec   = goxec;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -208,12 +210,11 @@ always @* begin
                     nx_stram_en = 1;
                     req_wait    = 1;
                 end
-                //8'b1000_0???: begin // ADD R,r
-                //    nx_regs_we  = expand_zz( op_zz );
-                //    nx_dst      = expand_reg(op[2:0],op_zz);
-                //    nx_alu_op   = ALU_ADD;
-                //    nx_phase    = DUMMY;
-                //end
+                8'b1000_0???: begin // ADD R,(mem)
+                    nx_phase  = LD_RAM;
+                    nx_ldram_en = 1;
+                    nx_goexec = 1;
+                end
                 default: nx_phase = ILLEGAL;
             endcase
         end
@@ -225,12 +226,24 @@ always @* begin
             nx_phase   = FETCH;
         end
         LD_RAM: begin
-            nx_phase    = FETCH;
+            if( goxec ) begin
+                nx_phase    = EXEC;
+
+                // send signal to EXEC so it uses alu_imm
+
+
+                // no change to fetched because we will
+                // reuse the last OP code byte
+            end else begin
+                nx_phase    = FETCH;
+                nx_data_sel = 1; // copy the RAM output
+                fetched = 1;  // this will set the RAM wait flag too
+            end
             nx_regs_we  = keep_we;
             nx_ldram_en = 0;
-            nx_data_sel = 1; // copy the RAM output
-            nx_data_latch = op;
-            fetched     = 1;  // this will set the RAM wait flag too
+            nx_data_latch = op; // is it necessary to have it in data_latch
+                                // and alu_imm?
+            nx_alu_imm    = op; // make it available to the ALU too
         end
         ST_RAM: begin
             nx_phase    = FETCH;
@@ -343,6 +356,7 @@ always @(posedge clk, posedge rst) begin
         data_sel <= 0;
         data_latch <= 0;
         nodummy_fetch <= 0;
+        goxec <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -364,6 +378,7 @@ always @(posedge clk, posedge rst) begin
         dec_rfp  <= nx_dec_rfp;
         keep_we  <= nx_keep_we;
         nodummy_fetch <= nx_nodummy_fetch;
+        goxec    <= nx_goexec;
         if( latch_op ) last_op <= op[7:0];
     end
 end
