@@ -54,10 +54,13 @@ if [ ! -e $CMPFILE ]; then
     exit 1
 fi
 
-if sdiff --suppress-common-lines test.out $CMPFILE; then
+if sdiff --suppress-common-lines --width=90 test.out $CMPFILE >/dev/null; then
     echo PASS
     exit 0
 else
+    echo ======== EXPECTED =========
+    cat $CMPFILE
+    echo ======== BUT GOT ==========
     cat test.out
     echo see $CMPFILE
     echo FAIL

@@ -183,11 +183,20 @@ always @* begin
             // leave the fetched update to the next state
             // either LD_RAM or ST_RAM
             casez( op[7:0] )
-                8'b0010_0???: begin // LD R,(mem)
-                    nx_phase    = LD_RAM;
-                    nx_dst      = expand_reg(op[2:0],op_zz);
-                    nx_regs_we  = expand_zz( op_zz );
-                    nx_ldram_en = 1;
+                8'b001?_0???: begin // LD   R,(mem) 0010_0RRR
+                                    // LDA  R,mem   001s_0RRR, but first half had zz==11
+                    if( op_zz==2'b11 ) begin // LDA
+                        nx_regs_we  = op[4] ? 3'b100 : 3'b010;
+                        nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
+                        nx_alu_imm  = { 8'd0, idx_addr };
+                        nx_alu_op   = ALU_MOVE;
+                        nx_phase    = DUMMY;
+                    end else begin // LD
+                        nx_phase    = LD_RAM;
+                        nx_dst      = expand_reg(op[2:0],op_zz);
+                        nx_keep_we  = expand_zz( op_zz );
+                        nx_ldram_en = 1;
+                    end
                 end
                 8'b01??_0???: begin // LD (mem),R
                     nx_phase    = ST_RAM;
@@ -196,13 +205,6 @@ always @* begin
                     nx_idx_len  = expand_zz( nx_op_zz );
                     nx_stram_en = 1;
                     req_wait    = 1;
-                end
-                8'b001?_0???: begin // LDA dst, src -- load address
-                    nx_regs_we  = op[4] ? 3'b100 : 3'b010;
-                    nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
-                    nx_alu_imm  = { 8'd0, idx_addr };
-                    nx_alu_op   = ALU_MOVE;
-                    nx_phase    = DUMMY;
                 end
                 //8'b1000_0???: begin // ADD R,r
                 //    nx_regs_we  = expand_zz( op_zz );
@@ -221,6 +223,7 @@ always @* begin
         end
         LD_RAM: begin
             nx_phase    = FETCH;
+            nx_regs_we  = keep_we;
             nx_ldram_en = 0;
             nx_data_sel = 1; // copy the RAM output
             nx_data_latch = op;
@@ -258,12 +261,14 @@ always @* begin
                     nx_alu_op   = ALU_MOVE;
                     nx_alu_smux = 1;
                     fetched     = 2;
-                    nx_keep_we  = expand_zz( op_zz );
-                    if( nx_op_zz==0 ) begin
+                    if( op_zz==0 ) begin
                         nx_alu_imm = {24'd0,op[15:8]};
+                        nx_regs_we  = expand_zz( op_zz );
+                        //nx_phase = DUMMY;
                     end else begin
                         nx_alu_imm[7:0] = op[15:8];
                         nx_alu_wait = 1;
+                        nx_keep_we  = expand_zz( op_zz );
                         nx_phase = FILL_IMM;
                     end
                 end
