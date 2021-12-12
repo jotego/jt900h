@@ -75,7 +75,8 @@ reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
 reg        nx_inc_rfp, nx_dec_rfp,
            nx_nodummy_fetch, nodummy_fetch,
-           nx_goexec, goxec;
+           nx_goexec, goxec,
+           nx_exec_imm, exec_imm;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -117,6 +118,7 @@ always @* begin
     nx_dec_rfp  = 0;
     nx_nodummy_fetch = nodummy_fetch;
     nx_goexec   = goxec;
+    nx_exec_imm = exec_imm;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -129,6 +131,7 @@ always @* begin
             nx_idx_len  = 0;
             nx_data_sel = 0;
             nx_keep_we  = 0;
+            nx_exec_imm = 0;
             casez( op[7:0] )
                 8'b10??_????,
                 8'b11??_00??,
@@ -210,7 +213,7 @@ always @* begin
                     nx_stram_en = 1;
                     req_wait    = 1;
                 end
-                8'b1000_0???: begin // ADD R,(mem)
+                8'b100?_0???: begin // ADD R,(mem) - ADC R,(mem)
                     nx_phase  = LD_RAM;
                     nx_ldram_en = 1;
                     nx_goexec = 1;
@@ -228,10 +231,7 @@ always @* begin
         LD_RAM: begin
             if( goxec ) begin
                 nx_phase    = EXEC;
-
-                // send signal to EXEC so it uses alu_imm
-
-
+                nx_exec_imm = 1;
                 // no change to fetched because we will
                 // reuse the last OP code byte
             end else begin
@@ -295,6 +295,8 @@ always @* begin
                     nx_alu_op   = op[4] ? ALU_ADC : ALU_ADD;
                     nx_regs_we  = expand_zz( op_zz );
                     nx_phase    = DUMMY;
+                    if( exec_imm )
+                        nx_alu_smux = 1;
                 end
                 8'b1100_1000: begin // ADD r,#
                     nx_alu_op   = ALU_ADD;
@@ -356,7 +358,8 @@ always @(posedge clk, posedge rst) begin
         data_sel <= 0;
         data_latch <= 0;
         nodummy_fetch <= 0;
-        goxec <= 0;
+        goxec    <= 0;
+        exec_imm <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -379,6 +382,7 @@ always @(posedge clk, posedge rst) begin
         keep_we  <= nx_keep_we;
         nodummy_fetch <= nx_nodummy_fetch;
         goxec    <= nx_goexec;
+        exec_imm <= nx_exec_imm;
         if( latch_op ) last_op <= op[7:0];
     end
 end

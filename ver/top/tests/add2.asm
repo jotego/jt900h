@@ -13,7 +13,9 @@
     ld xix,data
     incf
     ld wa,0x1101
-    add wa,(xix)
+    add wa,(xix)    ; wa = dbff
+    add a,1         ; a = 0, carry=1
+    adc d,(xix+1)   ; d = cb
     nop
     nop
 test_end:

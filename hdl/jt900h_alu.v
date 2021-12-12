@@ -66,7 +66,8 @@ always @* begin
     case( sel )
         default:;
         ALU_MOVE: rslt = imm;
-        ALU_ADD, ALU_ADC: begin    // also INC, also MULA
+        ALU_ADD, ALU_ADC: // also INC, also MULA
+        begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op2[3:0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
@@ -150,14 +151,16 @@ always @* begin
 end
 
 always @(posedge clk) if(cen) begin
-    dout     <= rslt;
-    sign     <= nx_s;
-    zero     <= nx_z;
-    halfc    <= nx_h;
-    overflow <= nx_v;
-    negative <= nx_n;
-    carry    <= nx_c;
-    alu_we   <= w;
+    if( w!=0 ) begin
+        dout     <= rslt;
+        sign     <= nx_s;
+        zero     <= nx_z;
+        halfc    <= nx_h;
+        overflow <= nx_v;
+        negative <= nx_n;
+        carry    <= nx_c;
+    end
+    alu_we <= w;
 end
 
 
