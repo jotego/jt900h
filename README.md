@@ -2,6 +2,10 @@
 
 Verilog module compatible with Toshiba TLCS900/H CPU.
 
+You can show your appreciation through
+* [Patreon](https://patreon.com/topapate), by supporting releases
+* [Paypal](https://paypal.me/topapate), with a donation
+
 (c) Jose Tejada 2021
 
 ## Folder Description

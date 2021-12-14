@@ -119,8 +119,8 @@ always @* begin
                 rslt[15:0] = op0[15:0] - 16'd4;
             end
         end
-        ALU_SUB, ALU_SBC: // also INC, also MULA
-        begin // checking w prevents executing twice the same inst.
+        ALU_SUB, ALU_SBC:
+        begin
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
@@ -210,7 +210,7 @@ always @(posedge clk, posedge rst)  begin
         carry    <= 0;
         alu_we   <= 0;
     end else if(cen) begin
-        if( w!=0 ) begin
+        if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout     <= rslt;
             sign     <= nx_s;
             zero     <= nx_z;
