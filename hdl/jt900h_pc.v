@@ -26,6 +26,9 @@ module jt900h_pc(
     input             op_ok,
     input      [ 1:0] ctl_fetched,
 
+    input      [23:0] imm,
+    input             we,
+
     output reg [31:0] pc
 );
 
@@ -33,8 +36,11 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         pc <= 0;
     end else if(cen) begin
-        if( op_ok )
+        if( we ) begin
+            pc[23:0] <= imm;    // should I clear the upper bits?
+        end else if( op_ok ) begin
             pc <= pc + {29'd0, idx_en ? idx_fetched : {1'b0,ctl_fetched}};
+        end
     end
 end
 

@@ -43,6 +43,9 @@ wire        reg_dec;
 wire        idx_en;
 wire        idx_ok, idx_wr, data_sel;
 
+// PC control
+wire        pc_we;
+
 // Register bank
 wire [31:0] pc;
 // offset register
@@ -151,6 +154,7 @@ jt900h_ctrl u_ctrl(
     .dec_rfp        ( dec_rfp           ),
 
     .fetched        ( ctl_fetch         ),
+    .pc_we          ( pc_we             ),
 
     .ldram_en       ( ldram_en          ),
     .stram_en       ( idx_wr            ),
@@ -165,6 +169,7 @@ jt900h_ctrl u_ctrl(
     .alu_op         ( alu_op            ),
     .alu_smux       ( alu_smux          ),
     .alu_wait       ( alu_wait          ),
+    .flags          ( flags             ),
 
     .op             ( buf_dout          ),
     .op_ok          ( buf_rdy           ),
@@ -205,6 +210,9 @@ jt900h_pc u_pc(
     .idx_en         ( idx_en            ),
     .idx_fetched    ( idx_fetch         ),
     .ctl_fetched    ( ctl_fetch         ),
+
+    .imm            ( alu_imm[23:0]     ),
+    .we             ( pc_we             ),
 
     .pc             ( pc                )
 );

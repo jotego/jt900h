@@ -38,13 +38,14 @@ reg [31:0] op2, rslt;
 reg        sign, zero, halfc, overflow, negative, carry;
 reg        nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
 reg [ 2:0] cc;
-wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v;
+wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
 
 assign flags   = {sign, zero, 1'b0, halfc, 1'b0, overflow, negative, carry};
 assign is_zero = w[0] ? rslt[7:0]==0 : w[1] ? rslt[15:0]==0 : rslt[31:0]==0;
 assign rslt_sign = w[0] ? rslt[7] : w[1] ? rslt[15] : rslt[31];
 assign rslt_c  = w[0] ? cc[0] : w[1] ? cc[1] : cc[2];
 assign rslt_v  = nx_s ^ op0_s ^ op1_s;
+assign rslt_even = w[0] ? ~^rslt[7:0] : ~^rslt[15:0];
 assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
 
@@ -84,15 +85,39 @@ always @* begin
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_h = 1;
-            nx_v = rslt_v;
+            nx_v = rslt_even;
+            nx_n = 0;
+            nx_c = 0;
+        end
+        ALU_OR: begin
+            rslt = op0 | op2;
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_h = 0;
+            nx_v = rslt_even;
             nx_n = 0;
             nx_c = 0;
         end
         ALU_MDEC1: begin
             if( (op0[15:0] & op2[15:0]) ==0 )
-                rslt[15:0] = (op0[15:0] & ~op2[15:0]) | op2[15:0];
-            else
-                rslt[15:0] = op0[15:0]-16'd1;
+                rslt[15:0] = op0[15:0] + op2[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] - 16'd1;
+            end
+        end
+        ALU_MDEC2: begin
+            if( (op0[15:0] & op2[15:0]) ==0 )
+                rslt[15:0] = op0[15:0] + op2[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] - 16'd2;
+            end
+        end
+        ALU_MDEC4: begin
+            if( (op0[15:0] & op2[15:0]) ==0 )
+                rslt[15:0] = op0[15:0] + op2[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] - 16'd4;
+            end
         end
         // ALU_SUB: rslt = op0-op2;   // also DEC and CP
         // ALU_SBC: rslt = op0-op2-carry;
@@ -164,18 +189,28 @@ always @* begin
         endcase
 end
 
-always @(posedge clk) if(cen) begin
-    if( w!=0 ) begin
-        dout     <= rslt;
-        sign     <= nx_s;
-        zero     <= nx_z;
-        halfc    <= nx_h;
-        overflow <= nx_v;
-        negative <= nx_n;
-        carry    <= nx_c;
+always @(posedge clk, posedge rst)  begin
+    if( rst ) begin
+        dout     <= 0;
+        sign     <= 0;
+        zero     <= 0;
+        halfc    <= 0;
+        overflow <= 0;
+        negative <= 0;
+        carry    <= 0;
+        alu_we   <= 0;
+    end else if(cen) begin
+        if( w!=0 ) begin
+            dout     <= rslt;
+            sign     <= nx_s;
+            zero     <= nx_z;
+            halfc    <= nx_h;
+            overflow <= nx_v;
+            negative <= nx_n;
+            carry    <= nx_c;
+        end
+        alu_we <= w;
     end
-    alu_we <= w;
 end
-
 
 endmodule

@@ -21,7 +21,9 @@ module jt900h_ctrl(
     input             clk,
     input             cen,
 
+    // PC
     output reg [ 1:0] fetched,    // number of bytes consumed
+    output reg        pc_we,
 
     output reg        ldram_en,
     output reg        stram_en,
@@ -42,6 +44,7 @@ module jt900h_ctrl(
     output reg [ 5:0] alu_op,
     output reg        alu_smux,
     output reg        alu_wait,
+    input      [ 7:0] flags,
 
     input      [31:0] op,
     input             op_ok,
@@ -59,6 +62,14 @@ localparam [4:0] FETCH    = 5'd0,
                  ST_RAM   = 5'd5,
                  DUMMY    = 5'd6,
                  ILLEGAL  = 5'd31;
+// Flag bits
+
+localparam  FS=7,
+            FZ=6,
+            FH=4,
+            FV=2,
+            FN=1,
+            FC=0;
 
 `include "jt900h.inc"
 
@@ -76,7 +87,9 @@ reg  [5:0] nx_alu_op;
 reg        nx_inc_rfp, nx_dec_rfp,
            nx_nodummy_fetch, nodummy_fetch,
            nx_goexec, goxec,
-           nx_exec_imm, exec_imm;
+           nx_exec_imm, exec_imm,
+           nx_pc_we,
+           nx_keep_pc_we, keep_pc_we;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -97,28 +110,30 @@ endfunction
 
 // Memory fetched requests
 always @* begin
-    fetched     = 0;
-    nx_phase    = op_phase;
-    nx_idx_en   = idx_en;
-    nx_src      = regs_src;
-    nx_dst      = regs_dst;
-    nx_alu_op   = alu_op;
-    nx_alu_imm  = alu_imm;
-    nx_alu_smux = alu_smux;
-    nx_alu_wait = alu_wait;
-    nx_ldram_en = ldram_en;
-    nx_stram_en = stram_en;
-    nx_op_zz    = op_zz;
-    nx_regs_we  = 0;
-    nx_keep_we  = keep_we;
-    latch_op    = 0;
-    req_wait    = 0;
-    nx_data_latch = data_latch;
-    nx_inc_rfp  = 0;
-    nx_dec_rfp  = 0;
+    fetched          = 0;
+    nx_phase         = op_phase;
+    nx_idx_en        = idx_en;
+    nx_src           = regs_src;
+    nx_dst           = regs_dst;
+    nx_alu_op        = alu_op;
+    nx_alu_imm       = alu_imm;
+    nx_alu_smux      = alu_smux;
+    nx_alu_wait      = alu_wait;
+    nx_ldram_en      = ldram_en;
+    nx_stram_en      = stram_en;
+    nx_op_zz         = op_zz;
+    nx_regs_we       = 0;
+    nx_keep_we       = keep_we;
+    latch_op         = 0;
+    req_wait         = 0;
+    nx_data_latch    = data_latch;
+    nx_inc_rfp       = 0;
+    nx_dec_rfp       = 0;
     nx_nodummy_fetch = nodummy_fetch;
-    nx_goexec   = goxec;
-    nx_exec_imm = exec_imm;
+    nx_goexec        = goxec;
+    nx_exec_imm      = exec_imm;
+    nx_pc_we         = op_phase==FETCH ? 0 : pc_we;
+    nx_keep_pc_we    = keep_pc_we;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -132,6 +147,7 @@ always @* begin
             nx_data_sel = 0;
             nx_keep_we  = 0;
             nx_exec_imm = 0;
+            nx_pc_we    = 0;
             casez( op[7:0] )
                 8'b10??_????,
                 8'b11??_00??,
@@ -176,13 +192,20 @@ always @* begin
                         end
                     end
                 end
+                8'b0001_101?: begin // JP 16/24-bit immediate value
+                    fetched       = 2;
+                    nx_alu_imm    = { 24'd0, op[15:8] };
+                    nx_op_zz      = !op[0] ? 2'd1: 2'd3; // 3 = special case to load 24 bits
+                    nx_phase      = FILL_IMM;
+                    nx_keep_pc_we = 1;
+                end
                 8'b0000_1100: begin
                     nx_inc_rfp = 1;
-                    fetched = 1;
+                    fetched    = 1;
                 end
                 8'b0000_1101: begin
                     nx_dec_rfp = 1;
-                    fetched = 1;
+                    fetched    = 1;
                 end
                 default:;
             endcase
@@ -216,16 +239,39 @@ always @* begin
                     nx_stram_en = 1;
                     req_wait    = 1;
                 end
-                8'b100?_0???, // ADD R,(mem) - ADC R,(mem)
-                8'b1100_0???: // AND R,(mem)
-                begin
-                    nx_phase  = LD_RAM;
-                    nx_ldram_en = 1;
-                    nx_goexec = 1;
-                    nx_dst    = expand_reg(op[2:0],op_zz);
-                    nx_src    = nx_dst;
+                8'b1101_????: begin // JP cc,mem
+                    nx_alu_imm  = { 8'd0, idx_addr };
+                    case( op[3:0] ) // conditions
+                        0: nx_pc_we = 0;    // false
+                        1: nx_pc_we = flags[FS]^flags[FV];               // signed <
+                        2: nx_pc_we = flags[FZ] | (flags[FS]^flags[FV]); // signed <=
+                        3: nx_pc_we = flags[FZ] | flags[FC];             // <=
+                        4: nx_pc_we = flags[FV];  // overflow
+                        5: nx_pc_we = flags[FS];  // minux
+                        6: nx_pc_we = flags[FZ];  // =
+                        7: nx_pc_we = flags[FC];  // carry
+                        8: nx_pc_we = 1;          // true
+                        9: nx_pc_we = ~(flags[FS]^flags[FV]); // >=
+                        10: nx_pc_we = ~(flags[FZ]|(flags[FS]^flags[FV])); // signed >
+                        11: nx_pc_we = ~(flags[FZ]|flags[FC]); // >
+                        12: nx_pc_we = ~flags[FV];
+                        13: nx_pc_we = ~flags[FS];
+                        14: nx_pc_we = ~flags[FZ];
+                        15: nx_pc_we = ~flags[FC];
+                    endcase
+                    nx_phase    = DUMMY;
                 end
-                default: nx_phase = ILLEGAL;
+                default: begin
+                    if( !op[4] ) begin // load operand from memory
+                        nx_phase  = LD_RAM;
+                        nx_ldram_en = 1;
+                        nx_goexec = 1;
+                        nx_dst    = expand_reg(op[2:0],op_zz);
+                        nx_src    = nx_dst;
+                    end else begin // store operand in memory
+                        // not implemented
+                    end
+                end
             endcase
         end
         DUMMY: begin
@@ -282,10 +328,14 @@ always @* begin
                     // nx_phase    = DUMMY;
                 end
                 8'b0011_1100, // MDEC1
+                8'b0011_1101, // MDEC2
+                8'b0011_1110, // MDEC4
                 8'b0000_0011: // LD r,#
                 begin
                     nx_alu_op   = op[7:0] == 8'b0000_0011 ? ALU_MOVE  :
                                   op[7:0] == 8'b0011_1100 ? ALU_MDEC1 :
+                                  op[7:0] == 8'b0011_1101 ? ALU_MDEC2 :
+                                  op[7:0] == 8'b0011_1110 ? ALU_MDEC4 :
                                   ALU_NOP;
                     nx_alu_smux = 1;
                     fetched     = 2;
@@ -300,6 +350,7 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
+                8'b1110_0???, // OR R,r
                 8'b100?_0???, // ADD R,r
                 8'b1100_0???: // AND R,r
                 begin
@@ -307,6 +358,7 @@ always @* begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   =
+                        op[7:3] == 5'b1110_0 ? ALU_OR  :
                         op[7:3] == 5'b1000_0 ? ALU_ADD :
                         op[7:3] == 5'b1001_0 ? ALU_ADC :
                         op[7:3] == 5'b1100_0 ? ALU_AND :
@@ -317,10 +369,12 @@ always @* begin
                         nx_alu_smux = 1;
                 end
                 8'b1100_100?, // ADD r,# - ADC r,#
+                8'b1100_1110, // OR r,#
                 8'b1100_1100: // AND r,#
                 begin
                     nx_alu_op   = op[7:0]==8'b1100_1000 ? ALU_ADD :
                                   op[7:0]==8'b1100_1001 ? ALU_ADC :
+                                  op[7:0]==8'b1100_1110 ? ALU_OR :
                                   ALU_AND;
                     nx_alu_smux = 1;
                     fetched     = 2;
@@ -343,14 +397,22 @@ always @* begin
             nx_alu_wait = 0;
             nx_phase = FETCH;
             nx_regs_we = keep_we;
-            if( op_zz == 1 ) begin
-                nx_alu_imm[31:16] = 0;
-                nx_alu_imm[15:8] = op[7:0];
-                fetched = 1;
-            end else begin
-                nx_alu_imm[31:8] = op[23:0];
-                fetched = 3;
-            end
+            nx_pc_we = keep_pc_we;
+            case ( op_zz )
+                1: begin
+                    nx_alu_imm[31:16] = 0;
+                    nx_alu_imm[15:8] = op[7:0];
+                    fetched = 1;
+                end
+                2: begin
+                    nx_alu_imm[31:8] = op[23:0];
+                    fetched = 3;
+                end
+                3: begin // special case to signal 3 bytes, used for JP instruction
+                    nx_alu_imm[23:8] = op[15:0];
+                    fetched = 2;
+                end
+            endcase
         end
         default: nx_phase=ILLEGAL;
     endcase
@@ -382,6 +444,8 @@ always @(posedge clk, posedge rst) begin
         nodummy_fetch <= 0;
         goxec    <= 0;
         exec_imm <= 0;
+        keep_pc_we <= 0;
+        pc_we    <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -405,6 +469,8 @@ always @(posedge clk, posedge rst) begin
         nodummy_fetch <= nx_nodummy_fetch;
         goxec    <= nx_goexec;
         exec_imm <= nx_exec_imm;
+        keep_pc_we <= nx_keep_pc_we;
+        pc_we    <= nx_pc_we;
         if( latch_op ) last_op <= op[7:0];
     end
 end
