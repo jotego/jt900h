@@ -119,8 +119,18 @@ always @* begin
                 rslt[15:0] = op0[15:0] - 16'd4;
             end
         end
-        // ALU_SUB: rslt = op0-op2;   // also DEC and CP
-        // ALU_SBC: rslt = op0-op2-carry;
+        ALU_SUB, ALU_SBC: // also INC, also MULA
+        begin // checking w prevents executing twice the same inst.
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
+            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
+            { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_n = 1;
+            nx_c = rslt_c;
+            nx_v = rslt_v;
+        end
         // ALU_OR:  rslt = op0|op2; // use it for SET bit,dst too?
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4

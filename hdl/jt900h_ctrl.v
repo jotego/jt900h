@@ -350,6 +350,7 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
+                8'b1010_0???, // SUB R,r
                 8'b1110_0???, // OR R,r
                 8'b100?_0???, // ADD R,r
                 8'b1100_0???: // AND R,r
@@ -358,6 +359,7 @@ always @* begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   =
+                        op[7:3] == 5'b1010_0 ? ALU_SUB :
                         op[7:3] == 5'b1110_0 ? ALU_OR  :
                         op[7:3] == 5'b1000_0 ? ALU_ADD :
                         op[7:3] == 5'b1001_0 ? ALU_ADC :
@@ -368,13 +370,16 @@ always @* begin
                     if( exec_imm )
                         nx_alu_smux = 1;
                 end
+                8'b1100_101?, // SUB r,# - SBC r,#
                 8'b1100_100?, // ADD r,# - ADC r,#
                 8'b1100_1110, // OR r,#
                 8'b1100_1100: // AND r,#
                 begin
                     nx_alu_op   = op[7:0]==8'b1100_1000 ? ALU_ADD :
                                   op[7:0]==8'b1100_1001 ? ALU_ADC :
-                                  op[7:0]==8'b1100_1110 ? ALU_OR :
+                                  op[7:0]==8'b1100_1010 ? ALU_SUB :
+                                  op[7:0]==8'b1100_1011 ? ALU_SBC :
+                                  op[7:0]==8'b1100_1110 ? ALU_OR  :
                                   ALU_AND;
                     nx_alu_smux = 1;
                     fetched     = 2;

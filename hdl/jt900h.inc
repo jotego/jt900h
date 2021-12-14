@@ -6,5 +6,7 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_MDEC1= 6'd5,
                  ALU_MDEC2= 6'd6,
                  ALU_MDEC4= 6'd7,
-                 ALU_OR   = 6'd8
+                 ALU_OR   = 6'd8,
+                 ALU_SUB  = 6'd9,
+                 ALU_SBC  = 6'd10
                  ;
