@@ -199,6 +199,10 @@ always @* begin
             endcase
             nx_v = op1[15:0]==0;
         end
+        ALU_CCF: begin
+            nx_c = ~carry;
+            nx_n = 0;
+        end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
@@ -214,7 +218,6 @@ always @* begin
         ANDCF: carry <= carry & op2[ op0[3:0] ]; // reuse for RCF - reset carry
         ORCF:  carry <= carry | op2[ op0[3:0] ]; // reuse for SCF - set carry
         XORCF: carry <= carry ^ op2[ op0[3:0] ];
-        CCF:   carry <= ~carry;
         ZCF:   carry <= ~zero;
         TSET: begin // reuse for BIT
             zero <= ~op2[op0[3:0]];
