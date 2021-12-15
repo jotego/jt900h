@@ -53,11 +53,13 @@ CODELEN=$(cat test.bin|wc -c)
 # The last bytes are NOPs
 CODELEN=$((CODELEN-8))
 
-iverilog test.v -f files.f -o sim -DSIMULATION $EXTRA \
+SIMEXE=sim_${RANDOM}_${RANDOM}
+
+iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat test.hex|wc -l) \
     -I../../hdl || exit $?
-./sim -lxt
-rm -f sim
+./$SIMEXE -lxt
+rm -f $SIMEXE
 
 CMPFILE=tests/$(basename $TEST .asm).out
 

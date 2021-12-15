@@ -128,6 +128,8 @@ always @(posedge clk, posedge rst) begin
         if( reg_dec )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= dst_out;
+
+        // Register writes from ALU/RAM
         if( we[0] ) begin
             if( r1sel[7] )
                 ptrs[r1sel[3:0]] <= data_mux[7:0];

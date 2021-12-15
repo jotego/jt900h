@@ -207,12 +207,17 @@ always @* begin
             rslt = op0;
             rslt[ {1'b0,imm[3:0]} ] = ~rslt[ {1'b0,imm[3:0]} ];
         end
+        ALU_CPL: begin
+            rslt = ~op2;
+            nx_h = 1;
+            nx_n = 1;
+        end
+
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
         /*
         NEG: rslt = -op0;
-        CPL: rslt = ~op0;
         EXTZ: rslt = w[1] ? {24'd0,op0[7:0]} : {16'd0,op0[15:0]};
         EXTS: rslt = w[1] ? {16'd0,{8{op0[7]}}, op0[7:0]} : {{16{op0[15]}},op0[15:0]};
         PAA: rslt = op0[0] ? op0+1'd1 : op0;

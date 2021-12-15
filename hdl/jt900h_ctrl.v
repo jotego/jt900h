@@ -159,6 +159,9 @@ always @* begin
             nx_was_load = 0;
             nx_goexec   = 0;
             casez( op[7:0] )
+                8'b0000_0000: begin // NOP
+                    fetched = 1;
+                end
                 8'b10??_????,
                 8'b11??_00??,
                 8'b11??_010?: begin // start indexed addressing
@@ -356,6 +359,11 @@ always @* begin
                     fetched     = 1;
                     nx_regs_we  = expand_zz( op_zz );
                     // nx_phase    = DUMMY;
+                end
+                9'b0000_0110_?: begin // CPL dst
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_alu_op  = ALU_CPL;
+                    fetched    = 1;
                 end
                 9'b0011_0010_?: begin // CHG #4,dst
                     nx_alu_imm = { 28'd0,op[11:8] };
