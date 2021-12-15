@@ -364,6 +364,12 @@ always @* begin
                     nx_flag_we  = 1;
                     fetched = 1;
                 end
+                9'b0000_111?_?: begin // BS1B, BS1F
+                    nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;
+                    nx_dst     = 8'hE0;
+                    nx_regs_we = expand_zz( op_zz );
+                    fetched    = 1;
+                end
                 9'b0011_1100_?, // MDEC1
                 9'b0011_1101_?, // MDEC2
                 9'b0011_1110_?, // MDEC4

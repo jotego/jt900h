@@ -10,5 +10,8 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_SUB  = 6'd9,
                  ALU_SBC  = 6'd10,
                  ALU_BIT  = 6'd11,
-                 ALU_BITX = 6'd12
+                 ALU_BITX = 6'd12,
+                 ALU_BS1B = 6'd13,
+                 ALU_BS1F = 6'd14,
+                 ALU_CCF  = 6'd15
                  ;
