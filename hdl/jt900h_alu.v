@@ -79,7 +79,7 @@ always @* begin
 
     case( sel )
         default:;
-        ALU_MOVE: rslt = sel_imm ? imm : op0;
+        ALU_MOVE: rslt = op2;
         ALU_ADD, ALU_ADC: // also INC, also MULA
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
@@ -202,6 +202,10 @@ always @* begin
         ALU_CCF: begin
             nx_c = ~carry;
             nx_n = 0;
+        end
+        ALU_CHG: begin
+            rslt = op0;
+            rslt[ {1'b0,imm[3:0]} ] = ~rslt[ {1'b0,imm[3:0]} ];
         end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4

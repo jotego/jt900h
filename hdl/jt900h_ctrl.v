@@ -284,6 +284,7 @@ always @* begin
                     endcase
                     nx_phase    = DUMMY;
                 end
+                //8'b1100_0???, // CHG #3,(mem)
                 8'b1100_1???: begin // BIT #3,(mem)
                     nx_phase    = LD_RAM;
                     nx_ldram_en = 1;
@@ -355,6 +356,13 @@ always @* begin
                     fetched     = 1;
                     nx_regs_we  = expand_zz( op_zz );
                     // nx_phase    = DUMMY;
+                end
+                9'b0011_0010_?: begin // CHG #4,dst
+                    nx_alu_imm = { 28'd0,op[11:8] };
+                    nx_alu_op   = ALU_CHG;
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_alu_smux = 1;
+                    fetched     = 2;
                 end
                 9'b0011_0011_?: begin // BIT #4,r
                     nx_alu_imm = { 28'd0,op[11:8] };
