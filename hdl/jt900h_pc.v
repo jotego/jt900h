@@ -32,6 +32,10 @@ module jt900h_pc(
     output reg [31:0] pc
 );
 
+`ifdef SIMULATION
+    wire [11:0] pc_short = pc[11:0];
+`endif
+
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         pc <= 0;

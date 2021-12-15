@@ -26,6 +26,8 @@ module jt900h_regs(
     output reg [ 1:0] rfp,          // register file pointer
     input             inc_rfp,
     input             dec_rfp,
+    input             rfp_we,
+    input      [ 1:0] imm,
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
     input      [ 1:0] reg_step,
@@ -160,8 +162,9 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         rfp <= 0;
     end else if(cen) begin
-        if( inc_rfp ) rfp<=rfp+2'd1;
-        if( dec_rfp ) rfp<=rfp-2'd1;
+        if( inc_rfp ) rfp <= rfp+2'd1;
+        if( dec_rfp ) rfp <= rfp-2'd1;
+        if( rfp_we  ) rfp <= imm;
     end
 end
 

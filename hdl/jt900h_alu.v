@@ -20,9 +20,9 @@ module jt900h_alu(
     input             rst,
     input             clk,
     input             cen,
-    input      [31:0] op0,
-    input      [31:0] op1,
-    input      [31:0] imm,
+    input      [31:0] op0,      // destination
+    input      [31:0] op1,      // source
+    input      [31:0] imm,      // alternative source
     input             sel_imm,
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,
@@ -33,18 +33,26 @@ module jt900h_alu(
 
 `include "jt900h.inc"
 
-reg [15:0] stcf;
-reg [31:0] op2, rslt;
-reg        sign, zero, halfc, overflow, negative, carry;
-reg        nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
-reg [ 2:0] cc;
-wire       is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
+reg  [15:0] stcf;
+reg  [31:0] op2, rslt;
+reg         sign, zero, halfc, overflow, negative, carry;
+reg         nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
+reg  [ 2:0] cc;
+wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
+reg  [32:0] ext_op0, ext_op2, ext_rslt;
+
+function [32:0] extend( input [31:0] x );
+    extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
+             w[1] ? { {17{x[15]}}, x[15:0] } : { x[31], x };
+endfunction
 
 assign flags   = {sign, zero, 1'b0, halfc, 1'b0, overflow, negative, carry};
 assign is_zero = w[0] ? rslt[7:0]==0 : w[1] ? rslt[15:0]==0 : rslt[31:0]==0;
 assign rslt_sign = w[0] ? rslt[7] : w[1] ? rslt[15] : rslt[31];
 assign rslt_c  = w[0] ? cc[0] : w[1] ? cc[1] : cc[2];
-assign rslt_v  = nx_s ^ op0_s ^ op1_s;
+assign rslt_v  = w[0] ? ext_rslt[32]^rslt[ 7] :
+                 w[1] ? ext_rslt[32]^rslt[15] :
+                        ext_rslt[32]^rslt[31];
 assign rslt_even = w[0] ? ~^rslt[7:0] : ~^rslt[15:0];
 assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
@@ -64,16 +72,20 @@ always @* begin
     nx_n = negative;
     nx_c = carry;
     rslt = dout;
+    ext_op0 = extend(op0);
+    ext_op2 = extend(op2);
+    ext_rslt = 0; // assign it for operations that alter the V bit
 
     case( sel )
         default:;
         ALU_MOVE: rslt = sel_imm ? imm : op0;
         ALU_ADD, ALU_ADC: // also INC, also MULA
         begin // checking w prevents executing twice the same inst.
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} + {1'b0,op2[3:0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
+            ext_rslt = ext_op0 + ext_op2;
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 0;
@@ -125,6 +137,7 @@ always @* begin
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
+            ext_rslt = ext_op0 - ext_op2;
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 1;

@@ -54,6 +54,7 @@ wire [15:0] op;
 wire [ 1:0] ctl_fetch;
 wire [ 2:0] idx_fetch;
 wire [23:0] idx_addr;
+wire        rfp_we;
 
 wire [ 2:0] regs_we, idx_len;
 wire [ 7:0] regs_src, regs_dst;
@@ -81,6 +82,9 @@ jt900h_regs u_regs(
     .rfp            ( rfp               ),          // register file pointer
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
+    .rfp_we         ( rfp_we            ),
+    .imm            ( alu_imm[1:0]      ),  // used for LDF only
+
 
     .alu_dout       ( alu_dout          ),
     .ram_dout       ( data_latch        ),
@@ -134,8 +138,8 @@ jt900h_alu u_alu(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
-    .op0            ( src_out           ),
-    .op1            ( dst_out           ),
+    .op0            ( dst_out           ),
+    .op1            ( src_out           ),
     .imm            ( alu_imm           ),
     .sel_imm        ( alu_smux          ),
     .w              ( regs_we           ),      // operation width
@@ -152,6 +156,7 @@ jt900h_ctrl u_ctrl(
 
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
+    .rfp_we         ( rfp_we            ),
 
     .fetched        ( ctl_fetch         ),
     .pc_we          ( pc_we             ),

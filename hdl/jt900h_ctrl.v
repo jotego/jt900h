@@ -38,6 +38,7 @@ module jt900h_ctrl(
     // RFP
     output reg        inc_rfp,
     output reg        dec_rfp,
+    output reg        rfp_we,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -89,7 +90,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_goexec, goxec,
            nx_exec_imm, exec_imm,
            nx_pc_we,
-           nx_keep_pc_we, keep_pc_we;
+           nx_keep_pc_we, keep_pc_we,
+           nx_rfp_we;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -134,6 +136,7 @@ always @* begin
     nx_exec_imm      = exec_imm;
     nx_pc_we         = op_phase==FETCH ? 0 : pc_we;
     nx_keep_pc_we    = keep_pc_we;
+    nx_rfp_we        = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -172,7 +175,15 @@ always @* begin
                     fetched  = 2;
                     nx_phase = EXEC;
                 end
-                8'b0???_0???: begin // LD R,# 0zzz_0RRR, register and immediate value
+                8'b0001_0111: begin // LDF
+                    nx_rfp_we  = 1;
+                    nx_alu_imm = { 24'd0, op[15:8] };
+                    fetched    = 2;
+                end
+                8'b0010_0???,   // byte
+                8'b0011_0???,   // word
+                8'b0100_0???:   // long word
+                begin // LD R,# 0zzz_0RRR, register and immediate value
                     if( op[7:0]==0 ) begin
                         fetched = 1; // NOP
                     end else begin
@@ -451,6 +462,7 @@ always @(posedge clk, posedge rst) begin
         exec_imm <= 0;
         keep_pc_we <= 0;
         pc_we    <= 0;
+        rfp_we   <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -476,6 +488,7 @@ always @(posedge clk, posedge rst) begin
         exec_imm <= nx_exec_imm;
         keep_pc_we <= nx_keep_pc_we;
         pc_we    <= nx_pc_we;
+        rfp_we   <= nx_rfp_we;
         if( latch_op ) last_op <= op[7:0];
     end
 end
