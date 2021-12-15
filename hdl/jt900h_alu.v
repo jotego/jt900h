@@ -24,6 +24,7 @@ module jt900h_alu(
     input      [31:0] op1,      // source
     input      [31:0] imm,      // alternative source
     input             sel_imm,
+    input             flag_we,   // instructions that affect the flags
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,
     input      [ 5:0] sel,      // operation selection
@@ -144,7 +145,16 @@ always @* begin
             nx_c = rslt_c;
             nx_v = rslt_v;
         end
-        // ALU_OR:  rslt = op0|op2; // use it for SET bit,dst too?
+        ALU_BIT: begin
+            nx_z = ~op1[ {1'b0,imm[3:0]} ];
+            nx_n = 0;
+            nx_h = 1;
+        end
+        ALU_BITX: begin
+            nx_z = ~imm[ {2'b0,imm[11:9]} ];
+            nx_n = 0;
+            nx_h = 1;
+        end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
@@ -225,6 +235,8 @@ always @(posedge clk, posedge rst)  begin
     end else if(cen) begin
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout     <= rslt;
+        end
+        if( w!=0 || flag_we ) begin
             sign     <= nx_s;
             zero     <= nx_z;
             halfc    <= nx_h;
