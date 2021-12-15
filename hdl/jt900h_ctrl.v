@@ -262,7 +262,7 @@ always @* begin
                     nx_phase    = DUMMY;
                 end
                 default: begin
-                    if( !op[4] ) begin // load operand from memory
+                    if( !op[3] ) begin // load operand from memory
                         nx_phase  = LD_RAM;
                         nx_ldram_en = 1;
                         nx_goexec = 1;
