@@ -44,7 +44,7 @@ wire        idx_en;
 wire        idx_ok, idx_wr, data_sel;
 
 // PC control
-wire        pc_we;
+wire        pc_we, pc_rel;
 
 // Register bank
 wire [31:0] pc;
@@ -67,7 +67,7 @@ wire [ 7:0] flags;
 wire [ 2:0] alu_we;
 wire        alu_smux;
 wire        alu_wait;
-wire        flag_we;
+wire        flag_we, djnz;
 
 // Memory controller
 wire        ldram_en;
@@ -148,6 +148,7 @@ jt900h_alu u_alu(
     .alu_we         ( alu_we            ),      // delayed version of regs_we
     .sel            ( alu_op            ),      // operation selection
     .flags          ( flags             ),
+    .djnz           ( djnz              ),
     .dout           ( alu_dout          )
 );
 
@@ -162,6 +163,7 @@ jt900h_ctrl u_ctrl(
 
     .fetched        ( ctl_fetch         ),
     .pc_we          ( pc_we             ),
+    .pc_rel         ( pc_rel            ),
 
     .ldram_en       ( ldram_en          ),
     .stram_en       ( idx_wr            ),
@@ -178,6 +180,7 @@ jt900h_ctrl u_ctrl(
     .alu_wait       ( alu_wait          ),
     .flags          ( flags             ),
     .flag_we        ( flag_we           ),
+    .djnz           ( djnz              ),
 
     .op             ( buf_dout          ),
     .op_ok          ( buf_rdy           ),
@@ -221,6 +224,7 @@ jt900h_pc u_pc(
 
     .imm            ( alu_imm[23:0]     ),
     .we             ( pc_we             ),
+    .rel            ( pc_rel            ),
 
     .pc             ( pc                )
 );

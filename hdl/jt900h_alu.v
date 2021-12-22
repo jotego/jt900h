@@ -28,7 +28,10 @@ module jt900h_alu(
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,
     input      [ 5:0] sel,      // operation selection
+    // Flags
     output     [ 7:0] flags,
+    output reg        djnz,
+
     output reg [31:0] dout
 );
 
@@ -37,7 +40,7 @@ module jt900h_alu(
 reg  [15:0] stcf;
 reg  [31:0] op2, rslt;
 reg         sign, zero, halfc, overflow, negative, carry;
-reg         nx_s, nx_z, nx_h, nx_v, nx_n, nx_c;
+reg         nx_s, nx_z, nx_h, nx_v, nx_n, nx_c, nx_djnz;
 reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
@@ -76,6 +79,7 @@ always @* begin
     ext_op0 = extend(op0);
     ext_op2 = extend(op2);
     ext_rslt = 0; // assign it for operations that alter the V bit
+    nx_djnz  = djnz;
 
     case( sel )
         default:;
@@ -212,6 +216,19 @@ always @* begin
             nx_h = 1;
             nx_n = 1;
         end
+        // ALU_DEC: begin
+        //     rslt =
+        // end
+
+        ALU_DJNZ: begin
+            if( w[1] ) begin
+                rslt[15:0] = op0[15:0] - 16'd1;
+                nx_djnz    = rslt[15:0]==0;
+            end else begin
+                rslt[7:0] = op0[ 7:0] - 8'd1;
+                nx_djnz   = rslt[7:0]==0;
+            end
+        end
 
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
@@ -249,6 +266,7 @@ always @(posedge clk, posedge rst)  begin
         negative <= 0;
         carry    <= 0;
         alu_we   <= 0;
+        djnz     <= 0;
     end else if(cen) begin
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout     <= rslt;
@@ -260,6 +278,7 @@ always @(posedge clk, posedge rst)  begin
             overflow <= nx_v;
             negative <= nx_n;
             carry    <= nx_c;
+            djnz     <= nx_djnz;
         end
         alu_we <= w;
     end

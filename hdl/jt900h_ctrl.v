@@ -23,7 +23,8 @@ module jt900h_ctrl(
 
     // PC
     output reg [ 1:0] fetched,    // number of bytes consumed
-    output reg        pc_we,
+    output reg        pc_we,      // absolute value write
+    output reg        pc_rel,     // relative value write
 
     output reg        ldram_en,
     output reg        stram_en,
@@ -47,6 +48,7 @@ module jt900h_ctrl(
     output reg        alu_wait,
     input      [ 7:0] flags,
     output reg        flag_we, // instructions that only affect the flags
+    input             djnz,
 
     input      [31:0] op,
     input             op_ok,
@@ -63,6 +65,7 @@ localparam [4:0] FETCH    = 5'd0,
                  FILL_IMM = 5'd4,
                  ST_RAM   = 5'd5,
                  DUMMY    = 5'd6,
+                 DJNZ     = 5'd7,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -90,7 +93,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_nodummy_fetch, nodummy_fetch,
            nx_goexec, goxec,
            nx_exec_imm, exec_imm,
-           nx_pc_we,
+           nx_pc_we, nx_pc_rel,
            nx_keep_pc_we, keep_pc_we,
            nx_rfp_we,
            nx_was_load, was_load,
@@ -138,6 +141,7 @@ always @* begin
     nx_goexec        = goxec;
     nx_exec_imm      = exec_imm;
     nx_pc_we         = op_phase==FETCH ? 0 : pc_we;
+    nx_pc_rel        = 0;
     nx_keep_pc_we    = keep_pc_we;
     nx_rfp_we        = 0;
     nx_was_load      = was_load;
@@ -337,6 +341,13 @@ always @* begin
             nx_idx_len  = 0;
             fetched     = 1;  // this will set the RAM wait flag too
         end
+        DJNZ: begin
+            nx_alu_imm = { 24'd0, op[7:0] };
+            nx_pc_rel  = !djnz;
+            fetched    = 1;
+            nx_phase   = DUMMY;
+            nx_nodummy_fetch = 1;
+        end
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
             casez( { op[7:0], was_load } )
@@ -364,6 +375,12 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     nx_alu_op  = ALU_CPL;
                     fetched    = 1;
+                end
+                9'b0001_1100_?: begin // DJNZ
+                    nx_alu_op = ALU_DJNZ;
+                    nx_regs_we = expand_zz( op_zz );
+                    fetched   = 1;
+                    nx_phase  = DJNZ;
                 end
                 9'b0011_0010_?: begin // CHG #4,dst
                     nx_alu_imm = { 28'd0,op[11:8] };
@@ -515,6 +532,7 @@ always @(posedge clk, posedge rst) begin
         exec_imm <= 0;
         keep_pc_we <= 0;
         pc_we    <= 0;
+        pc_rel   <= 0;
         rfp_we   <= 0;
         was_load <= 0;
         flag_we  <= 0;
@@ -543,6 +561,7 @@ always @(posedge clk, posedge rst) begin
         exec_imm <= nx_exec_imm;
         keep_pc_we <= nx_keep_pc_we;
         pc_we    <= nx_pc_we;
+        pc_rel   <= nx_pc_rel;
         rfp_we   <= nx_rfp_we;
         was_load <= nx_was_load;
         flag_we  <= nx_flag_we;
