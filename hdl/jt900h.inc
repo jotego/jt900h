@@ -21,6 +21,7 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_EXTS = 6'd20,
                  ALU_EXTZ = 6'd21,
                  ALU_CP   = 6'd22,
+                 ALU_XOR  = 6'd23,
 
                  ALU_LAST = 6'd63
                  ;

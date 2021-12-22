@@ -438,16 +438,18 @@ always @* begin
                     end
                 end
                 9'b1111_0???_?, // CP  R,r
+                9'b1110_0???_?, // OR  R,r
+                9'b1101_0???_?, // XOR R,r
+                9'b1100_0???_?, // AND R,r
                 9'b1010_0???_?, // SUB R,r
-                9'b1110_0???_?, // OR R,r
-                9'b100?_0???_?, // ADD R,r
-                9'b1100_0???_?: // AND R,r
+                9'b100?_0???_?: // ADD R,r
                 begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   =
                         op[7:3] == 5'b1111_0 ? ALU_CP  :
                         op[7:3] == 5'b1110_0 ? ALU_OR  :
+                        op[7:3] == 5'b1101_0 ? ALU_XOR :
                         op[7:3] == 5'b1100_0 ? ALU_AND :
                         op[7:3] == 5'b1010_0 ? ALU_SUB :
                         op[7:3] == 5'b1001_0 ? ALU_ADC :
@@ -466,6 +468,7 @@ always @* begin
                 9'b1100_101?_0, // SUB r,# - SBC r,#
                 9'b1100_100?_0, // ADD r,# - ADC r,#
                 9'b1100_1110_0, // OR r,#
+                9'b1100_1101_0, // XOR r,#
                 9'b1100_1100_0: // AND r,#
                 begin
                     nx_alu_op   =
@@ -475,6 +478,7 @@ always @* begin
                                   op[7:0]==8'b1100_1010 ? ALU_SUB :
                                   op[7:0]==8'b1100_1011 ? ALU_SBC :
                                   op[7:0]==8'b1100_1110 ? ALU_OR  :
+                                  op[7:0]==8'b1100_1101 ? ALU_XOR :
                                   ALU_AND;
                     nx_alu_smux = 1;
                     fetched     = 2;

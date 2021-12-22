@@ -108,8 +108,8 @@ always @* begin
             nx_n = 0;
             nx_c = 0;
         end
-        ALU_OR: begin
-            rslt = op0 | op2;
+        ALU_OR, ALU_XOR: begin
+            rslt = sel==ALU_OR ? op0 | op2 : op0 ^ op2;
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_h = 0;
