@@ -436,32 +436,42 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
+                9'b1111_0???_?, // CP  R,r
                 9'b1010_0???_?, // SUB R,r
                 9'b1110_0???_?, // OR R,r
                 9'b100?_0???_?, // ADD R,r
                 9'b1100_0???_?: // AND R,r
                 begin
-                    nx_keep_we  = expand_zz( op_zz );
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
                     nx_alu_op   =
-                        op[7:3] == 5'b1010_0 ? ALU_SUB :
+                        op[7:3] == 5'b1111_0 ? ALU_CP  :
                         op[7:3] == 5'b1110_0 ? ALU_OR  :
-                        op[7:3] == 5'b1000_0 ? ALU_ADD :
-                        op[7:3] == 5'b1001_0 ? ALU_ADC :
                         op[7:3] == 5'b1100_0 ? ALU_AND :
+                        op[7:3] == 5'b1010_0 ? ALU_SUB :
+                        op[7:3] == 5'b1001_0 ? ALU_ADC :
+                        op[7:3] == 5'b1000_0 ? ALU_ADD :
                         ALU_NOP;
-                    nx_regs_we  = expand_zz( op_zz );
+                    if( op[7:3] == 5'b1111_0 ) begin
+                        nx_regs_we = 0;
+                        nx_flag_we = 1;
+                    end else begin
+                        nx_regs_we = expand_zz( op_zz );
+                    end
+                    nx_keep_we  = nx_regs_we;
                     nx_phase    = DUMMY;
                     if( exec_imm )
                         nx_alu_smux = 1;
                 end
+                9'b1100_1111_0, // CP  r,#imm
                 9'b1100_101?_0, // SUB r,# - SBC r,#
                 9'b1100_100?_0, // ADD r,# - ADC r,#
                 9'b1100_1110_0, // OR r,#
                 9'b1100_1100_0: // AND r,#
                 begin
-                    nx_alu_op   = op[7:0]==8'b1100_1000 ? ALU_ADD :
+                    nx_alu_op   =
+                                  op[7:0]==8'b1100_1111 ? ALU_CP  :
+                                  op[7:0]==8'b1100_1000 ? ALU_ADD :
                                   op[7:0]==8'b1100_1001 ? ALU_ADC :
                                   op[7:0]==8'b1100_1010 ? ALU_SUB :
                                   op[7:0]==8'b1100_1011 ? ALU_SBC :
@@ -479,6 +489,11 @@ always @* begin
                         nx_alu_wait = 1;
                         nx_keep_we  = expand_zz( op_zz );
                         nx_phase = FILL_IMM;
+                    end
+                    if( op[7:0] == 8'b1100_1111 ) begin // CP
+                        nx_regs_we = 0;
+                        nx_keep_we = 0;
+                        nx_flag_we = 1;
                     end
                 end
                 default:;

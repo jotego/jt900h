@@ -80,6 +80,7 @@ always @* begin
     ext_op2 = extend(op2);
     ext_rslt = 0; // assign it for operations that alter the V bit
     nx_djnz  = djnz;
+    cc = 0;
 
     case( sel )
         default:;
@@ -136,7 +137,7 @@ always @* begin
                 rslt[15:0] = op0[15:0] - 16'd4;
             end
         end
-        ALU_SUB, ALU_SBC:
+        ALU_SUB, ALU_SBC, ALU_CP:
         begin
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
