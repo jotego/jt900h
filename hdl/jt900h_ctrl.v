@@ -408,8 +408,8 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
-                9'b0001_0011_?: begin // EXTS
-                    nx_alu_op  = ALU_EXTS;
+                9'b0001_001?_?: begin // EXTS, EXTZ
+                    nx_alu_op  = op[0] ? ALU_EXTS : ALU_EXTZ;
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
