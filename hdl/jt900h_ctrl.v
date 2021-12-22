@@ -315,6 +315,7 @@ always @* begin
             nx_nodummy_fetch = 0;
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
+            if( keep_we!=0 ) nx_flag_we = flag_we;
             nx_phase   = FETCH;
         end
         LD_RAM: begin
@@ -452,11 +453,9 @@ always @* begin
                         op[7:3] == 5'b1001_0 ? ALU_ADC :
                         op[7:3] == 5'b1000_0 ? ALU_ADD :
                         ALU_NOP;
+                    nx_regs_we = expand_zz( op_zz );
                     if( op[7:3] == 5'b1111_0 ) begin
-                        nx_regs_we = 0;
                         nx_flag_we = 1;
-                    end else begin
-                        nx_regs_we = expand_zz( op_zz );
                     end
                     nx_keep_we  = nx_regs_we;
                     nx_phase    = DUMMY;
@@ -491,8 +490,6 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                     if( op[7:0] == 8'b1100_1111 ) begin // CP
-                        nx_regs_we = 0;
-                        nx_keep_we = 0;
                         nx_flag_we = 1;
                     end
                 end

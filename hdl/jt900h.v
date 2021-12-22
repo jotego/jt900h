@@ -67,7 +67,7 @@ wire [ 7:0] flags;
 wire [ 2:0] alu_we;
 wire        alu_smux;
 wire        alu_wait;
-wire        flag_we, djnz;
+wire        flag_we, djnz, flag_only;
 
 // Memory controller
 wire        ldram_en;
@@ -106,6 +106,7 @@ jt900h_regs u_regs(
     .dst            ( regs_dst          ),
     .ram_we         ( regs_we           ),
     .alu_we         ( alu_we            ),
+    .flag_only      ( flag_only         ), // alu_we ignored if flag_we
     .dst_out        ( dst_out           ),
     // Register dump
     .dmp_addr       ( dmp_addr          ),
@@ -146,6 +147,7 @@ jt900h_alu u_alu(
     .flag_we        ( flag_we           ),
     .w              ( regs_we           ),      // operation width
     .alu_we         ( alu_we            ),      // delayed version of regs_we
+    .flag_only      ( flag_only         ),
     .sel            ( alu_op            ),      // operation selection
     .flags          ( flags             ),
     .djnz           ( djnz              ),

@@ -25,8 +25,9 @@ module jt900h_alu(
     input      [31:0] imm,      // alternative source
     input             sel_imm,
     input             flag_we,   // instructions that affect the flags
+    output reg        flag_only, // flag_we delayed one clock
     input      [ 2:0] w,        // operation width
-    output reg [ 2:0] alu_we,
+    output reg [ 2:0] alu_we,   // w delayed one clock
     input      [ 5:0] sel,      // operation selection
     // Flags
     output     [ 7:0] flags,
@@ -276,6 +277,7 @@ always @(posedge clk, posedge rst)  begin
         negative <= 0;
         carry    <= 0;
         alu_we   <= 0;
+        flag_only<= 0;
         djnz     <= 0;
     end else if(cen) begin
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
@@ -290,7 +292,8 @@ always @(posedge clk, posedge rst)  begin
             carry    <= nx_c;
             djnz     <= nx_djnz;
         end
-        alu_we <= w;
+        alu_we    <= w;
+        flag_only <= flag_we;
     end
 end
 

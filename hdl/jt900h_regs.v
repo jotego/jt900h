@@ -54,6 +54,7 @@ module jt900h_regs(
     // write result
     input       [2:0] ram_we,
     input       [2:0] alu_we,
+    input             flag_only,
     //input      [31:0] din
     // Register dump
     input      [7:0] dmp_addr,
@@ -86,7 +87,7 @@ assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
 assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 assign data_mux = data_sel ? ram_dout : alu_dout;
-assign we       = data_sel ? ram_we : alu_we;
+assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
 
 assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 
