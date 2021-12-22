@@ -408,6 +408,11 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
+                9'b0001_0011_?: begin // EXTS
+                    nx_alu_op  = ALU_EXTS;
+                    nx_regs_we = expand_zz( op_zz );
+                    fetched    = 1;
+                end
                 9'b0011_1100_?, // MDEC1
                 9'b0011_1101_?, // MDEC2
                 9'b0011_1110_?, // MDEC4

@@ -17,5 +17,8 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_CHG  = 6'd16,
                  ALU_CPL  = 6'd17,
                  ALU_DEC  = 6'd18,
-                 ALU_DJNZ = 6'd19
+                 ALU_DJNZ = 6'd19,
+                 ALU_EXTS = 6'd20,
+
+                 ALU_LAST = 6'd63
                  ;
