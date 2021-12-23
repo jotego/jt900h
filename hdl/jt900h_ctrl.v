@@ -251,8 +251,8 @@ always @* begin
             nx_idx_en = 0;
             // leave the fetched update to the next state
             // either LD_RAM or ST_RAM
-            casez( op[7:0] )
-                8'b001?_0???: begin // LD   R,(mem) 0010_0RRR
+            casez( {op[7:0], op_zz==2'b11} )
+                9'b001?_0???_?: begin // LD   R,(mem) 0010_0RRR
                                     // LDA  R,mem   001s_0RRR, but first half had zz==11
                     if( op_zz==2'b11 ) begin // LDA
                         nx_regs_we  = op[4] ? 3'b100 : 3'b010;
@@ -268,7 +268,7 @@ always @* begin
                         nx_ram_ren = 1;
                     end
                 end
-                8'b01??_0???: begin // LD (mem),R
+                9'b01??_0???_?: begin // LD (mem),R
                     nx_phase    = ST_RAM;
                     nx_op_zz    = op[5:4];
                     nx_src      = expand_reg(op[2:0],nx_op_zz);
@@ -276,7 +276,7 @@ always @* begin
                     nx_ram_wen = 1;
                     req_wait    = 1;
                 end
-                8'b1101_????: begin // JP cc,mem
+                9'b1101_????_1: begin // JP cc,mem
                     nx_alu_imm  = { 8'd0, idx_addr };
                     case( op[3:0] ) // conditions
                         0: nx_pc_we = 0;    // false
@@ -299,7 +299,7 @@ always @* begin
                     nx_phase    = DUMMY;
                 end
                 //8'b1100_0???, // CHG #3,(mem)
-                8'b1100_1???: begin // BIT #3,(mem)
+                9'b1100_1???_?: begin // BIT #3,(mem)
                     nx_phase    = LD_RAM;
                     nx_ram_ren = 1;
                     nx_goexec   = 1;
@@ -356,14 +356,32 @@ always @* begin
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
             casez( { op[7:0], was_load } )
-                9'b1000_1???_1: begin // ADD (mem), R
-                    nx_src       = regs_dst;
-                    nx_alu_op    = ALU_ADD;
-                    nx_regs_we   = expand_zz( op_zz );
-                    nx_flag_we   = 1;
-                    nx_alu_smux  = 1;
-                    nx_dly_fetch = 1;
-                    nx_phase     = ST_RAM;
+                9'b1???_1???_1: begin // Arithmetic on memory (mem), R
+                    if( op_zz== 2'b11 ) begin
+                    // 9'b1100_1???_1 BIT #3,(mem), only byte length
+                        nx_alu_imm[11:9] = op[2:0];
+                        nx_alu_op   = ALU_BITX;
+                        nx_flag_we  = 1;
+                        fetched = 1;
+                    end else begin
+                        nx_src       = regs_dst;
+                        case( op[6:4] )
+                            3'b110:  nx_alu_op = ALU_OR;
+                            3'b101:  nx_alu_op = ALU_XOR;
+                            3'b100:  nx_alu_op = ALU_AND;
+                            3'b011:  nx_alu_op = ALU_SBC;
+                            3'b010:  nx_alu_op = ALU_SUB;
+                            3'b001:  nx_alu_op = ALU_ADC;
+                            3'b000:  nx_alu_op = ALU_ADD;
+                            // 3'b111:  nx_alu_op = ALU_CP;
+                            default: nx_alu_op = ALU_NOP;
+                        endcase
+                        nx_regs_we   = expand_zz( op_zz );
+                        nx_flag_we   = 1;
+                        nx_alu_smux  = 1;
+                        nx_dly_fetch = 1;
+                        nx_phase     = ST_RAM;
+                    end
                 end
                 9'b1000_1???_0: begin // LD R,r
                     nx_src     = regs_dst;
@@ -372,14 +390,20 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
-                9'b1001_1???_?: begin // LD r,R
+                9'b1001_1???_0: begin // LD r,R
                     nx_src    = expand_reg(op[2:0],op_zz);
                     nx_alu_op = ALU_MOVE;
                     fetched   = 1;
                 end
-                9'b1010_1???_?: begin
+                9'b1101_1???_0, // CP r,#3
+                9'b1010_1???_0: // LD r,#3
+                begin
                     nx_alu_imm  = {29'd0,op[2:0]};
-                    nx_alu_op   = ALU_MOVE;
+                    case( op[6:4] )
+                        3'b101: nx_alu_op  = ALU_CP;
+                        3'b010: nx_alu_op  = ALU_MOVE;
+                        default: nx_alu_op = ALU_NOP;
+                    endcase
                     nx_alu_smux = 1;
                     fetched     = 1;
                     nx_regs_we  = expand_zz( op_zz );
@@ -409,12 +433,6 @@ always @* begin
                     nx_alu_smux = 1;
                     nx_flag_we  = 1;
                     fetched     = 2;
-                end
-                9'b1100_1???_1: begin // BIT #3,(mem), only byte length
-                    nx_alu_imm[11:9] = op[2:0];
-                    nx_alu_op   = ALU_BITX;
-                    nx_flag_we  = 1;
-                    fetched = 1;
                 end
                 9'b0000_111?_?: begin // BS1B, BS1F
                     nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;
