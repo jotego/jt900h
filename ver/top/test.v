@@ -43,6 +43,7 @@ always @(posedge dump_2file) begin
         $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
                                               xreg(cnt+32), xreg(cnt+48) );
     end
+    $fdisplay(file,"-- index registers --");
     $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
                                           xreg(72), xreg(76) );
     $fclose(file);
