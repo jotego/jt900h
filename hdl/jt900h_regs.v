@@ -69,7 +69,7 @@ reg [7:0] accs[0:63];
 reg [7:0] ptrs[0:15];
 reg [7:0] r0sel, r1sel;
 
-wire [31:0] full_step, data_mux;
+wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
 
 `ifdef SIMULATION
@@ -88,7 +88,8 @@ wire [ 2:0] we;
 
 assign data_mux = data_sel ? ram_dout : alu_dout;
 assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
-
+assign ptr_out  = { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
+                    ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] };
 assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 
 // gigantic multiplexer:
@@ -125,10 +126,10 @@ always @(posedge clk, posedge rst) begin
     end else if(cen) begin
         if( reg_inc )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= dst_out + full_step;
+              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
         if( reg_dec )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= dst_out;
+              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out;
 
         // Register writes from ALU/RAM
         if( we[0] ) begin

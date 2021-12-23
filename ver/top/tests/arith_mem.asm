@@ -6,14 +6,14 @@
     lda xix,data
     ld a,1
     add (xix),a
-    ld b,(xix)
+    ld b,(xix+)
     cp b,0xff
     jp ne,bad_end
 
-    ;ld c,(xix)
-    ;add c,0x10
-    ;cp c,0xda
-    ;jp ne,bad_end
+    ld c,(xix)
+    add c,0x10
+    cp c,0xda
+    jp ne,bad_end
 
 end_loop:
     ld hl,0xbabe
