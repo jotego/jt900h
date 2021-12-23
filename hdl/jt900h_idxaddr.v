@@ -84,7 +84,7 @@ always @* begin
             casez( {op[6],op[3:0]} )
                 5'b0_????: begin
                     nx_idx_rdreg_sel = fullreg(op[2:0]);
-                    nx_idx_offset = op[3] ? { {16{op[15]}}, op[15:8] } : 0;
+                    nx_idx_offset = op[3] ? { {16{op[15]}}, op[15:8] } : 24'd0;
                     nx_pre_ok = 1;
                     fetched = op[3] ? 3'd2: 3'd1;
                 end

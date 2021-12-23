@@ -70,22 +70,22 @@ reg [7:0] ptrs[0:15];
 reg [7:0] r0sel, r1sel;
 
 wire [31:0] full_step, data_mux;
-wire [31:0] xix, xiy, xiz, xsp;
 wire [ 2:0] we;
 
 `ifdef SIMULATION
+    wire [31:0] xix, xiy, xiz, xsp;
     wire [31:0] cur_xwa, cur_xbc, cur_xde, cur_xhl;
 
     assign cur_xwa = {accs[{rfp,4'd3}],accs[{rfp,4'd2}],accs[{rfp,4'd1}],accs[{rfp,4'd0}]};
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
     assign cur_xde = {accs[{rfp,4'hb}],accs[{rfp,4'ha}],accs[{rfp,4'h9}],accs[{rfp,4'h8}]};
     assign cur_xhl = {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]};
+    assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
+    assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
+    assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
+    assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 `endif
 
-assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
-assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
-assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
-assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 assign data_mux = data_sel ? ram_dout : alu_dout;
 assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
 

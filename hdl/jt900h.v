@@ -167,8 +167,8 @@ jt900h_ctrl u_ctrl(
     .pc_we          ( pc_we             ),
     .pc_rel         ( pc_rel            ),
 
-    .ldram_en       ( ldram_en          ),
-    .stram_en       ( idx_wr            ),
+    .ram_ren        ( ldram_en          ),
+    .ram_wen        ( idx_wr            ),
     .idx_en         ( idx_en            ),
     .idx_ok         ( idx_ok            ),
     .idx_len        ( idx_len           ),
@@ -201,7 +201,7 @@ jt900h_ramctl u_ramctl(
 
     .ldram_en       ( ldram_en          ),
     .idx_addr       ( idx_addr          ),
-    .reg_dout       ( src_out           ),
+    .alu_dout       ( alu_dout          ),
     .idx_wr         ( idx_wr            ),
     .len            ( idx_len           ),
     // RAM interface

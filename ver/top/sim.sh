@@ -6,7 +6,7 @@ ACCEPT=
 
 # Try linting the code first
 cd ../../hdl
-verilator --lint-only jt900h.v || exit $?
+verilator --lint-only *.v --top-module jt900h || exit $?
 cd -
 
 if [ $# -ge 1 ]; then

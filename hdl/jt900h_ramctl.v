@@ -27,7 +27,7 @@ module jt900h_ramctl(
     input      [23:0] pc,
 
     // RAM writes
-    input      [31:0] reg_dout,
+    input      [31:0] alu_dout,
     input             idx_wr,   // starts an indexed RAM write
     input      [ 2:0] len,
 
@@ -72,7 +72,7 @@ always @(posedge clk,posedge rst) begin
         if( idx_wr ) begin // Write access
             if( !idx_wr_l ) begin
                 ram_addr <= idx_addr;
-                ram_din  <= len[0] || idx_addr[0] ? {2{reg_dout[7:0]}} : reg_dout[15:0];
+                ram_din  <= len[0] || idx_addr[0] ? {2{alu_dout[7:0]}} : alu_dout[15:0];
                 ram_we   <= len[0] ? { idx_addr[0], ~idx_addr[0] } :
                             idx_addr[0] ? 2'b10 : 2'b11;
                 wrbusy   <= 1;
@@ -81,19 +81,19 @@ always @(posedge clk,posedge rst) begin
                 ram_addr <= ram_addr+24'd2;
                 wrbusy <= 1;
                 if( wron==2 ) begin
-                    ram_din <= {2{reg_dout[31:24]}};
+                    ram_din <= {2{alu_dout[31:24]}};
                     ram_we  <= 2'b01;
                     wron    <= 0;
                 end else begin
                     if( idx_addr[0] ) begin
-                        ram_din <= len[1] ? {2{reg_dout[15:8]}} :
-                                  reg_dout[23:8];
+                        ram_din <= len[1] ? {2{alu_dout[15:8]}} :
+                                  alu_dout[23:8];
                         if( len[2] ) begin
                             wron <= 2;
                         end
                         ram_we <= len[1] ? 2'b01 : 2'b11;
                     end else begin // even
-                        ram_din <= reg_dout[31:16];
+                        ram_din <= alu_dout[31:16];
                         ram_we  <= 2'b11;
                         wron <= 0;
                     end
