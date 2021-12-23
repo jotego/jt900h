@@ -243,6 +243,12 @@ always @* begin
             else
                 rslt       = {16'd0,op0[15:0]};
         end
+        ALU_MIRR: begin
+            rslt[15:0] = {
+                op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
+                op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15]
+            };
+        end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
@@ -260,12 +266,11 @@ always @* begin
             zero <= ~op2[op0[3:0]];
             rslt = op0 | (16'd1<<op0[3:0]);
         end
-        MIRR: rslt = {
-                op[0], op[1], op[2], op[3], op[4], op[5], op[6], op[7],
-                op[8], op[9], op[10], op[11], op[12], op[13], op[14], op[15],
-            };*/
+        */
         endcase
 end
+
+reg flag_wel;
 
 always @(posedge clk, posedge rst)  begin
     if( rst ) begin
@@ -279,11 +284,13 @@ always @(posedge clk, posedge rst)  begin
         alu_we   <= 0;
         flag_only<= 0;
         djnz     <= 0;
+        flag_wel <= 0;
     end else if(cen) begin
+        flag_wel <= flag_we;
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
-            dout     <= rslt;
+            dout      <= rslt;
         end
-        if( w!=0 || flag_we ) begin
+        if( w!=0 || (flag_we && !flag_wel)  ) begin
             sign     <= nx_s;
             zero     <= nx_z;
             halfc    <= nx_h;
@@ -292,8 +299,8 @@ always @(posedge clk, posedge rst)  begin
             carry    <= nx_c;
             djnz     <= nx_djnz;
         end
-        alu_we    <= w;
         flag_only <= flag_we;
+        alu_we    <= w;
     end
 end
 

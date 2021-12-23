@@ -146,7 +146,7 @@ always @* begin
     nx_keep_pc_we    = keep_pc_we;
     nx_rfp_we        = 0;
     nx_was_load      = was_load;
-    nx_flag_we       = 0;
+    nx_flag_we       = flag_we;
     nx_idx_len       = idx_len;
     nx_data_sel      = data_sel;
     nx_dly_fetch     = dly_fetch;
@@ -167,6 +167,7 @@ always @* begin
             nx_was_load = 0;
             nx_goexec   = 0;
             nx_dly_fetch= 0;
+            nx_flag_we  = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
                     fetched = 1;
@@ -400,7 +401,10 @@ always @* begin
                 begin
                     nx_alu_imm  = {29'd0,op[2:0]};
                     case( op[6:4] )
-                        3'b101: nx_alu_op  = ALU_CP;
+                        3'b101: begin
+                            nx_alu_op  = ALU_CP;
+                            nx_flag_we = 1;
+                        end
                         3'b010: nx_alu_op  = ALU_MOVE;
                         default: nx_alu_op = ALU_NOP;
                     endcase
@@ -412,6 +416,11 @@ always @* begin
                 9'b0000_0110_?: begin // CPL dst
                     nx_regs_we = expand_zz( op_zz );
                     nx_alu_op  = ALU_CPL;
+                    fetched    = 1;
+                end
+                9'b0001_0110_?: begin // MIRR
+                    nx_regs_we = 3'b010;
+                    nx_alu_op  = ALU_MIRR;
                     fetched    = 1;
                 end
                 9'b0001_1100_?: begin // DJNZ
