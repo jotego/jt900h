@@ -189,7 +189,7 @@ always @* begin
             nx_h = 1;
         end
         ALU_BITX: begin
-            nx_z = ~imm[ {2'b0,imm[11:9]} ];
+            nx_z = ~imm[ {2'b0,imm[10:8]} ];
             nx_n = 0;
             nx_h = 1;
         end
@@ -289,13 +289,21 @@ always @* begin
             nx_c = rslt_c;
             nx_v = rslt_v;
         end
+        ALU_LDCF: begin
+            nx_c = op0[ {1'b0,op2[3:0]} ];
+        end
+        ALU_LDCFX: begin
+            nx_c = imm[ {2'b0,imm[10:8]} ];
+        end
+        ALU_LDCFA: begin
+            nx_c = imm[ {2'b0,op1[2:0]} ];
+        end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
         /*
         PAA: rslt = op0[0] ? op0+1'd1 : op0;
         // MUL, MULS, DIV, DIVS
-        LDCF: carry <= op2[ op0[3:0] ];
         STCF: rslt = stcf;
         ANDCF: carry <= carry & op2[ op0[3:0] ]; // reuse for RCF - reset carry
         ORCF:  carry <= carry | op2[ op0[3:0] ]; // reuse for SCF - set carry

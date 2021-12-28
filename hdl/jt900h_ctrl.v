@@ -360,8 +360,13 @@ always @* begin
                 9'b1???_1???_1: begin // Arithmetic on memory (mem), R
                     if( op_zz== 2'b11 ) begin
                         // 9'b1100_1???_1 BIT #3,(mem), only byte length
-                        nx_alu_imm[11:9] = op[2:0];
-                        nx_alu_op   = ALU_BITX;
+                        // 9'b1001_1???_1 LDCF #3,(mem)
+                        case( op[6:4] )
+                            3'b100: nx_alu_op = ALU_BITX;
+                            3'b001: nx_alu_op = ALU_LDCFX;
+                            default: nx_alu_op = ALU_NOP;
+                        endcase
+                        nx_alu_imm[10:8] = op[2:0];
                         nx_flag_we  = 1;
                         fetched = 1;
                     end else begin
@@ -447,6 +452,28 @@ always @* begin
                     nx_alu_smux = 1;
                     nx_flag_we  = 1;
                     fetched     = 2;
+                end
+                9'b0010_0011_?, // LDCF #4,r
+                9'b0010_1011_0: // LDCF A,r
+                begin
+                    nx_alu_imm = { 28'd0,op[11:8] };
+                    nx_src      = 8'he0;    // A
+                    if( !op[3] ) begin
+                        nx_alu_smux = 1;
+                        fetched     = 2;
+                    end else begin
+                        fetched     = 1;
+                    end
+                    nx_alu_op  = ALU_LDCF;
+                    nx_flag_we = 1;
+                    nx_regs_we = expand_zz( op_zz );
+                end
+                9'b0010_1011_1: begin // LDCF A,(mem)
+                    nx_src     = 8'hE0;
+                    nx_alu_op  = ALU_LDCFA;
+                    nx_flag_we = 1;
+                    nx_regs_we = 1;
+                    fetched    = 1;
                 end
                 9'b0110_0???_?, // INC #3, dst
                 9'b0110_1???_?: // DEC #3, dst
