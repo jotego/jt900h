@@ -154,18 +154,34 @@ always @* begin
                 rslt[15:0] = op0[15:0] - 16'd4;
             end
         end
-        ALU_SUB, ALU_SBC, ALU_CP:
+        ALU_SUB, ALU_SBC, ALU_CP, ALU_DEC:
         begin
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
             ext_rslt = ext_op0 - ext_op2;
+            if( sel!=ALU_DEC || w[0]  ) begin
+                nx_s = rslt_sign;
+                nx_z = is_zero;
+                nx_n = 1;
+                nx_v = rslt_v;
+            end
+            if( sel!=ALU_DEC ) begin
+                nx_c = rslt_c;
+            end
+        end
+        ALU_DECX: // DEC on memory
+        begin // checking w prevents executing twice the same inst.
+            { nx_h,  rslt[ 3: 0] } = {1'b0,imm[ 3: 0]}-{2'b0,imm[18:16]};
+            { cc[0], rslt[ 7: 4] } = {1'b0,imm[ 7: 4]}-{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,imm[15: 8]}-{ 8'b0,cc[0]};
+            // The documentation only sets a limit to flag changes for DEC #3,r
+            // Not for DEC<W> #3,(mem)
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 1;
-            nx_c = rslt_c;
-            nx_v = rslt_v;
+            nx_v = rslt_sign ^ (w[0] ? ^op2[7] : op2[15]);
         end
         ALU_BIT: begin
             nx_z = ~op1[ {1'b0,imm[3:0]} ];
