@@ -31,6 +31,16 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_LDCFX= 6'd30,
                  ALU_LDCFA= 6'd31,
                  ALU_SCF  = 6'd32,
+                 ALU_XORCF = 6'd33,
+                 ALU_XORCFX= 6'd34,
+                 ALU_XORCFA= 6'd35,
+                 ALU_ORCF  = 6'd36,
+                 ALU_ORCFX = 6'd37,
+                 ALU_ORCFA = 6'd38,
+                 ALU_ANDCF = 6'd39,
+                 ALU_ANDCFX= 6'd40,
+                 ALU_ANDCFA= 6'd41,
+                 ALU_RCF   = 6'd42,
 
                  ALU_LAST = 6'd63
                  ;

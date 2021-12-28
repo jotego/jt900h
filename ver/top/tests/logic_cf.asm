@@ -1,14 +1,28 @@
-    ; set/reset carry flag
+    ; Arithmetic operations that read & write to memory
     main section code
     org 0
     ld a,0xbf    ; common header
 
     jp c,bad_end
-    scf
+    ld bc,0xaa55
+
+    orcf 0,bc
     jp nc,bad_end
-    rcf
+
+    or e,1
+    ld a,1
+    andcf a,bc
     jp c,bad_end
 
+    or e,2
+    lda xix,data
+    xorcf 1,(xix)
+    jp nc,bad_end
+
+    or e,4
+    ld a,0
+    andcf a,(xix)
+    jp c,bad_end
 
 end_loop:
     ld hl,0xbabe

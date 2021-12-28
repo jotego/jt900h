@@ -246,6 +246,11 @@ always @* begin
             nx_n = 0;
             nx_h = 0;
         end
+        ALU_RCF: begin
+            nx_c = 0;
+            nx_n = 0;
+            nx_h = 0;
+        end
         ALU_CHG: begin
             rslt = op0;
             rslt[ {1'b0,imm[3:0]} ] = ~rslt[ {1'b0,imm[3:0]} ];
@@ -303,21 +308,33 @@ always @* begin
         ALU_LDCFA: begin
             nx_c = imm[ {2'b0,op1[2:0]} ];
         end
-        // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
-        // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
-        // can be performed
-        /*
-        PAA: rslt = op0[0] ? op0+1'd1 : op0;
-        // MUL, MULS, DIV, DIVS
-        ANDCF: carry <= carry & op2[ op0[3:0] ]; // reuse for RCF - reset carry
-        ORCF:  carry <= carry | op2[ op0[3:0] ]; // reuse for SCF - set carry
-        XORCF: carry <= carry ^ op2[ op0[3:0] ];
-        ZCF:   carry <= ~zero;
-        TSET: begin // reuse for BIT
-            zero <= ~op2[op0[3:0]];
-            rslt = op0 | (16'd1<<op0[3:0]);
+        ALU_XORCF: begin
+            nx_c = carry ^ op0[ {1'b0,op2[3:0]} ];
         end
-        */
+        ALU_XORCFX: begin
+            nx_c = carry ^ imm[ {2'b0,imm[10:8]} ];
+        end
+        ALU_XORCFA: begin
+            nx_c = carry ^ imm[ {2'b0,op1[2:0]} ];
+        end
+        ALU_ORCF: begin
+            nx_c = carry | op0[ {1'b0,op2[3:0]} ];
+        end
+        ALU_ORCFX: begin
+            nx_c = carry | imm[ {2'b0,imm[10:8]} ];
+        end
+        ALU_ORCFA: begin
+            nx_c = carry | imm[ {2'b0,op1[2:0]} ];
+        end
+        ALU_ANDCF: begin
+            nx_c = carry & op0[ {1'b0,op2[3:0]} ];
+        end
+        ALU_ANDCFX: begin
+            nx_c = carry & imm[ {2'b0,imm[10:8]} ];
+        end
+        ALU_ANDCFA: begin
+            nx_c = carry & imm[ {2'b0,op1[2:0]} ];
+        end
         endcase
 end
 

@@ -10,7 +10,7 @@
     add wa,0x100    ; a=00103
     add xwa,0x10000 ; a=10103
     ; Indexed addressing on bank 1
-    ld xix,data
+    lda xix,data
     incf
     ld wa,0x1101
     add wa,(xix)    ; wa = dbff

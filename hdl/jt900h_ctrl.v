@@ -102,6 +102,7 @@ reg  [1:0] nx_dly_fetch, dly_fetch;         // fetch update to be run later
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
+reg        bad_zz;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -150,6 +151,7 @@ always @* begin
     nx_idx_len       = idx_len;
     nx_data_sel      = data_sel;
     nx_dly_fetch     = dly_fetch;
+    bad_zz           = op_zz == 2'b11;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -197,9 +199,11 @@ always @* begin
                     fetched  = 2;
                     nx_phase = EXEC;
                 end
-                8'b0001_0001: begin // SCF
+                8'b0001_0000, // RCF
+                8'b0001_0001: // SCF
+                begin
                     nx_flag_we = 1;
-                    nx_alu_op  = ALU_SCF;
+                    nx_alu_op  = op[0] ? ALU_SCF : ALU_RCF;
                     fetched    = 1;
                 end
                 8'b0001_0010: begin // CCF
@@ -207,7 +211,7 @@ always @* begin
                     nx_alu_op  = ALU_CCF;
                     fetched    = 1;
                 end
-                8'b0001_0111: begin // LDF
+                8'b0001_0111: begin // LDF - LoaD register File pointer
                     nx_rfp_we  = 1;
                     nx_alu_imm = { 24'd0, op[15:8] };
                     fetched    = 2;
@@ -366,9 +370,11 @@ always @* begin
                     if( op_zz== 2'b11 ) begin
                         // 9'b1100_1???_1 BIT #3,(mem), only byte length
                         // 9'b1001_1???_1 LDCF #3,(mem)
+                        // 9'b1000_1???_1 ORCF #3,(mem)
                         case( op[6:4] )
                             3'b100: nx_alu_op = ALU_BITX;
                             3'b001: nx_alu_op = ALU_LDCFX;
+                            3'b000: nx_alu_op = ALU_ORCFX;
                             default: nx_alu_op = ALU_NOP;
                         endcase
                         nx_alu_imm[10:8] = op[2:0];
@@ -458,8 +464,10 @@ always @* begin
                     nx_flag_we  = 1;
                     fetched     = 2;
                 end
-                9'b0010_0011_?, // LDCF #4,r
-                9'b0010_1011_0: // LDCF A,r
+                9'b0010_?011_0, // LDCF #4,r   - A,r
+                9'b0010_?010_0, // XORCF #4,r  - A,r
+                9'b0010_?001_0, // ORCF #4,r   - A,r
+                9'b0010_?000_0: // ANDCF #4,r  - A,r
                 begin
                     nx_alu_imm = { 28'd0,op[11:8] };
                     nx_src      = 8'he0;    // A
@@ -469,13 +477,27 @@ always @* begin
                     end else begin
                         fetched     = 1;
                     end
-                    nx_alu_op  = ALU_LDCF;
+                    case( op[1:0] )
+                        0: nx_alu_op = ALU_ANDCF;
+                        1: nx_alu_op = ALU_ORCF;
+                        2: nx_alu_op = ALU_XORCF;
+                        3: nx_alu_op = ALU_LDCF;
+                    endcase
                     nx_flag_we = 1;
                     nx_regs_we = expand_zz( op_zz );
                 end
-                9'b0010_1011_1: begin // LDCF A,(mem)
-                    nx_src     = 8'hE0;
-                    nx_alu_op  = ALU_LDCFA;
+                9'b0010_1000_1, // ANDCF A,(mem)
+                9'b0010_1001_1, // ORCF A,(mem)
+                9'b0010_1010_1, // XORCF A,(mem)
+                9'b0010_1011_1: // LDCF A,(mem)
+                begin
+                    nx_src = 8'hE0;
+                    case(op[1:0])
+                        0: nx_alu_op = ALU_ANDCFA;
+                        1: nx_alu_op = ALU_ORCFA;
+                        2: nx_alu_op = ALU_XORCFA;
+                        3: nx_alu_op = ALU_LDCFA;
+                    endcase
                     nx_flag_we = 1;
                     nx_regs_we = 1;
                     fetched    = 1;
@@ -531,12 +553,25 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
+                9'b1001_0???_1, // XORCF #3,(mem)
+                9'b1000_0???_1: // ANDCF #3,(mem)
+                begin
+                    case(op[4])
+                        1: nx_alu_op = ALU_XORCFX;
+                        0: nx_alu_op = ALU_ANDCFX;
+                    endcase
+                    nx_alu_imm[10:8] = op[2:0];
+                    nx_regs_we       = expand_zz( op_zz );
+                    nx_flag_we       = 1;
+                    nx_alu_smux      = 1;   // not really needed, left for consistency
+                    fetched          = 1;
+                end
                 9'b1111_0???_?, // CP  R,r
                 9'b1110_0???_?, // OR  R,r
                 9'b1101_0???_?, // XOR R,r
                 9'b1100_0???_?, // AND R,r
                 9'b1010_0???_?, // SUB R,r
-                9'b100?_0???_?: // ADD R,r
+                9'b100?_0???_0: // ADD R,r
                 begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);
