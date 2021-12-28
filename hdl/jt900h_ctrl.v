@@ -200,10 +200,16 @@ always @* begin
                     nx_phase = EXEC;
                 end
                 8'b0001_0000, // RCF
-                8'b0001_0001: // SCF
+                8'b0001_0001, // SCF
+                8'b0001_0011: // ZCF
                 begin
                     nx_flag_we = 1;
-                    nx_alu_op  = op[0] ? ALU_SCF : ALU_RCF;
+                    case( op[1:0] )
+                        0: nx_alu_op = ALU_RCF;
+                        1: nx_alu_op = ALU_SCF;
+                        3: nx_alu_op = ALU_ZCF;
+                        default: nx_alu_op = ALU_NOP;
+                    endcase
                     fetched    = 1;
                 end
                 8'b0001_0010: begin // CCF

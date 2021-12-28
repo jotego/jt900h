@@ -237,6 +237,10 @@ always @* begin
             endcase
             nx_v = op1[15:0]==0;
         end
+        ALU_ZCF: begin
+            nx_c = ~zero;
+            nx_n = 0;
+        end
         ALU_CCF: begin
             nx_c = ~carry;
             nx_n = 0;

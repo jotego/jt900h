@@ -41,6 +41,7 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_ANDCFX= 6'd40,
                  ALU_ANDCFA= 6'd41,
                  ALU_RCF   = 6'd42,
+                 ALU_ZCF   = 6'd43,
 
                  ALU_LAST = 6'd63
                  ;

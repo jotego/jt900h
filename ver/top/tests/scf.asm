@@ -1,4 +1,4 @@
-    ; set/reset carry flag
+    ; set/reset/~zero to carry flag
     main section code
     org 0
     ld a,0xbf    ; common header
@@ -9,6 +9,15 @@
     rcf
     jp c,bad_end
 
+    ld a,0
+    add a,a
+    jp nz,bad_end
+    zcf
+    jp c,bad_end
+    add a,1
+    jp z,bad_end
+    zcf
+    jp nc,bad_end
 
 end_loop:
     ld hl,0xbabe
