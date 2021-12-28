@@ -197,6 +197,11 @@ always @* begin
                     fetched  = 2;
                     nx_phase = EXEC;
                 end
+                8'b0001_0001: begin // SCF
+                    nx_flag_we = 1;
+                    nx_alu_op  = ALU_SCF;
+                    fetched    = 1;
+                end
                 8'b0001_0010: begin // CCF
                     nx_flag_we = 1;
                     nx_alu_op  = ALU_CCF;

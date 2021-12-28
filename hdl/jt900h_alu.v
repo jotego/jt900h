@@ -241,6 +241,11 @@ always @* begin
             nx_c = ~carry;
             nx_n = 0;
         end
+        ALU_SCF: begin
+            nx_c = 1;
+            nx_n = 0;
+            nx_h = 0;
+        end
         ALU_CHG: begin
             rslt = op0;
             rslt[ {1'b0,imm[3:0]} ] = ~rslt[ {1'b0,imm[3:0]} ];
@@ -304,7 +309,6 @@ always @* begin
         /*
         PAA: rslt = op0[0] ? op0+1'd1 : op0;
         // MUL, MULS, DIV, DIVS
-        STCF: rslt = stcf;
         ANDCF: carry <= carry & op2[ op0[3:0] ]; // reuse for RCF - reset carry
         ORCF:  carry <= carry | op2[ op0[3:0] ]; // reuse for SCF - set carry
         XORCF: carry <= carry ^ op2[ op0[3:0] ];
