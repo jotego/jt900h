@@ -86,23 +86,24 @@ always @* begin
     case( sel )
         default:;
         ALU_MOVE: rslt = op2;
-        ALU_ADD, ALU_ADC: // also INC on register, also MULA
+        ALU_ADD, ALU_ADC, ALU_INC: // also INC on register, also MULA
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
             ext_rslt = ext_op0 + ext_op2;
-            if( sel==ALU_INC && w[0]  ) begin
+            if( sel!=ALU_INC || w[0]  ) begin
                 nx_s = rslt_sign;
                 nx_z = is_zero;
                 nx_n = 0;
                 nx_v = rslt_v;
-            end else if (sel!=ALU_INC) begin
+            end
+            if (sel!=ALU_INC) begin
                 nx_c = rslt_c;
             end
         end
-        ALU_INC: // INC on memory
+        ALU_INCX: // INC on memory
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,imm[ 3: 0]}+{2'b0,imm[18:16]};
             { cc[0], rslt[ 7: 4] } = {1'b0,imm[ 7: 4]}+{ 4'b0,nx_h};

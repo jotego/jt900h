@@ -453,13 +453,13 @@ always @* begin
                     nx_alu_smux = 1;
                     if( was_load ) begin
                         nx_alu_imm[23:16] = { 5'd0, op[2:0] };
-                        nx_alu_op   = ALU_INC;
+                        nx_alu_op   = ALU_INCX;
                         nx_dly_fetch = 1;
                         nx_flag_we   = 1;
                         nx_phase     = ST_RAM;
                     end else begin
                         nx_alu_imm = { 29'd0, op[2:0] };
-                        nx_alu_op  = ALU_ADD;
+                        nx_alu_op  = ALU_INC;
                         fetched    = 1;
                     end
                 end
