@@ -23,6 +23,8 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_CP   = 6'd22,
                  ALU_XOR  = 6'd23,
                  ALU_MIRR = 6'd24,
+                 ALU_NEG  = 6'd25,
+                 ALU_INC  = 6'd26,
 
                  ALU_LAST = 6'd63
                  ;

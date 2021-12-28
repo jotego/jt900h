@@ -86,18 +86,33 @@ always @* begin
     case( sel )
         default:;
         ALU_MOVE: rslt = op2;
-        ALU_ADD, ALU_ADC: // also INC, also MULA
+        ALU_ADD, ALU_ADC: // also INC on register, also MULA
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
             ext_rslt = ext_op0 + ext_op2;
+            if( sel==ALU_INC && w[0]  ) begin
+                nx_s = rslt_sign;
+                nx_z = is_zero;
+                nx_n = 0;
+                nx_v = rslt_v;
+            end else if (sel!=ALU_INC) begin
+                nx_c = rslt_c;
+            end
+        end
+        ALU_INC: // INC on memory
+        begin // checking w prevents executing twice the same inst.
+            { nx_h,  rslt[ 3: 0] } = {1'b0,imm[ 3: 0]}+{2'b0,imm[18:16]};
+            { cc[0], rslt[ 7: 4] } = {1'b0,imm[ 7: 4]}+{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,imm[15: 8]}+{ 8'b0,cc[0]};
+            // The documentation only sets a limit to flag changes for INC #3,r
+            // Not for INC<W> #3,(mem)
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 0;
-            nx_c = rslt_c;
-            nx_v = rslt_v;
+            nx_v = rslt_sign ^ (w[0] ? ^op2[7] : op2[15]);
         end
         ALU_AND: begin // use it for RES bit,dst too?
             rslt = op0 & op2;
@@ -249,11 +264,18 @@ always @* begin
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15]
             };
         end
+        ALU_NEG: begin
+            rslt = -op0;
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_n = 1;
+            nx_c = rslt_c;
+            nx_v = rslt_v;
+        end
         // ALU_XOR: rslt = op0^op2; // use it for CHG bit,dst too?
         // Control unit should set op2 so MINC1,MINC2,MINC4 and MDEC1/2/4
         // can be performed
         /*
-        NEG: rslt = -op0;
         PAA: rslt = op0[0] ? op0+1'd1 : op0;
         // MUL, MULS, DIV, DIVS
         LDCF: carry <= op2[ op0[3:0] ];

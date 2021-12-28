@@ -269,7 +269,7 @@ always @* begin
                         nx_ram_ren = 1;
                     end
                 end
-                9'b01??_0???_?: begin // LD (mem),R
+                9'b01??_0???_1: begin // LD (mem),R
                     nx_phase    = ST_RAM;
                     nx_op_zz    = op[5:4];
                     nx_src      = expand_reg(op[2:0],nx_op_zz);
@@ -306,11 +306,11 @@ always @* begin
                     nx_goexec   = 1;
                 end
                 default: begin // load operand from memory
-                        nx_phase  = LD_RAM;
-                        nx_ram_ren = 1;
-                        nx_goexec = 1;
-                        nx_dst    = expand_reg(op[2:0],op_zz);
-                        nx_src    = nx_dst;
+                    nx_phase  = LD_RAM;
+                    nx_ram_ren = 1;
+                    nx_goexec = 1;
+                    nx_dst    = expand_reg(op[2:0],op_zz);
+                    nx_src    = nx_dst;
                 end
             endcase
         end
@@ -359,7 +359,7 @@ always @* begin
             casez( { op[7:0], was_load } )
                 9'b1???_1???_1: begin // Arithmetic on memory (mem), R
                     if( op_zz== 2'b11 ) begin
-                    // 9'b1100_1???_1 BIT #3,(mem), only byte length
+                        // 9'b1100_1???_1 BIT #3,(mem), only byte length
                         nx_alu_imm[11:9] = op[2:0];
                         nx_alu_op   = ALU_BITX;
                         nx_flag_we  = 1;
@@ -413,9 +413,14 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     // nx_phase    = DUMMY;
                 end
+                9'b0000_0111_?, // NEG dst
                 9'b0000_0110_?: begin // CPL dst
                     nx_regs_we = expand_zz( op_zz );
-                    nx_alu_op  = ALU_CPL;
+                    case( op[2:0] )
+                        3'b110: nx_alu_op  = ALU_CPL;
+                        3'b111: nx_alu_op  = ALU_NEG;
+                        default: nx_alu_op = ALU_NOP;
+                    endcase
                     fetched    = 1;
                 end
                 9'b0001_0110_?: begin // MIRR
@@ -442,6 +447,21 @@ always @* begin
                     nx_alu_smux = 1;
                     nx_flag_we  = 1;
                     fetched     = 2;
+                end
+                9'b0110_0???_?: begin // INC #3, dst
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_alu_smux = 1;
+                    if( was_load ) begin
+                        nx_alu_imm[23:16] = { 5'd0, op[2:0] };
+                        nx_alu_op   = ALU_INC;
+                        nx_dly_fetch = 1;
+                        nx_flag_we   = 1;
+                        nx_phase     = ST_RAM;
+                    end else begin
+                        nx_alu_imm = { 29'd0, op[2:0] };
+                        nx_alu_op  = ALU_ADD;
+                        fetched    = 1;
+                    end
                 end
                 9'b0000_111?_?: begin // BS1B, BS1F
                     nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;
