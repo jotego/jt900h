@@ -69,7 +69,7 @@ always @(posedge clk,posedge rst) begin
         idx_wr_l <= idx_wr;
         wrbusy   <= 0;
         ram_we   <= 0;
-        if( idx_wr ) begin // Write access
+        if( idx_wr || wron!=0 ) begin // Write access
             if( !idx_wr_l ) begin
                 ram_addr <= idx_addr;
                 ram_din  <= len[0] || idx_addr[0] ? {2{alu_dout[7:0]}} : alu_dout[15:0];

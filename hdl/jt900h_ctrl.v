@@ -285,12 +285,14 @@ always @* begin
                     end
                 end
                 9'b01??_0???_1: begin // LD (mem),R
-                    nx_phase    = ST_RAM;
-                    nx_op_zz    = op[5:4];
-                    nx_src      = expand_reg(op[2:0],nx_op_zz);
-                    nx_idx_len  = expand_zz( nx_op_zz );
-                    nx_ram_wen = 1;
-                    req_wait    = 1;
+                    nx_phase = EXEC;
+                    nx_was_load = 1;
+//                    nx_phase    = ST_RAM;
+//                    nx_op_zz    = op[5:4];
+//                    nx_src      = expand_reg(op[2:0],nx_op_zz);
+//                    nx_idx_len  = expand_zz( nx_op_zz );
+//                    nx_ram_wen = 1;
+//                    req_wait    = 1;
                 end
                 9'b1101_????_1: begin // JP cc,mem
                     nx_alu_imm  = { 8'd0, idx_addr };
@@ -386,7 +388,7 @@ always @* begin
                     nx_flag_we  = 1;
                     fetched = 1;
                 end
-                10'b1???_1???_10: begin
+                10'b1???_1???_10: begin // arithmetic to memory
                     nx_src       = regs_dst;
                     case( op[6:4] )
                         3'b110:  nx_alu_op = ALU_OR;
@@ -507,8 +509,16 @@ always @* begin
                     nx_regs_we = 1;
                     fetched    = 1;
                 end
-                10'b0110_0???_??, // INC #3, dst
-                10'b0110_1???_??: // DEC #3, dst
+                10'b01??_0???_11: begin // LD (mem),R
+                    nx_alu_op = ALU_MOVE;
+                    nx_src    = expand_reg(op[2:0],op[5:4]);
+                    nx_regs_we = expand_zz( op[5:4] );
+                    nx_flag_we = 1;
+                    nx_dly_fetch = 1;
+                    nx_phase     = ST_RAM;
+                end
+                10'b0110_0???_?0, // INC #3, dst
+                10'b0110_1???_?0: // DEC #3, dst
                 begin
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
