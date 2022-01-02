@@ -22,7 +22,7 @@ module jt900h_ctrl(
     input             cen,
 
     // PC
-    output reg [ 1:0] fetched,    // number of bytes consumed
+    output reg [ 2:0] fetched,    // number of bytes consumed
     output reg        pc_we,      // absolute value write
     output reg        pc_rel,     // relative value write
 
@@ -33,6 +33,7 @@ module jt900h_ctrl(
     input      [23:0] idx_addr,
     output reg [ 2:0] idx_len,
     output reg        data_sel,
+    output reg        sel_xsp,
 
     output reg [31:0] data_latch,
 
@@ -40,6 +41,7 @@ module jt900h_ctrl(
     output reg        inc_rfp,
     output reg        dec_rfp,
     output reg        rfp_we,
+    output reg        dec_xsp,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -66,6 +68,7 @@ localparam [4:0] FETCH    = 5'd0,
                  ST_RAM   = 5'd5,
                  DUMMY    = 5'd6,
                  DJNZ     = 5'd7,
+                 PUSH_PC  = 5'd8,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -97,8 +100,9 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_keep_pc_we, keep_pc_we,
            nx_rfp_we,
            nx_was_load, was_load,
-           nx_flag_we;
-reg  [1:0] nx_dly_fetch, dly_fetch;         // fetch update to be run later
+           nx_flag_we,
+           nx_sel_xsp, nx_dec_xsp;
+reg  [2:0] nx_dly_fetch, dly_fetch;         // fetch update to be run later
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -172,6 +176,8 @@ always @* begin
     nx_idx_len       = idx_len;
     nx_data_sel      = data_sel;
     nx_dly_fetch     = dly_fetch;
+    nx_dec_xsp       = 0;
+    nx_sel_xsp       = sel_xsp;
     bad_zz           = op_zz == 2'b11;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
@@ -191,6 +197,7 @@ always @* begin
             nx_goexec   = 0;
             nx_dly_fetch= 0;
             nx_flag_we  = 0;
+            nx_sel_xsp  = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
                     fetched = 1;
@@ -281,6 +288,12 @@ always @* begin
                     nx_dec_rfp = 1;
                     fetched    = 1;
                 end
+                8'b0001_110?: begin // CALL
+                    fetched = op[0] ? 3'd4 : 3'd3;
+                    nx_dec_xsp = 1;
+                    nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
+                    nx_phase = PUSH_PC;
+                end
                 8'b011?_????: begin // JR
                     if( op[4] ) begin
                         nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
@@ -292,6 +305,16 @@ always @* begin
                 end
                 default:;
             endcase
+        end
+        PUSH_PC: begin
+            // store the PC
+            nx_sel_xsp = 1;
+            nx_data_sel = 1;
+            nx_ram_wen = 1;
+            nx_idx_len = 4;
+            // jump
+            nx_pc_we   = 1;
+            nx_phase   = DUMMY;
         end
         IDX: if( idx_ok ) begin
             nx_idx_en = 0;
@@ -350,6 +373,7 @@ always @* begin
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
+            nx_data_sel = 0;
             nx_phase   = FETCH;
         end
         LD_RAM: begin
@@ -715,6 +739,8 @@ always @(posedge clk, posedge rst) begin
         was_load <= 0;
         flag_we  <= 0;
         dly_fetch<= 0;
+        sel_xsp  <= 0;
+        dec_xsp  <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -745,6 +771,8 @@ always @(posedge clk, posedge rst) begin
         was_load <= nx_was_load;
         flag_we  <= nx_flag_we;
         dly_fetch<= nx_dly_fetch;
+        sel_xsp  <= nx_sel_xsp;
+        dec_xsp  <= nx_dec_xsp;
         if( latch_op ) last_op <= op[7:0];
     end
 end

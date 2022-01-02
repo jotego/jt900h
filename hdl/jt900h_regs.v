@@ -28,6 +28,12 @@ module jt900h_regs(
     input             dec_rfp,
     input             rfp_we,
     input      [ 1:0] imm,
+
+    // stack
+    output     [31:0] xsp,
+    input             dec_xsp,
+
+
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
     input      [ 1:0] reg_step,
@@ -72,8 +78,10 @@ reg [7:0] r0sel, r1sel;
 wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
 
+assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
+
 `ifdef SIMULATION
-    wire [31:0] xix, xiy, xiz, xsp;
+    wire [31:0] xix, xiy, xiz;
     wire [31:0] cur_xwa, cur_xbc, cur_xde, cur_xhl;
 
     assign cur_xwa = {accs[{rfp,4'd3}],accs[{rfp,4'd2}],accs[{rfp,4'd1}],accs[{rfp,4'd0}]};
@@ -83,7 +91,6 @@ wire [ 2:0] we;
     assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
-    assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 `endif
 
 assign data_mux = data_sel ? ram_dout : alu_dout;
@@ -130,6 +137,10 @@ always @(posedge clk, posedge rst) begin
         if( reg_dec )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out;
+
+        // Stack
+        if( dec_xsp )
+            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - 4;
 
         // Register writes from ALU/RAM
         if( we[0] ) begin

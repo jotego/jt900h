@@ -24,7 +24,10 @@ module jt900h_ramctl(
     //input      [ 2:0] regs_we,
     input             ldram_en,
     input      [23:0] idx_addr,
+    input      [23:0] xsp,
     input      [23:0] pc,
+    input             sel_xsp,
+    input             data_sel,
 
     // RAM writes
     input      [31:0] alu_dout,
@@ -46,12 +49,15 @@ reg  [15:0] cache0, cache1; // always keep 4 bytes of data
 reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
-wire [23:0] req_addr;
+wire [23:0] req_addr, eff_addr;
+wire [31:0] eff_data;
 reg         wrbusy, idx_wr_l;
 reg  [ 1:0] wron;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
 assign req_addr = ldram_en ? idx_addr : pc;
+assign eff_addr = sel_xsp ? xsp : idx_addr;
+assign eff_data = data_sel ? {8'd0,pc} : alu_dout;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};
 
@@ -71,35 +77,35 @@ always @(posedge clk,posedge rst) begin
         ram_we   <= 0;
         if( idx_wr || wron!=0 ) begin // Write access
             if( !idx_wr_l ) begin
-                ram_addr <= idx_addr;
-                ram_din  <= len[0] || idx_addr[0] ? {2{alu_dout[7:0]}} : alu_dout[15:0];
-                ram_we   <= len[0] ? { idx_addr[0], ~idx_addr[0] } :
-                            idx_addr[0] ? 2'b10 : 2'b11;
+                ram_addr <= eff_addr;
+                ram_din  <= len[0] || eff_addr[0] ? {2{eff_data[7:0]}} : eff_data[15:0];
+                ram_we   <= len[0] ? { eff_addr[0], ~eff_addr[0] } :
+                            eff_addr[0] ? 2'b10 : 2'b11;
                 wrbusy   <= 1;
-                if( (idx_addr[0] && len[1]) || len[2] ) wron <= 1;
+                if( (eff_addr[0] && len[1]) || len[2] ) wron <= 1;
             end else if( wron!=0 ) begin
                 ram_addr <= ram_addr+24'd2;
                 wrbusy <= 1;
                 if( wron==2 ) begin
-                    ram_din <= {2{alu_dout[31:24]}};
+                    ram_din <= {2{eff_data[31:24]}};
                     ram_we  <= 2'b01;
                     wron    <= 0;
                 end else begin
-                    if( idx_addr[0] ) begin
-                        ram_din <= len[1] ? {2{alu_dout[15:8]}} :
-                                  alu_dout[23:8];
+                    if( eff_addr[0] ) begin
+                        ram_din <= len[1] ? {2{eff_data[15:8]}} :
+                                  eff_data[23:8];
                         if( len[2] ) begin
                             wron <= 2;
                         end
                         ram_we <= len[1] ? 2'b01 : 2'b11;
                     end else begin // even
-                        ram_din <= alu_dout[31:16];
+                        ram_din <= eff_data[31:16];
                         ram_we  <= 2'b11;
                         wron <= 0;
                     end
                 end
             end
-        end else begin // Read access
+        end else if(!wrbusy) begin // Read access
             if( we_mask!=0 ) begin // assume 0 bus waits for now
                 ram_addr <= ram_addr+24'd2;
                 if( we_mask[0] ) begin

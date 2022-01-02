@@ -51,10 +51,9 @@ wire [31:0] pc;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
-wire [ 1:0] ctl_fetch;
-wire [ 2:0] idx_fetch;
+wire [ 2:0] ctl_fetch, idx_fetch;
 wire [23:0] idx_addr;
-wire        rfp_we;
+wire        rfp_we, dec_xsp;
 
 wire [ 2:0] regs_we, idx_len;
 wire [ 7:0] regs_src, regs_dst;
@@ -72,8 +71,9 @@ wire        flag_we, djnz, flag_only;
 // Memory controller
 wire        ldram_en;
 wire        cur_op;
-wire [31:0] buf_dout;
+wire [31:0] buf_dout, xsp;
 wire        buf_rdy;
+wire        sel_xsp;
 
 jt900h_regs u_regs(
     .rst            ( rst               ),
@@ -86,6 +86,9 @@ jt900h_regs u_regs(
     .rfp_we         ( rfp_we            ),
     .imm            ( alu_imm[1:0]      ),  // used for LDF only
 
+    // Stack
+    .xsp            ( xsp               ),
+    .dec_xsp        (dec_xsp            ),
 
     .alu_dout       ( alu_dout          ),
     .ram_dout       ( data_latch        ),
@@ -162,6 +165,8 @@ jt900h_ctrl u_ctrl(
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
     .rfp_we         ( rfp_we            ),
+    .dec_xsp        ( dec_xsp           ),
+    .sel_xsp        ( sel_xsp           ),
 
     .fetched        ( ctl_fetch         ),
     .pc_we          ( pc_we             ),
@@ -198,6 +203,9 @@ jt900h_ramctl u_ramctl(
     .cen            ( cen               ),
 
     .pc             ( pc[23:0]          ),
+    .xsp            ( xsp[23:0]         ),
+    .sel_xsp        ( sel_xsp           ),
+    .data_sel       ( data_sel          ),
 
     .ldram_en       ( ldram_en          ),
     .idx_addr       ( idx_addr          ),
