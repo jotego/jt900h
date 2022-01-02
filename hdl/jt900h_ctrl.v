@@ -102,7 +102,7 @@ reg  [1:0] nx_dly_fetch, dly_fetch;         // fetch update to be run later
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
-reg        bad_zz;
+reg        bad_zz, jp_ok;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -117,6 +117,27 @@ function [7:0] expand_reg(input [2:0] short_reg, input [1:0] zz );
                 short_reg[2] ? {4'hf,  short_reg[1:0],2'd0  } :
                                {4'he, {short_reg[1:0],2'd0} };
 endfunction
+
+always @* begin
+    case( op[3:0] ) // conditions
+        0: jp_ok = 0;    // false
+        1: jp_ok = flags[FS]^flags[FV];               // signed <
+        2: jp_ok = flags[FZ] | (flags[FS]^flags[FV]); // signed <=
+        3: jp_ok = flags[FZ] | flags[FC];             // <=
+        4: jp_ok = flags[FV];  // overflow
+        5: jp_ok = flags[FS];  // minux
+        6: jp_ok = flags[FZ];  // =
+        7: jp_ok = flags[FC];  // carry
+        8: jp_ok = 1;          // true
+        9: jp_ok = ~(flags[FS]^flags[FV]); // >=
+        10: jp_ok = ~(flags[FZ]|(flags[FS]^flags[FV])); // signed >
+        11: jp_ok = ~(flags[FZ]|flags[FC]); // >
+        12: jp_ok = ~flags[FV];
+        13: jp_ok = ~flags[FS];
+        14: jp_ok = ~flags[FZ];
+        15: jp_ok = ~flags[FC];
+    endcase
+end
 
 // Memory fetched requests
 always @* begin
@@ -260,6 +281,15 @@ always @* begin
                     nx_dec_rfp = 1;
                     fetched    = 1;
                 end
+                8'b011?_????: begin // JR
+                    if( op[4] ) begin
+                        nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
+                    end else begin
+                        nx_alu_imm  = { {24{op[15]}}, op[15:8] } + 2;
+                    end
+                    nx_pc_rel   = jp_ok;
+                    nx_phase    = DUMMY;
+                end
                 default:;
             endcase
         end
@@ -296,24 +326,7 @@ always @* begin
                 end
                 9'b1101_????_1: begin // JP cc,mem
                     nx_alu_imm  = { 8'd0, idx_addr };
-                    case( op[3:0] ) // conditions
-                        0: nx_pc_we = 0;    // false
-                        1: nx_pc_we = flags[FS]^flags[FV];               // signed <
-                        2: nx_pc_we = flags[FZ] | (flags[FS]^flags[FV]); // signed <=
-                        3: nx_pc_we = flags[FZ] | flags[FC];             // <=
-                        4: nx_pc_we = flags[FV];  // overflow
-                        5: nx_pc_we = flags[FS];  // minux
-                        6: nx_pc_we = flags[FZ];  // =
-                        7: nx_pc_we = flags[FC];  // carry
-                        8: nx_pc_we = 1;          // true
-                        9: nx_pc_we = ~(flags[FS]^flags[FV]); // >=
-                        10: nx_pc_we = ~(flags[FZ]|(flags[FS]^flags[FV])); // signed >
-                        11: nx_pc_we = ~(flags[FZ]|flags[FC]); // >
-                        12: nx_pc_we = ~flags[FV];
-                        13: nx_pc_we = ~flags[FS];
-                        14: nx_pc_we = ~flags[FZ];
-                        15: nx_pc_we = ~flags[FC];
-                    endcase
+                    nx_pc_we    = jp_ok;
                     nx_phase    = DUMMY;
                 end
                 //8'b1100_0???, // CHG #3,(mem)
@@ -365,7 +378,7 @@ always @* begin
             nx_dly_fetch = 0;
         end
         DJNZ: begin
-            nx_alu_imm = { 24'd0, op[7:0] };
+            nx_alu_imm = { {24{op[7]}}, op[7:0] };
             nx_pc_rel  = !djnz;
             fetched    = 1;
             nx_phase   = DUMMY;

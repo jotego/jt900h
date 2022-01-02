@@ -224,7 +224,7 @@ jt900h_pc u_pc(
     .idx_fetched    ( idx_fetch         ),
     .ctl_fetched    ( ctl_fetch         ),
 
-    .imm            ( alu_imm[23:0]     ),
+    .imm            ( alu_imm           ),
     .we             ( pc_we             ),
     .rel            ( pc_rel            ),
 
