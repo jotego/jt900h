@@ -294,6 +294,12 @@ always @* begin
                     nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
                     nx_phase = PUSH_PC;
                 end
+                8'b0001_1110: begin // CALLR
+                    nx_alu_imm  = { {16{op[23]}}, op[23:8] };
+                    fetched = 3;
+                    nx_phase = PUSH_PC;
+                    nx_dec_xsp = 1;
+                end
                 8'b011?_????: begin // JR
                     if( op[4] ) begin
                         nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
@@ -313,7 +319,10 @@ always @* begin
             nx_ram_wen = 1;
             nx_idx_len = 4;
             // jump
-            nx_pc_we   = 1;
+            if( op[1] )
+                nx_pc_rel = 1;  // CALLR
+            else
+                nx_pc_we   = 1; // CALL
             nx_phase   = DUMMY;
         end
         IDX: if( idx_ok ) begin

@@ -76,7 +76,7 @@ always @(posedge clk,posedge rst) begin
         wrbusy   <= 0;
         ram_we   <= 0;
         if( idx_wr || wron!=0 ) begin // Write access
-            if( !idx_wr_l ) begin
+            if( wron==0 ) begin
                 ram_addr <= eff_addr;
                 ram_din  <= len[0] || eff_addr[0] ? {2{eff_data[7:0]}} : eff_data[15:0];
                 ram_we   <= len[0] ? { eff_addr[0], ~eff_addr[0] } :
