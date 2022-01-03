@@ -25,9 +25,10 @@ module jt900h_ramctl(
     input             ldram_en,
     input      [23:0] idx_addr,
     input      [23:0] xsp,
+    input      [ 7:0] flags,
     input      [23:0] pc,
     input             sel_xsp,
-    input             data_sel,
+    input      [ 1:0] data_sel,
 
     // RAM writes
     input      [31:0] alu_dout,
@@ -50,16 +51,23 @@ reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
 wire [23:0] req_addr, eff_addr;
-wire [31:0] eff_data;
+reg  [31:0] eff_data;
 reg         wrbusy, idx_wr_l;
 reg  [ 1:0] wron;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
 assign req_addr = ldram_en ? idx_addr : pc;
 assign eff_addr = sel_xsp ? xsp : idx_addr;
-assign eff_data = data_sel ? {8'd0,pc} : alu_dout;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};
+
+always @* begin
+    case( data_sel )
+        1: eff_data = {8'd0,pc};
+        2: eff_data = {24'd0, flags};
+        default: eff_data = alu_dout;
+    endcase
+end
 
 always @(posedge clk,posedge rst) begin
     if( rst ) begin

@@ -32,7 +32,7 @@ module jt900h_ctrl(
     input             idx_ok,
     input      [23:0] idx_addr,
     output reg [ 2:0] idx_len,
-    output reg        data_sel,
+    output reg [ 1:0] ram_dsel,
     output reg        sel_xsp,
 
     output reg [31:0] data_latch,
@@ -70,6 +70,7 @@ localparam [4:0] FETCH    = 5'd0,
                  DJNZ     = 5'd7,
                  PUSH_PC  = 5'd8,
                  PUSH_R   = 5'd9,
+                 PUSH_F   = 5'd10,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -90,7 +91,8 @@ reg  [2:0] nx_regs_we, nx_idx_len,
            nx_keep_we, keep_we;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ram_ren, nx_ram_wen,
-           nx_idx_en, nx_data_sel;
+           nx_idx_en;
+reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [5:0] nx_alu_op;
 reg        nx_inc_rfp, nx_dec_rfp,
@@ -175,7 +177,7 @@ always @* begin
     nx_was_load      = was_load;
     nx_flag_we       = flag_we;
     nx_idx_len       = idx_len;
-    nx_data_sel      = data_sel;
+    nx_ram_dsel      = ram_dsel;
     nx_dly_fetch     = dly_fetch;
     nx_dec_xsp       = 0;
     nx_sel_xsp       = sel_xsp;
@@ -190,7 +192,7 @@ always @* begin
             nx_alu_wait = 0;
             nx_regs_we  = 0;
             nx_idx_len  = 0;
-            nx_data_sel = 0;
+            nx_ram_dsel = 0;
             nx_keep_we  = 0;
             nx_exec_imm = 0;
             nx_pc_we    = 0;
@@ -274,6 +276,12 @@ always @* begin
                         end
                     end
                 end
+                8'b0001_1000: begin // PUSH F
+                    nx_idx_len = 1;
+                    nx_dec_xsp = 1;
+                    nx_ram_dsel= 2;
+                    nx_phase   = PUSH_F;
+                end
                 8'b0001_0100,       // PUSH A
                 8'b001?_1???: begin // PUSH R
                     nx_src     = op[5] ?
@@ -282,7 +290,7 @@ always @* begin
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
                     nx_dec_xsp = nx_regs_we;
-                    nx_idx_len = nx_dec_xsp;
+                    nx_idx_len = nx_regs_we;
                     nx_phase   = PUSH_R;
                     nx_flag_we = 1;
                     fetched = 0;
@@ -326,10 +334,18 @@ always @* begin
                 default:;
             endcase
         end
+        PUSH_F: begin
+            // store the PC
+            nx_sel_xsp = 1;
+            nx_ram_dsel = 2;
+            nx_ram_wen = 1;
+            nx_idx_len = 1;
+            nx_phase   = DUMMY;
+        end
         PUSH_PC: begin
             // store the PC
             nx_sel_xsp = 1;
-            nx_data_sel = 1;
+            nx_ram_dsel = 1;
             nx_ram_wen = 1;
             nx_idx_len = 4;
             // jump
@@ -396,7 +412,7 @@ always @* begin
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
-            nx_data_sel = 0;
+            nx_ram_dsel = 0;
             nx_phase   = FETCH;
         end
         LD_RAM: begin
@@ -408,7 +424,7 @@ always @* begin
                 // reuse the last OP code byte
             end else begin
                 nx_phase    = FETCH;
-                nx_data_sel = 1; // copy the RAM output
+                nx_ram_dsel = 1; // copy the RAM output
                 fetched = 1;  // this will set the RAM wait flag too
             end
             nx_regs_we  = keep_we;
@@ -759,7 +775,7 @@ always @(posedge clk, posedge rst) begin
         last_op  <= 0;
         ram_wen <= 0;
         idx_len  <= 0;
-        data_sel <= 0;
+        ram_dsel <= 0;
         data_latch <= 0;
         nodummy_fetch <= 0;
         goxec    <= 0;
@@ -788,7 +804,7 @@ always @(posedge clk, posedge rst) begin
         regs_we  <= nx_regs_we;
         ram_wait <= nx_ram_wait;
         idx_len  <= nx_idx_len;
-        data_sel <= nx_data_sel;
+        ram_dsel <= nx_ram_dsel;
         data_latch <= nx_data_latch;
         inc_rfp  <= nx_inc_rfp;
         dec_rfp  <= nx_dec_rfp;

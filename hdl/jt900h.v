@@ -41,7 +41,8 @@ wire        reg_inc;
 wire        reg_dec;
 
 wire        idx_en;
-wire        idx_ok, idx_wr, data_sel;
+wire        idx_ok, idx_wr;
+wire [ 1:0] ram_dsel;
 
 // PC control
 wire        pc_we, pc_rel;
@@ -95,7 +96,7 @@ jt900h_regs u_regs(
     .ram_dout       ( data_latch        ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
-    .data_sel       ( data_sel          ),
+    .data_sel       ( ram_dsel[0]       ),
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
@@ -179,7 +180,7 @@ jt900h_ctrl u_ctrl(
     .idx_ok         ( idx_ok            ),
     .idx_len        ( idx_len           ),
     .idx_addr       ( idx_addr          ),
-    .data_sel       ( data_sel          ),
+    .ram_dsel       ( ram_dsel          ),
     .data_latch     ( data_latch        ),
 
     .alu_imm        ( alu_imm           ),
@@ -204,9 +205,10 @@ jt900h_ramctl u_ramctl(
     .cen            ( cen               ),
 
     .pc             ( pc[23:0]          ),
+    .flags          ( flags             ),
     .xsp            ( xsp[23:0]         ),
     .sel_xsp        ( sel_xsp           ),
-    .data_sel       ( data_sel          ),
+    .data_sel       ( ram_dsel          ),
 
     .ldram_en       ( ldram_en          ),
     .idx_addr       ( idx_addr          ),
