@@ -31,7 +31,7 @@ module jt900h_regs(
 
     // stack
     output     [31:0] xsp,
-    input             dec_xsp,
+    input      [ 2:0] dec_xsp,
 
 
     // From indexed memory addresser
@@ -139,8 +139,8 @@ always @(posedge clk, posedge rst) begin
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out;
 
         // Stack
-        if( dec_xsp )
-            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - 4;
+        if( dec_xsp != 0 )
+            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - { 29'd0, dec_xsp};
 
         // Register writes from ALU/RAM
         if( we[0] ) begin

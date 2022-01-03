@@ -41,7 +41,7 @@ module jt900h_ctrl(
     output reg        inc_rfp,
     output reg        dec_rfp,
     output reg        rfp_we,
-    output reg        dec_xsp,
+    output reg [ 2:0] dec_xsp,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -69,6 +69,7 @@ localparam [4:0] FETCH    = 5'd0,
                  DUMMY    = 5'd6,
                  DJNZ     = 5'd7,
                  PUSH_PC  = 5'd8,
+                 PUSH_R   = 5'd9,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -101,8 +102,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_rfp_we,
            nx_was_load, was_load,
            nx_flag_we,
-           nx_sel_xsp, nx_dec_xsp;
-reg  [2:0] nx_dly_fetch, dly_fetch;         // fetch update to be run later
+           nx_sel_xsp;
+reg  [2:0] nx_dly_fetch, dly_fetch, nx_dec_xsp;         // fetch update to be run later
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -273,6 +274,19 @@ always @* begin
                         end
                     end
                 end
+                8'b0001_0100,       // PUSH A
+                8'b001?_1???: begin // PUSH R
+                    nx_src     = op[5] ?
+                        expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
+                        8'he0; // A
+                    nx_alu_op  = ALU_MOVE;
+                    nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
+                    nx_dec_xsp = nx_regs_we;
+                    nx_idx_len = nx_dec_xsp;
+                    nx_phase   = PUSH_R;
+                    nx_flag_we = 1;
+                    fetched = 0;
+                end
                 8'b0001_101?: begin // JP 16/24-bit immediate value
                     fetched       = 2;
                     nx_alu_imm    = { 24'd0, op[15:8] };
@@ -290,7 +304,7 @@ always @* begin
                 end
                 8'b0001_110?: begin // CALL
                     fetched = op[0] ? 3'd4 : 3'd3;
-                    nx_dec_xsp = 1;
+                    nx_dec_xsp = 4;
                     nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
                     nx_phase = PUSH_PC;
                 end
@@ -298,7 +312,7 @@ always @* begin
                     nx_alu_imm  = { {16{op[23]}}, op[23:8] };
                     fetched = 3;
                     nx_phase = PUSH_PC;
-                    nx_dec_xsp = 1;
+                    nx_dec_xsp = 4;
                 end
                 8'b011?_????: begin // JR
                     if( op[4] ) begin
@@ -325,6 +339,12 @@ always @* begin
                 nx_pc_we   = 1; // CALL
             nx_phase   = DUMMY;
         end
+        PUSH_R: begin
+            nx_ram_wen = 1;
+            nx_sel_xsp = 1;
+            nx_idx_len = regs_we;
+            nx_phase   = DUMMY;
+        end
         IDX: if( idx_ok ) begin
             nx_idx_en = 0;
             // leave the fetched update to the next state
@@ -349,12 +369,6 @@ always @* begin
                 9'b01??_0???_1: begin // LD (mem),R
                     nx_phase = EXEC;
                     nx_was_load = 1;
-//                    nx_phase    = ST_RAM;
-//                    nx_op_zz    = op[5:4];
-//                    nx_src      = expand_reg(op[2:0],nx_op_zz);
-//                    nx_idx_len  = expand_zz( nx_op_zz );
-//                    nx_ram_wen = 1;
-//                    req_wait    = 1;
                 end
                 9'b1101_????_1: begin // JP cc,mem
                     nx_alu_imm  = { 8'd0, idx_addr };
@@ -579,6 +593,15 @@ always @* begin
                         nx_alu_op  = op[3] ? ALU_DEC : ALU_INC;
                         fetched    = 1;
                     end
+                end
+                10'b0000_0100_?0: begin // PUSH r
+                    nx_alu_op  = ALU_MOVE;
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_dec_xsp = nx_regs_we;
+                    nx_idx_len = nx_dec_xsp;
+                    nx_phase   = PUSH_R;
+                    nx_flag_we = 1;
+                    // the dummy state will do the fetching
                 end
                 10'b0000_111?_??: begin // BS1B, BS1F
                     nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;

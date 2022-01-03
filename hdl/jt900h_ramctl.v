@@ -94,9 +94,7 @@ always @(posedge clk,posedge rst) begin
                     if( eff_addr[0] ) begin
                         ram_din <= len[1] ? {2{eff_data[15:8]}} :
                                   eff_data[23:8];
-                        if( len[2] ) begin
-                            wron <= 2;
-                        end
+                        wron <= len[2] ? 2 : 0;
                         ram_we <= len[1] ? 2'b01 : 2'b11;
                     end else begin // even
                         ram_din <= eff_data[31:16];

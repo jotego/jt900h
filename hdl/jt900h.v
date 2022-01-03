@@ -51,9 +51,10 @@ wire [31:0] pc;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
-wire [ 2:0] ctl_fetch, idx_fetch;
+wire [ 2:0] ctl_fetch, idx_fetch,
+            dec_xsp;
 wire [23:0] idx_addr;
-wire        rfp_we, dec_xsp;
+wire        rfp_we;
 
 wire [ 2:0] regs_we, idx_len;
 wire [ 7:0] regs_src, regs_dst;
