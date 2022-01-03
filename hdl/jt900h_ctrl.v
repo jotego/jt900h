@@ -276,6 +276,17 @@ always @* begin
                         end
                     end
                 end
+                8'b0000_10?1: begin // PUSH<W> #
+                    nx_regs_we  = op[1] ? 3'b10 : 3'b1;
+                    nx_dec_xsp  = nx_regs_we;
+                    nx_idx_len  = nx_regs_we;
+                    nx_alu_op   = ALU_MOVE;
+                    nx_phase    = PUSH_R;
+                    nx_flag_we  = 1;
+                    nx_alu_smux = 1;
+                    fetched     = op[1] ? 3'd2 : 3'd1;
+                    nx_alu_imm[15:0] = op[23:8];
+                end
                 8'b0001_1000: begin // PUSH F
                     nx_idx_len = 1;
                     nx_dec_xsp = 1;
