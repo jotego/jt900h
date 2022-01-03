@@ -33,7 +33,11 @@ module jt900h_ctrl(
     input      [23:0] idx_addr,
     output reg [ 2:0] idx_len,
     output reg [ 1:0] ram_dsel,
+
+    // XSP
     output reg        sel_xsp,
+    output reg [ 2:0] inc_xsp,
+    output reg [ 2:0] dec_xsp,
 
     output reg [31:0] data_latch,
 
@@ -42,7 +46,6 @@ module jt900h_ctrl(
     output reg        inc_rfp,
     output reg        dec_rfp,
     output reg        rfp_we,
-    output reg [ 2:0] dec_xsp,
 
     // ALU control
     output reg [31:0] alu_imm,
@@ -107,7 +110,9 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_was_load, was_load,
            nx_flag_we,
            nx_sel_xsp;
-reg  [2:0] nx_dly_fetch, dly_fetch, nx_dec_xsp;         // fetch update to be run later
+reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
+           nx_dec_xsp,
+           nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -186,6 +191,7 @@ always @* begin
     nx_idx_len       = idx_len;
     nx_ram_dsel      = ram_dsel;
     nx_dly_fetch     = dly_fetch;
+    nx_inc_xsp       = 0;
     nx_dec_xsp       = 0;
     nx_sel_xsp       = sel_xsp;
     nx_iff           = riff;
@@ -399,14 +405,14 @@ always @* begin
                         nx_alu_smux = 1;
                         nx_phase    = DUMMY;
                     end else begin // LD
-                        nx_phase    = LD_RAM;
-                        nx_dst      = expand_reg(op[2:0],op_zz);
-                        nx_keep_we  = expand_zz( op_zz );
+                        nx_phase   = LD_RAM;
+                        nx_dst     = expand_reg(op[2:0],op_zz);
+                        nx_keep_we = expand_zz( op_zz );
                         nx_ram_ren = 1;
                     end
                 end
                 9'b01??_0???_1: begin // LD (mem),R
-                    nx_phase = EXEC;
+                    nx_phase    = EXEC;
                     nx_was_load = 1;
                 end
                 9'b1101_????_1: begin // JP cc,mem
@@ -416,16 +422,16 @@ always @* begin
                 end
                 //8'b1100_0???, // CHG #3,(mem)
                 9'b1100_1???_?: begin // BIT #3,(mem)
-                    nx_phase    = LD_RAM;
+                    nx_phase   = LD_RAM;
                     nx_ram_ren = 1;
-                    nx_goexec   = 1;
+                    nx_goexec  = 1;
                 end
                 default: begin // load operand from memory
-                    nx_phase  = LD_RAM;
+                    nx_phase   = LD_RAM;
                     nx_ram_ren = 1;
-                    nx_goexec = 1;
-                    nx_dst    = expand_reg(op[2:0],op_zz);
-                    nx_src    = nx_dst;
+                    nx_goexec  = 1;
+                    nx_dst     = expand_reg(op[2:0],op_zz);
+                    nx_src     = nx_dst;
                 end
             endcase
         end
@@ -435,7 +441,6 @@ always @* begin
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
-            //nx_ram_dsel = 0;
             nx_phase   = FETCH;
         end
         LD_RAM: begin
@@ -455,6 +460,7 @@ always @* begin
             nx_data_latch = op; // is it necessary to have it in data_latch
                                 // and alu_imm?
             nx_alu_imm    = op; // make it available to the ALU too
+            nx_inc_xsp = nx_keep_inc_xsp;
         end
         ST_RAM: begin
             nx_phase   = FETCH;
@@ -651,6 +657,15 @@ always @* begin
                     nx_flag_we = 1;
                     // the dummy state will do the fetching
                 end
+                10'b0000_0101_00: begin // POP r
+                    nx_ram_ren = 1;
+                    nx_sel_xsp = 1;
+                    nx_keep_we = expand_zz( op_zz );
+                    nx_idx_len = expand_zz( op_zz );
+                    nx_dst     = regs_dst;
+                    nx_phase   = LD_RAM;
+                    nx_keep_inc_xsp = expand_zz( op_zz );
+                end
                 10'b0000_111?_??: begin // BS1B, BS1F
                     nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;
                     nx_dst     = 8'hE0;
@@ -821,6 +836,8 @@ always @(posedge clk, posedge rst) begin
         dly_fetch<= 0;
         sel_xsp  <= 0;
         dec_xsp  <= 0;
+        inc_xsp  <= 0;
+        keep_inc_sp <= 0;
         riff     <= 3'b111;
     end else if(cen) begin
         op_phase <= nx_phase;
@@ -854,6 +871,8 @@ always @(posedge clk, posedge rst) begin
         dly_fetch<= nx_dly_fetch;
         sel_xsp  <= nx_sel_xsp;
         dec_xsp  <= nx_dec_xsp;
+        inc_xsp  <= nx_inc_xsp;
+        keep_inc_sp <= nx_keep_inc_xsp;
         riff     <= nx_iff;
         if( latch_op ) last_op <= op[7:0];
     end

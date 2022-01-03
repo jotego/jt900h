@@ -56,7 +56,7 @@ reg         wrbusy, idx_wr_l;
 reg  [ 1:0] wron;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
-assign req_addr = ldram_en ? idx_addr : pc;
+assign req_addr = ldram_en ? ( sel_xsp ? xsp : idx_addr ) : pc;
 assign eff_addr = sel_xsp ? xsp : idx_addr;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};

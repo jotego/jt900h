@@ -54,7 +54,7 @@ wire        pc_we, pc_rel;
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
 wire [ 2:0] ctl_fetch, idx_fetch,
-            dec_xsp;
+            inc_xsp, dec_xsp;
 wire [23:0] idx_addr;
 wire        rfp_we;
 
@@ -87,6 +87,7 @@ jt900h_ctrl u_ctrl(
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
     .rfp_we         ( rfp_we            ),
+    .inc_xsp        ( inc_xsp           ),
     .dec_xsp        ( dec_xsp           ),
     .sel_xsp        ( sel_xsp           ),
 
@@ -134,7 +135,8 @@ jt900h_regs u_regs(
 
     // Stack
     .xsp            ( xsp               ),
-    .dec_xsp        (dec_xsp            ),
+    .inc_xsp        ( inc_xsp           ),
+    .dec_xsp        ( dec_xsp           ),
 
     .alu_dout       ( alu_dout          ),
     .ram_dout       ( data_latch        ),
