@@ -621,7 +621,16 @@ always @* begin
                         fetched    = 1;
                     end
                 end
-                10'b0000_0100_?0: begin // PUSH r
+                10'b0000_0100_10: begin // PUSH<W> mem
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_dec_xsp  = nx_regs_we;
+                    nx_idx_len  = nx_regs_we;
+                    nx_alu_op   = ALU_MOVE;
+                    nx_phase    = PUSH_R;
+                    nx_flag_we  = 1;
+                    nx_alu_smux = 1;
+                end
+                10'b0000_0100_00: begin // PUSH r
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = expand_zz( op_zz );
                     nx_dec_xsp = nx_regs_we;
