@@ -4,3 +4,4 @@
 0fedcba9 - 00110ba9 - 00220ba9 - 00330ba9
 -- index registers --
 12345678 - 9abcdef0 - 87654321 - 00000000
+SR = 00f8

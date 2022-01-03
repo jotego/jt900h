@@ -38,6 +38,7 @@ module jt900h_ctrl(
     output reg [31:0] data_latch,
 
     // RFP
+    input      [ 1:0] rfp,
     output reg        inc_rfp,
     output reg        dec_rfp,
     output reg        rfp_we,
@@ -55,6 +56,7 @@ module jt900h_ctrl(
     input      [31:0] op,
     input             op_ok,
 
+    output     [15:0] sr,       // status register
     output reg [ 2:0] regs_we,
     output reg [ 7:0] regs_dst,
     output reg [ 7:0] regs_src
@@ -110,6 +112,11 @@ reg  [2:0] nx_dly_fetch, dly_fetch, nx_dec_xsp;         // fetch update to be ru
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
 reg        bad_zz, jp_ok;
+
+// Interrupt masks
+reg  [2:0] riff, nx_iff;
+
+assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -181,6 +188,7 @@ always @* begin
     nx_dly_fetch     = dly_fetch;
     nx_dec_xsp       = 0;
     nx_sel_xsp       = sel_xsp;
+    nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
@@ -809,6 +817,7 @@ always @(posedge clk, posedge rst) begin
         dly_fetch<= 0;
         sel_xsp  <= 0;
         dec_xsp  <= 0;
+        riff     <= 3'b111;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -841,6 +850,7 @@ always @(posedge clk, posedge rst) begin
         dly_fetch<= nx_dly_fetch;
         sel_xsp  <= nx_sel_xsp;
         dec_xsp  <= nx_dec_xsp;
+        riff     <= nx_iff;
         if( latch_op ) last_op <= op[7:0];
     end
 end

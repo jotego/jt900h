@@ -21,8 +21,7 @@ module jt900h_regs(
     input             clk,
     input             cen,
 
-    // input             src_mux,
-    // input             aux_mux,
+    input      [15:0] sr,           // status register
     output reg [ 1:0] rfp,          // register file pointer
     input             inc_rfp,
     input             dec_rfp,
@@ -189,7 +188,12 @@ always @(posedge clk) begin
         dmp_din <= accs[dmp_addr[5:0]];
     else if( dmp_addr < 8'h50 )
         dmp_din <= ptrs[dmp_addr[3:0]];
-    else
-        dmp_din <= 0;
+    else begin
+        case( dmp_addr )
+            8'h51: dmp_din <= sr[ 7:0];
+            8'h50: dmp_din <= sr[15:8];
+            default: dmp_din <= 0;
+        endcase
+    end
 end
 endmodule

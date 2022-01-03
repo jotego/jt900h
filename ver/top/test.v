@@ -12,7 +12,7 @@ reg  [15:0] mem[0:1023];
 
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_din;
-reg  [7:0] dmp_buf[0:79];
+reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
 
@@ -46,6 +46,7 @@ always @(posedge dump_2file) begin
     $fdisplay(file,"-- index registers --");
     $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
                                           xreg(72), xreg(76) );
+    $fdisplay(file,"SR = %02X",{ dmp_buf[81], dmp_buf[80]} );
     $fclose(file);
     // Dump the memory too
     file=$fopen("mem.bin","wb");
@@ -86,7 +87,7 @@ always @(posedge clk) begin
         dmp_addr <= dmp_addr+1'd1;
         dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;
-        if( dmp_addr==81 ) begin
+        if( dmp_addr==84 ) begin
             dump_2file=1;
         end
     end

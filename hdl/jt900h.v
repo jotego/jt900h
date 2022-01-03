@@ -30,6 +30,9 @@ module jt900h(
     output     [7:0] dmp_din
 );
 
+wire [15:0] sr;
+
+// Register bank
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out;
@@ -45,10 +48,8 @@ wire        idx_ok, idx_wr;
 wire [ 1:0] ram_dsel;
 
 // PC control
-wire        pc_we, pc_rel;
-
-// Register bank
 wire [31:0] pc;
+wire        pc_we, pc_rel;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
 wire [15:0] op;
@@ -77,11 +78,54 @@ wire [31:0] buf_dout, xsp;
 wire        buf_rdy;
 wire        sel_xsp;
 
+jt900h_ctrl u_ctrl(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+
+    .rfp            ( rfp               ),
+    .inc_rfp        ( inc_rfp           ),
+    .dec_rfp        ( dec_rfp           ),
+    .rfp_we         ( rfp_we            ),
+    .dec_xsp        ( dec_xsp           ),
+    .sel_xsp        ( sel_xsp           ),
+
+    .fetched        ( ctl_fetch         ),
+    .pc_we          ( pc_we             ),
+    .pc_rel         ( pc_rel            ),
+
+    .ram_ren        ( ldram_en          ),
+    .ram_wen        ( idx_wr            ),
+    .idx_en         ( idx_en            ),
+    .idx_ok         ( idx_ok            ),
+    .idx_len        ( idx_len           ),
+    .idx_addr       ( idx_addr          ),
+    .ram_dsel       ( ram_dsel          ),
+    .data_latch     ( data_latch        ),
+
+    .alu_imm        ( alu_imm           ),
+    .alu_op         ( alu_op            ),
+    .alu_smux       ( alu_smux          ),
+    .alu_wait       ( alu_wait          ),
+    .flags          ( flags             ),
+    .sr             ( sr                ),
+    .flag_we        ( flag_we           ),
+    .djnz           ( djnz              ),
+
+    .op             ( buf_dout          ),
+    .op_ok          ( buf_rdy           ),
+
+    .regs_we        ( regs_we           ),
+    .regs_dst       ( regs_dst          ),
+    .regs_src       ( regs_src          )
+);
+
 jt900h_regs u_regs(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
 
+    .sr             ( sr                ),
     .rfp            ( rfp               ),          // register file pointer
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
@@ -157,46 +201,6 @@ jt900h_alu u_alu(
     .flags          ( flags             ),
     .djnz           ( djnz              ),
     .dout           ( alu_dout          )
-);
-
-jt900h_ctrl u_ctrl(
-    .rst            ( rst               ),
-    .clk            ( clk               ),
-    .cen            ( cen               ),
-
-    .inc_rfp        ( inc_rfp           ),
-    .dec_rfp        ( dec_rfp           ),
-    .rfp_we         ( rfp_we            ),
-    .dec_xsp        ( dec_xsp           ),
-    .sel_xsp        ( sel_xsp           ),
-
-    .fetched        ( ctl_fetch         ),
-    .pc_we          ( pc_we             ),
-    .pc_rel         ( pc_rel            ),
-
-    .ram_ren        ( ldram_en          ),
-    .ram_wen        ( idx_wr            ),
-    .idx_en         ( idx_en            ),
-    .idx_ok         ( idx_ok            ),
-    .idx_len        ( idx_len           ),
-    .idx_addr       ( idx_addr          ),
-    .ram_dsel       ( ram_dsel          ),
-    .data_latch     ( data_latch        ),
-
-    .alu_imm        ( alu_imm           ),
-    .alu_op         ( alu_op            ),
-    .alu_smux       ( alu_smux          ),
-    .alu_wait       ( alu_wait          ),
-    .flags          ( flags             ),
-    .flag_we        ( flag_we           ),
-    .djnz           ( djnz              ),
-
-    .op             ( buf_dout          ),
-    .op_ok          ( buf_rdy           ),
-
-    .regs_we        ( regs_we           ),
-    .regs_dst       ( regs_dst          ),
-    .regs_src       ( regs_src          )
 );
 
 jt900h_ramctl u_ramctl(
