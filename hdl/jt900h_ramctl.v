@@ -25,7 +25,7 @@ module jt900h_ramctl(
     input             ldram_en,
     input      [23:0] idx_addr,
     input      [23:0] xsp,
-    input      [ 7:0] flags,
+    input      [15:0] sr,
     input      [23:0] pc,
     input             sel_xsp,
     input      [ 1:0] data_sel,
@@ -64,7 +64,7 @@ assign dout = {cache1, cache0};
 always @* begin
     case( data_sel )
         1: eff_data = {8'd0,pc};
-        2: eff_data = {24'd0, flags};
+        2: eff_data = {16'd0, sr};
         default: eff_data = alu_dout;
     endcase
 end

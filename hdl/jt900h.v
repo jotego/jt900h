@@ -209,8 +209,8 @@ jt900h_ramctl u_ramctl(
     .cen            ( cen               ),
 
     .pc             ( pc[23:0]          ),
-    .flags          ( flags             ),
     .xsp            ( xsp[23:0]         ),
+    .sr             ( sr                ),
     .sel_xsp        ( sel_xsp           ),
     .data_sel       ( ram_dsel          ),
 

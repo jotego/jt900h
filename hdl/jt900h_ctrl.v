@@ -72,7 +72,7 @@ localparam [4:0] FETCH    = 5'd0,
                  DJNZ     = 5'd7,
                  PUSH_PC  = 5'd8,
                  PUSH_R   = 5'd9,
-                 PUSH_F   = 5'd10,
+                 PUSH_SR  = 5'd10,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -284,6 +284,10 @@ always @* begin
                         end
                     end
                 end
+                8'b0000_0110: begin // EI num
+                    nx_iff  = op[10:8];
+                    fetched = 2;
+                end
                 8'b0000_10?1: begin // PUSH<W> #
                     nx_regs_we  = op[1] ? 3'b10 : 3'b1;
                     nx_dec_xsp  = nx_regs_we;
@@ -295,11 +299,12 @@ always @* begin
                     fetched     = op[1] ? 3'd2 : 3'd1;
                     nx_alu_imm[15:0] = op[23:8];
                 end
-                8'b0001_1000: begin // PUSH F
-                    nx_idx_len = 1;
-                    nx_dec_xsp = 1;
+                8'b0001_1000,       // PUSH F
+                8'b0000_0010: begin // PUSH SR
+                    nx_idx_len = op[1] ? 3'd2 : 3'd1;
+                    nx_dec_xsp = op[1] ? 3'd2 : 3'd1;
                     nx_ram_dsel= 2;
-                    nx_phase   = PUSH_F;
+                    nx_phase   = PUSH_SR;
                 end
                 8'b0001_0100,       // PUSH A
                 8'b001?_1???: begin // PUSH R
@@ -353,20 +358,19 @@ always @* begin
                 default:;
             endcase
         end
-        PUSH_F: begin
-            // store the PC
-            nx_sel_xsp = 1;
+        PUSH_SR: begin // PUSH_F is done here too
+            nx_sel_xsp  = 1;
             nx_ram_dsel = 2;
-            nx_ram_wen = 1;
-            nx_idx_len = 1;
-            nx_phase   = DUMMY;
+            nx_ram_wen  = 1;
+            nx_idx_len  = dec_xsp; // 1 or 2 bytes
+            nx_phase    = DUMMY;
         end
         PUSH_PC: begin
             // store the PC
-            nx_sel_xsp = 1;
+            nx_sel_xsp  = 1;
             nx_ram_dsel = 1;
-            nx_ram_wen = 1;
-            nx_idx_len = 4;
+            nx_ram_wen  = 1;
+            nx_idx_len  = 4;
             // jump
             if( op[1] )
                 nx_pc_rel = 1;  // CALLR
@@ -431,7 +435,7 @@ always @* begin
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
-            nx_ram_dsel = 0;
+            //nx_ram_dsel = 0;
             nx_phase   = FETCH;
         end
         LD_RAM: begin
