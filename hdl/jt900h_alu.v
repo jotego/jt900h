@@ -303,6 +303,14 @@ always @* begin
             nx_c = rslt_c;
             nx_v = rslt_v;
         end
+        ALU_RES: begin
+            rslt = op0;
+            rslt[ {1'b0,op2[3:0]} ] = 0;
+        end
+        ALU_RESX: begin
+            rslt = imm;
+            rslt[ {2'b0,imm[10:8]} ] = 0;
+        end
         ALU_LDCF: begin
             nx_c = op0[ {1'b0,op2[3:0]} ];
         end

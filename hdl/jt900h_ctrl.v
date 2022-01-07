@@ -312,6 +312,19 @@ always @* begin
                     nx_ram_dsel= 2;
                     nx_phase   = PUSH_SR;
                 end
+                8'b0001_0101,       // POP A
+                8'b010?_1???: begin // POP R
+                    nx_dst     = op[6] ?
+                        expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
+                        8'he0; // A
+                    nx_keep_we = !op[6] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
+                    nx_keep_inc_xsp = nx_keep_we;
+                    nx_idx_len = nx_keep_we;
+                    nx_ram_ren = 1;
+                    nx_sel_xsp = 1;
+                    nx_phase   = LD_RAM;
+                    fetched = 0;
+                end
                 8'b0001_0100,       // PUSH A
                 8'b001?_1???: begin // PUSH R
                     nx_src     = op[5] ?
@@ -493,16 +506,23 @@ always @* begin
                     nx_flag_we  = 1;
                     fetched = 1;
                 end
+                10'b1011_0???_11: begin  // RES #3,(mem)
+                    nx_alu_op       = ALU_RESX;
+                    nx_regs_we      = 1;
+                    nx_alu_imm[10:8] = op[2:0];
+                    nx_dly_fetch    = 1;
+                    nx_phase        = ST_RAM;
+                end
                 10'b1???_1???_10: begin // arithmetic to memory
                     nx_src       = regs_dst;
                     case( op[6:4] )
-                        3'b110:  nx_alu_op = ALU_OR;
-                        3'b101:  nx_alu_op = ALU_XOR;
-                        3'b100:  nx_alu_op = ALU_AND;
-                        3'b011:  nx_alu_op = ALU_SBC;
-                        3'b010:  nx_alu_op = ALU_SUB;
-                        3'b001:  nx_alu_op = ALU_ADC;
-                        3'b000:  nx_alu_op = ALU_ADD;
+                        3'b110: nx_alu_op = ALU_OR;
+                        3'b101: nx_alu_op = ALU_XOR;
+                        3'b100: nx_alu_op = ALU_AND;
+                        3'b011: nx_alu_op = ALU_SBC;
+                        3'b010: nx_alu_op = ALU_SUB;
+                        3'b001: nx_alu_op = ALU_ADC;
+                        3'b000: nx_alu_op = ALU_ADD;
                         // 3'b111:  nx_alu_op = ALU_CP;
                         default: nx_alu_op = ALU_NOP;
                     endcase
@@ -562,9 +582,10 @@ always @* begin
                     fetched   = 1;
                     nx_phase  = DJNZ;
                 end
+                10'b0011_0000_??,       // RES #4, r
                 10'b0011_0010_??: begin // CHG #4,dst
                     nx_alu_imm = { 28'd0,op[11:8] };
-                    nx_alu_op   = ALU_CHG;
+                    nx_alu_op   = op[1] ? ALU_CHG : ALU_RES;
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
                     fetched     = 2;

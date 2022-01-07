@@ -11,19 +11,22 @@
     push bc
     push xde
 
-    pop xde1
-    pop rbc1
-    pop ra1
+    incf
+    pop xde
+    pop bc
+    pop a
 
     ; in different order
     push xde
     push a
     push bc
 
-    pop rbc2
-    pop ra2
-    pop xde2
+    incf
+    pop bc
+    pop a
+    pop xde
 
+    LDF 0
     cp a,ra1
     jp ne,bad_end
     cp a,ra2
