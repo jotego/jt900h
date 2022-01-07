@@ -27,12 +27,12 @@ module jt900h_regs(
     input             dec_rfp,
     input             rfp_we,
     input      [ 1:0] imm,
-
+    output reg        bc_unity,
+    input             dec_bc,
     // stack
     output     [31:0] xsp,
     input      [ 2:0] inc_xsp,
     input      [ 2:0] dec_xsp,
-
 
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
@@ -77,7 +77,9 @@ reg [7:0] r0sel, r1sel;
 
 wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
+wire [15:0] cur_bc;
 
+assign cur_bc = { accs[{rfp,4'd5}],accs[{rfp,4'd4}] };
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 
 `ifdef SIMULATION
@@ -130,13 +132,18 @@ always @(posedge clk, posedge rst) begin
         for( gen_cnt=0; gen_cnt<16; gen_cnt=gen_cnt+1 ) begin
             ptrs[gen_cnt] <= 0;
         end
+        bc_unity <= 0;
     end else if(cen) begin
+        bc_unity <= cur_bc==1;
         if( reg_inc )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
         if( reg_dec )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out;
+
+        if( dec_bc )
+            { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
 
         // Stack
         if( dec_xsp != 0 )

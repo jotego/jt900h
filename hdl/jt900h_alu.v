@@ -29,6 +29,7 @@ module jt900h_alu(
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,   // w delayed one clock
     input      [ 5:0] sel,      // operation selection
+    input             bc_unity, // high when BC==1
     // Flags
     output     [ 7:0] flags,
     output reg        djnz,
@@ -154,7 +155,7 @@ always @* begin
                 rslt[15:0] = op0[15:0] - 16'd4;
             end
         end
-        ALU_SUB, ALU_SBC, ALU_CP, ALU_DEC:
+        ALU_SUB, ALU_SBC, ALU_CP, ALU_DEC, ALU_CPD:
         begin
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
             { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
@@ -165,9 +166,9 @@ always @* begin
                 nx_s = rslt_sign;
                 nx_z = is_zero;
                 nx_n = 1;
-                nx_v = rslt_v;
+                nx_v = sel==ALU_CPD ? bc_unity : rslt_v;
             end
-            if( sel!=ALU_DEC ) begin
+            if( sel!=ALU_DEC && sel!=ALU_CPD ) begin
                 nx_c = rslt_c;
             end
         end
@@ -310,6 +311,28 @@ always @* begin
         ALU_RESX: begin
             rslt = imm;
             rslt[ {2'b0,imm[10:8]} ] = 0;
+        end
+        ALU_SET: begin
+            rslt = op0;
+            rslt[ {1'b0,op2[3:0]} ] = 1;
+        end
+        ALU_SETX: begin
+            rslt = imm;
+            rslt[ {2'b0,imm[10:8]} ] = 1;
+        end
+        ALU_TSET: begin
+            rslt = op0;
+            rslt[ {1'b0,op2[3:0]} ] = 1;
+            nx_z = ~op0[{1'b0,op2[3:0]}];
+            nx_n = 0;
+            nx_h = 1;
+        end
+        ALU_TSETX: begin
+            rslt = imm;
+            rslt[ {2'b0,imm[10:8]} ] = 1;
+            nx_z = ~op0[{2'b0,imm[10:8]}];
+            nx_n = 0;
+            nx_h = 1;
         end
         ALU_LDCF: begin
             nx_c = op0[ {1'b0,op2[3:0]} ];

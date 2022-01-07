@@ -34,6 +34,8 @@ module jt900h_ctrl(
     output reg [ 2:0] idx_len,
     output reg [ 1:0] ram_dsel,
 
+    output reg        dec_bc,
+
     // XSP
     output reg        sel_xsp,
     output reg [ 2:0] inc_xsp,
@@ -109,7 +111,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_rfp_we,
            nx_was_load, was_load,
            nx_flag_we,
-           nx_sel_xsp;
+           nx_sel_xsp, nx_dec_bc;
 reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
            nx_dec_xsp,
            nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
@@ -196,6 +198,7 @@ always @* begin
     nx_sel_xsp       = sel_xsp;
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
+    nx_dec_bc        = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -496,15 +499,33 @@ always @* begin
                     // 9'b1100_1???_1 BIT #3,(mem), only byte length
                     // 9'b1001_1???_1 LDCF #3,(mem)
                     // 9'b1000_1???_1 ORCF #3,(mem)
-                    case( op[6:4] )
-                        3'b100: nx_alu_op = ALU_BITX;
-                        3'b001: nx_alu_op = ALU_LDCFX;
-                        3'b000: nx_alu_op = ALU_ORCFX;
+                    // 9'b1011_1???_1 SET #3,(mem)
+                    // 9'b1010_1???_1 TSET #3,(mem)
+                    nx_flag_we = 1;
+                    fetched    = 1;
+                    case( op[6:3] )
+                        4'b0101,4'b0111: begin
+                            nx_alu_op    = op[4] ? ALU_SETX : ALU_TSETX;
+                            nx_regs_we   = 1;
+                            fetched      = 0;
+                            nx_dly_fetch = 1;
+                            nx_phase     = ST_RAM;
+                        end
+                        4'b1001: nx_alu_op = ALU_BITX;
+                        4'b0011: nx_alu_op = ALU_LDCFX;
+                        4'b0001: nx_alu_op = ALU_ORCFX;
                         default: nx_alu_op = ALU_NOP;
                     endcase
                     nx_alu_imm[10:8] = op[2:0];
-                    nx_flag_we  = 1;
-                    fetched = 1;
+                end
+                10'b0001_0110_1?: begin // CPD
+                    nx_alu_op  = ALU_CPD;
+                    nx_dst     = 8'he0;
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_flag_we = 1;
+                    nx_alu_smux= 1;
+                    nx_dec_bc  = 1;
+                    fetched    = 1;
                 end
                 10'b1011_0???_11: begin  // RES #3,(mem)
                     nx_alu_op       = ALU_RESX;
@@ -571,7 +592,7 @@ always @* begin
                     endcase
                     fetched    = 1;
                 end
-                10'b0001_0110_??: begin // MIRR
+                10'b0001_0110_00: begin // MIRR
                     nx_regs_we = 3'b010;
                     nx_alu_op  = ALU_MIRR;
                     fetched    = 1;
@@ -582,10 +603,17 @@ always @* begin
                     fetched   = 1;
                     nx_phase  = DJNZ;
                 end
+                10'b0011_0100_??,       // TSET #4, r
+                10'b0011_0001_??,       // SET #4, r
                 10'b0011_0000_??,       // RES #4, r
                 10'b0011_0010_??: begin // CHG #4,dst
                     nx_alu_imm = { 28'd0,op[11:8] };
-                    nx_alu_op   = op[1] ? ALU_CHG : ALU_RES;
+                    case( op[2:0] )
+                        0: nx_alu_op = ALU_RES;
+                        1: nx_alu_op = ALU_SET;
+                        2: nx_alu_op = ALU_CHG;
+                        4: nx_alu_op = ALU_TSET;
+                    endcase
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
                     fetched     = 2;
@@ -867,6 +895,7 @@ always @(posedge clk, posedge rst) begin
         inc_xsp  <= 0;
         keep_inc_sp <= 0;
         riff     <= 3'b111;
+        dec_bc   <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -902,6 +931,7 @@ always @(posedge clk, posedge rst) begin
         inc_xsp  <= nx_inc_xsp;
         keep_inc_sp <= nx_keep_inc_xsp;
         riff     <= nx_iff;
+        dec_bc   <= nx_dec_bc;
         if( latch_op ) last_op <= op[7:0];
     end
 end
