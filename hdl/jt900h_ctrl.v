@@ -643,6 +643,13 @@ always @* begin
                     nx_dly_fetch = 1;
                     nx_phase     = ST_RAM;
                 end
+                10'b0111_????_00: begin // SCC
+                    nx_alu_imm[15:0] = { 15'd0, jp_ok };
+                    nx_alu_smux = 1;
+                    nx_alu_op   = ALU_MOVE;
+                    nx_regs_we  = expand_zz( op_zz );
+                    fetched     = 1;
+                end
                 10'b0110_0???_?0, // INC #3, dst
                 10'b0110_1???_?0: // DEC #3, dst
                 begin
