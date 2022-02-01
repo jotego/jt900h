@@ -794,7 +794,7 @@ always @* begin
                 10'b1101_0???_??, // XOR R,r
                 10'b1100_0???_??, // AND R,r
                 10'b1010_0???_??, // SUB R,r
-                10'b100?_0???_?0: // ADD R,r
+                10'b100?_0???_?0: // ADD R,r / ADC R,r
                 begin
                     nx_src      = regs_dst; // swap R, r
                     nx_dst      = expand_reg(op[2:0],op_zz);

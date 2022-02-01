@@ -116,11 +116,13 @@ always @* begin
                         0: nx_pre_ok = 1;
                         1: begin
                             nx_pre_ok = 0;
-                            nx_phase   = 1;
+                            nx_phase  = 1;
+                            fetched   = 0; // data fetch will be done in phase 1
                         end
-                        2: begin
+                        3: begin
                             nx_pre_ok = 0;
-                            nx_phase   = 1;
+                            nx_phase  = 1;
+                            fetched   = 0; // data fetch will be done in phase 1
                             nx_ridx_mode = { 1'b1, op[10] };
                         end
                     endcase
@@ -147,14 +149,16 @@ always @* begin
                     fetched    = 2;
                 end
                 5'h13: begin
-                    fetched = 2;
+                    nx_ridx_mode = ridx_mode;
                     if( !ridx_mode[1] ) begin
                         nx_idx_offset = { {8{op[15]}}, op[15:0] };
                         nx_pre_ok = 1;
+                        fetched = 2;
                     end else begin
-                        nx_idx_rdreg_sel = op[7:0];
-                        nx_idx_rdreg_aux = op[15:8];
+                        nx_idx_rdreg_sel = op[23:16];
+                        nx_idx_rdreg_aux = op[31:24];
                         nx_pre_ok = 1;
+                        fetched = 4;
                     end
                 end
                 default:;

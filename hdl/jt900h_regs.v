@@ -111,7 +111,7 @@ always @* begin
         {   accs[ {r0sel[5:2],2'b11} ], accs[ {r0sel[5:2],2'b10} ],
             accs[ {r0sel[5:1],1'b1}  ], accs[ r0sel[5:0] ] };
 
-    r1sel   = simplify(dst); //simplify(idx_rdreg_aux);
+    r1sel   = idx_en ? simplify(idx_rdreg_aux) : simplify(dst);
     dst_out = r1sel[7] ?
         {   ptrs[ {r1sel[3:2],2'b11} ], ptrs[ {r1sel[3:2],2'b10} ],
             ptrs[ {r1sel[3:1],1'b1}  ], ptrs[ r1sel[3:0] ] } :
