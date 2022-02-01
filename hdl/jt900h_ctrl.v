@@ -57,6 +57,7 @@ module jt900h_ctrl(
     input      [ 7:0] flags,
     output reg        flag_we, // instructions that only affect the flags
     input             djnz,
+    input             alu_busy,
 
     input      [31:0] op,
     input             op_ok,
@@ -78,6 +79,7 @@ localparam [4:0] FETCH    = 5'd0,
                  PUSH_PC  = 5'd8,
                  PUSH_R   = 5'd9,
                  PUSH_SR  = 5'd10,
+                 WAIT_ALU = 5'd11,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -534,6 +536,24 @@ always @* begin
                     nx_dly_fetch    = 1;
                     nx_phase        = ST_RAM;
                 end
+                10'b1111_1???_00: begin // Shift operations
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_src     = 8'hE0; // current A register
+                    nx_keep_we = nx_regs_we;
+                    //nx_multi   = 1;
+                    fetched    = 1;
+                    nx_phase   = WAIT_ALU;
+                    case(op[2:0])
+                        3'b000: nx_alu_op = ALU_RLC;
+                        3'b001: nx_alu_op = ALU_RRC;
+                        3'b010: nx_alu_op = ALU_RL;
+                        3'b011: nx_alu_op = ALU_RR;
+                        3'b100: nx_alu_op = ALU_SLA;
+                        3'b101: nx_alu_op = ALU_SRA;
+                        3'b110: nx_alu_op = ALU_SLL;
+                        3'b111: nx_alu_op = ALU_SRL;
+                    endcase
+                end
                 10'b1???_1???_10: begin // arithmetic to memory
                     nx_src       = regs_dst;
                     case( op[6:4] )
@@ -831,6 +851,19 @@ always @* begin
                 end
                 default:;
             endcase
+        end
+        WAIT_ALU: begin
+            if( alu_busy ) begin
+                nx_regs_we = keep_we;
+                nx_keep_we = keep_we;
+                nx_phase   = WAIT_ALU;
+            end else begin
+                nx_keep_we = 0;
+                nx_alu_op  = ALU_NOP;
+                nx_phase   = FETCH;
+            end
+            nx_alu_op  = alu_op;
+            nx_dst     = regs_dst;
         end
         FILL_IMM: begin
             nx_alu_wait = 0;

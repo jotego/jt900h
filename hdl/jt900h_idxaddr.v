@@ -79,6 +79,7 @@ always @* begin
     nx_pre_ok   = pre_ok & idx_en;
     nx_idx_addr = idx_en && !idx_ok ?
         (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) : idx_addr;
+    nx_idx_rdreg_aux = idx_rdreg_aux;
     if( idx_en && !pre_ok ) begin
         nx_pre_ok = 0;
         if( !phase ) begin

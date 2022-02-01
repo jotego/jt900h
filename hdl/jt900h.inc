@@ -49,6 +49,13 @@ localparam [5:0] ALU_NOP  = 6'd0,
                  ALU_TSET  = 6'd48,
                  ALU_TSETX = 6'd49,
                  ALU_CPD   = 6'd50,
-
-                 ALU_LAST = 6'd63
+                 ALU_RLC   = 6'd51,
+                 ALU_RRC   = 6'd52,
+                 ALU_RL    = 6'd53,
+                 ALU_RR    = 6'd54,
+                 ALU_SLA   = 6'd55,
+                 ALU_SRA   = 6'd56,
+                 ALU_SLL   = 6'd57,
+                 ALU_SRL   = 6'd58,
+                 ALU_LAST  = 6'd63
                  ;

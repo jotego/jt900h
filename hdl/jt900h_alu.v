@@ -30,6 +30,8 @@ module jt900h_alu(
     output reg [ 2:0] alu_we,   // w delayed one clock
     input      [ 5:0] sel,      // operation selection
     input             bc_unity, // high when BC==1
+    // multi-cycle operations
+    output reg        busy,     // high if more cycles are needed
     // Flags
     output     [ 7:0] flags,
     output reg        djnz,
@@ -43,9 +45,11 @@ reg  [15:0] stcf;
 reg  [31:0] op2, rslt;
 reg         sign, zero, halfc, overflow, negative, carry;
 reg         nx_s, nx_z, nx_h, nx_v, nx_n, nx_c, nx_djnz;
+reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
+reg  [ 3:0] nx_cnt, cnt;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -82,6 +86,8 @@ always @* begin
     ext_op2 = extend(op2);
     ext_rslt = 0; // assign it for operations that alter the V bit
     nx_djnz  = djnz;
+    nx_busy  = 0;
+    nx_cnt   = 0;
     cc = 0;
 
     case( sel )
@@ -370,10 +376,35 @@ always @* begin
         ALU_ANDCFA: begin
             nx_c = carry & imm[ {2'b0,op1[2:0]} ];
         end
+        ALU_RLC: begin
+            if( w[0] )
+                rslt[7:0] = { op0[6:0], op0[7] };
+            else if( w[1] )
+                rslt[15:0] = { op0[14:0], op0[15] };
+            else
+                rslt[31:0] = { op0[30:0], op0[31] };
+            nx_c = op0_s;
+            nx_z = is_zero;
+            nx_s = rslt_sign;
+            nx_h = 0;
+            nx_v = rslt_even;
+            nx_n = 0;
+            if( !busy ) begin
+                nx_busy = op2[3:0]!=1;
+                nx_cnt = op2[3:0];
+            end else begin
+                nx_busy = cnt > 1;
+                nx_cnt  = cnt-4'd1;
+            end
+        end
         endcase
 end
 
 reg flag_wel;
+wire busy_end;
+
+//assign busy_end = busy && cnt==0;
+assign busy_end = busyl & ~busy;
 
 always @(posedge clk, posedge rst)  begin
     if( rst ) begin
@@ -388,12 +419,17 @@ always @(posedge clk, posedge rst)  begin
         flag_only<= 0;
         djnz     <= 0;
         flag_wel <= 0;
+        busy     <= 0;
+        busyl    <= 0;
+        busy_cen <= 0;
+        cnt      <= 0;
     end else if(cen) begin
         flag_wel <= flag_we;
+        busyl    <= busy;
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout      <= rslt;
         end
-        if( w!=0 || (flag_we && !flag_wel)  ) begin
+        if( (w!=0 || (flag_we && !flag_wel)) && ((!busy && !busyl) || busy_cen)) begin
             sign     <= nx_s;
             zero     <= nx_z;
             halfc    <= nx_h;
@@ -401,9 +437,12 @@ always @(posedge clk, posedge rst)  begin
             negative <= nx_n;
             carry    <= nx_c;
             djnz     <= nx_djnz;
+            busy     <= nx_busy;
+            cnt      <= nx_cnt;
         end
         flag_only <= flag_we;
-        alu_we    <= w;
+        alu_we    <= (busyl && cnt<=1) ? 0 : w;
+        busy_cen  <= busy ? ~busy_cen : 1'b1;
     end
 end
 
