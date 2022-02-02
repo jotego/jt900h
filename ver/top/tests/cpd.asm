@@ -18,7 +18,7 @@
     jp ne,bad_end
 
     cpd a,(xix-)
-    jp eq,bad_end
+    jp nov,bad_end  ; V is set when BC==0 after CPD
     cp bc,0
     jp ne,bad_end
 
