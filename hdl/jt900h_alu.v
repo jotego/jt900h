@@ -50,6 +50,7 @@ reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
+wire        shr_msb, shl_lsb;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -66,6 +67,8 @@ assign rslt_v  = w[0] ? ext_rslt[32]^rslt[ 7] :
 assign rslt_even = w[0] ? ~^rslt[7:0] : ~^rslt[15:0];
 assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
+assign shr_msb = sel==ALU_RR ? carry : sel==ALU_SRA ? op0_s : 1'b0;
+assign shl_lsb = sel==ALU_RL && carry;
 
 always @* begin
 //    stcf = op1;
@@ -376,14 +379,44 @@ always @* begin
         ALU_ANDCFA: begin
             nx_c = carry & imm[ {2'b0,op1[2:0]} ];
         end
-        ALU_RLC: begin
-            if( w[0] )
-                rslt[7:0] = { op0[6:0], op0[7] };
-            else if( w[1] )
-                rslt[15:0] = { op0[14:0], op0[15] };
-            else
-                rslt[31:0] = { op0[30:0], op0[31] };
-            nx_c = op0_s;
+        ALU_RLC, ALU_RRC, ALU_RL, ALU_RR, ALU_SLA, ALU_SRA, ALU_SLL, ALU_SRL: begin
+            case( sel )
+                ALU_RL,ALU_SLA,ALU_SLL: begin
+                    if( w[0] )
+                        { nx_c, rslt[7:0] } = { op0[7:0], shl_lsb };
+                    else if( w[1] )
+                        { nx_c, rslt[15:0] } = { op0[15:0], shl_lsb };
+                    else
+                        { nx_c, rslt[31:0] } = { op0[31:0], shl_lsb };
+                end
+                ALU_RR,ALU_SRA,ALU_SRL: begin
+                    if( w[0] )
+                        { rslt[ 7:0], nx_c } = { shr_msb, op0[7:0] };
+                    else if( w[1] )
+                        { rslt[15:0], nx_c } = { shr_msb, op0[15:0] };
+                    else
+                        { rslt[31:0], nx_c } = { shr_msb, op0[31:0] };
+                end
+                ALU_RLC: begin
+                    if( w[0] )
+                        rslt[7:0] = { op0[6:0], op0[7] };
+                    else if( w[1] )
+                        rslt[15:0] = { op0[14:0], op0[15] };
+                    else
+                        rslt[31:0] = { op0[30:0], op0[31] };
+                    nx_c = op0_s;
+                end
+                ALU_RRC: begin
+                    if( w[0] )
+                        rslt[7:0] = { op0[0], op0[7:1] };
+                    else if( w[1] )
+                        rslt[15:0] = { op0[0], op0[15:1] };
+                    else
+                        rslt[31:0] = { op0[0], op0[31:1] };
+                    nx_c = op0[0];
+                end
+                default:;
+            endcase
             nx_z = is_zero;
             nx_s = rslt_sign;
             nx_h = 0;

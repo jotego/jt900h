@@ -660,11 +660,21 @@ always @* begin
                     nx_alu_smux = 1;
                     fetched     = 2;
                 end
-                10'b1110_1000_0?: begin // RLC #4, r
+                10'b1110_1???_0?: // RLC/RRC/RL/RR/SLA/SRA/SLL/SRL #4, r
+                begin
                     nx_alu_imm  = { 28'd0,op[11:8] };
                     nx_alu_smux = 1;
                     fetched     = 2;
-                    nx_alu_op   = ALU_RLC;
+                    case(op[2:0])
+                        3'b000: nx_alu_op = ALU_RLC;
+                        3'b001: nx_alu_op = ALU_RRC;
+                        3'b010: nx_alu_op = ALU_RL;
+                        3'b011: nx_alu_op = ALU_RR;
+                        3'b100: nx_alu_op = ALU_SLA;
+                        3'b101: nx_alu_op = ALU_SRA;
+                        3'b110: nx_alu_op = ALU_SLL;
+                        3'b111: nx_alu_op = ALU_SRL;
+                    endcase
                     nx_regs_we  = expand_zz( op_zz );
                     nx_keep_we  = nx_regs_we;
                     nx_phase    = WAIT_ALU;
