@@ -140,7 +140,7 @@ always @(posedge clk, posedge rst) begin
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
         if( reg_dec )
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out;
+              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out - full_step;
 
         if( dec_bc )
             { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
