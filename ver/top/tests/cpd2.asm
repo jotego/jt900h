@@ -3,26 +3,29 @@
     org 0
     ld a,0xbf    ; common header
 
-    ld a,0xca
-    ld xix,data+2
+    ld wa,0xcafe
+    ld xiy,data+2*2
     ld bc,3
 
-    cpd a,(xix-)
+    ld de,(xiy)
+    cpd wa,(xiy-)
     jp eq,bad_end
     cp bc,2
     jp ne,bad_end
 
-    cpd a,(xix-)
-    jp ne,bad_end
+    ld de,(xiy)
+    cpd wa,(xiy-)
+    jp eq,bad_end
     cp bc,1
     jp ne,bad_end
 
-    cpd a,(xix-)
-    jp eq,bad_end
+    ld de,(xiy)
+    cpd wa,(xiy-)
+    jp ne,bad_end
     cp bc,0
     jp ne,bad_end
 
-    cp xix,data-1
+    cp xiy,data-2
     jp ne,bad_end
 
 test_end:
