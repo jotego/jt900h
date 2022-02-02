@@ -646,23 +646,18 @@ always @* begin
                 10'b0011_0100_??,       // TSET #4, r
                 10'b0011_0001_??,       // SET #4, r
                 10'b0011_0000_??,       // RES #4, r
+                10'b0011_0011_??,       // BIT #4,r
                 10'b0011_0010_??: begin // CHG #4,dst
                     nx_alu_imm = { 28'd0,op[11:8] };
                     case( op[2:0] )
                         0: nx_alu_op = ALU_RES;
                         1: nx_alu_op = ALU_SET;
                         2: nx_alu_op = ALU_CHG;
+                        3: begin nx_alu_op = ALU_BIT; nx_flag_we  = 1; end
                         4: nx_alu_op = ALU_TSET;
                     endcase
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
-                    fetched     = 2;
-                end
-                10'b0011_0011_??: begin // BIT #4,r
-                    nx_alu_imm = { 28'd0,op[11:8] };
-                    nx_alu_op   = ALU_BIT;
-                    nx_alu_smux = 1;
-                    nx_flag_we  = 1;
                     fetched     = 2;
                 end
                 10'b0010_?011_0?, // LDCF #4,r   - A,r
