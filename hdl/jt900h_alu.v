@@ -49,7 +49,7 @@ reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
-reg  [ 3:0] nx_cnt, cnt;
+reg  [ 4:0] nx_cnt, cnt;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -391,10 +391,10 @@ always @* begin
             nx_n = 0;
             if( !busy ) begin
                 nx_busy = op2[3:0]!=1;
-                nx_cnt = op2[3:0];
+                nx_cnt = { op2[3:0]==0, op2[3:0]};
             end else begin
                 nx_busy = cnt > 1;
-                nx_cnt  = cnt-4'd1;
+                nx_cnt  = cnt-5'd1;
             end
         end
         endcase
