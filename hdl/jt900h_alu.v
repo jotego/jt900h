@@ -28,7 +28,7 @@ module jt900h_alu(
     output reg        flag_only, // flag_we delayed one clock
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,   // w delayed one clock
-    input      [ 5:0] sel,      // operation selection
+    input      [ 6:0] sel,      // operation selection
     input             bc_unity, // high when BC==1
     // multi-cycle operations
     output reg        busy,     // high if more cycles are needed
@@ -48,9 +48,10 @@ reg         nx_s, nx_z, nx_h, nx_v, nx_n, nx_c, nx_djnz;
 reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
+wire        imm_s;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
-wire        shr_msb, shl_lsb;
+wire        shr_msb, shl_lsb, shrx_msb, shlx_lsb;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -65,10 +66,13 @@ assign rslt_v  = w[0] ? ext_rslt[32]^rslt[ 7] :
                  w[1] ? ext_rslt[32]^rslt[15] :
                         ext_rslt[32]^rslt[31];
 assign rslt_even = w[0] ? ~^rslt[7:0] : ~^rslt[15:0];
-assign op0_s   = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
-assign op1_s   = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
-assign shr_msb = sel==ALU_RR ? carry : sel==ALU_SRA ? op0_s : 1'b0;
-assign shl_lsb = sel==ALU_RL && carry;
+assign op0_s    = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
+assign op1_s    = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
+assign imm_s    = w[0] ? imm[7] : w[1] ? imm[15] : imm[31];
+assign shr_msb  = sel==ALU_RR ? carry : sel==ALU_SRA ? op0_s : 1'b0;
+assign shl_lsb  = sel==ALU_RL && carry;
+assign shrx_msb = sel==ALU_RRX ? carry : sel==ALU_SRAX ? imm_s : 1'b0;
+assign shlx_lsb = sel==ALU_RLX && carry;
 
 always @* begin
 //    stcf = op1;
@@ -430,7 +434,45 @@ always @* begin
                 nx_cnt  = cnt-5'd1;
             end
         end
-        endcase
+        ALU_RLCX, ALU_RRCX, ALU_RLX, ALU_RRX, ALU_SLAX, ALU_SRAX, ALU_SLLX, ALU_SRLX: begin
+            case( sel )
+                ALU_RLX,ALU_SLAX,ALU_SLLX: begin
+                    if( w[0] )
+                        { nx_c, rslt[7:0] } = { imm[7:0], shlx_lsb };
+                    else
+                        { nx_c, rslt[15:0] } = { imm[15:0], shlx_lsb };
+                end
+                ALU_RRX,ALU_SRAX,ALU_SRLX: begin
+                    if( w[0] )
+                        { rslt[ 7:0], nx_c } = { shrx_msb, imm[7:0] };
+                    else
+                        { rslt[15:0], nx_c } = { shrx_msb, imm[15:0] };
+                end
+                ALU_RLCX: begin
+                    if( w[0] ) begin
+                        rslt[7:0] = { imm[6:0], imm[7] };
+                        nx_c = imm[6];
+                    end else begin
+                        rslt[15:0] = { imm[14:0], imm[15] };
+                        nx_c = imm[15];
+                    end
+                end
+                ALU_RRCX: begin
+                    if( w[0] )
+                        rslt[7:0] = { imm[0], imm[7:1] };
+                    else
+                        rslt[15:0] = { imm[0], imm[15:1] };
+                    nx_c = imm[0];
+                end
+                default:;
+            endcase
+            nx_z = is_zero;
+            nx_s = rslt_sign;
+            nx_h = 0;
+            nx_v = rslt_even;
+            nx_n = 0;
+        end
+    endcase
 end
 
 reg flag_wel;

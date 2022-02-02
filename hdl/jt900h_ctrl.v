@@ -51,7 +51,7 @@ module jt900h_ctrl(
 
     // ALU control
     output reg [31:0] alu_imm,
-    output reg [ 5:0] alu_op,
+    output reg [ 6:0] alu_op,
     output reg        alu_smux,
     output reg        alu_wait,
     input      [ 7:0] flags,
@@ -104,7 +104,7 @@ reg        nx_alu_smux, nx_alu_wait,
            nx_idx_en;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
-reg  [5:0] nx_alu_op;
+reg  [6:0] nx_alu_op;
 reg        nx_inc_rfp, nx_dec_rfp,
            nx_nodummy_fetch, nodummy_fetch,
            nx_goexec, goxec,
@@ -556,7 +556,24 @@ always @* begin
                     nx_dly_fetch    = 1;
                     nx_phase        = ST_RAM;
                 end
-                10'b1111_1???_00: begin // Shift operations
+                10'b0111_1???_1?: begin // Shift operations on memory RL<W> (mem)
+                    nx_regs_we   = expand_zz( op_zz );
+                    nx_keep_we   = nx_regs_we;
+                    nx_flag_we   = 1;
+                    nx_dly_fetch = 1;
+                    nx_phase     = ST_RAM;
+                    case(op[2:0])
+                        3'b000: nx_alu_op = ALU_RLCX;
+                        3'b001: nx_alu_op = ALU_RRCX;
+                        3'b010: nx_alu_op = ALU_RLX;
+                        3'b011: nx_alu_op = ALU_RRX;
+                        3'b100: nx_alu_op = ALU_SLAX;
+                        3'b101: nx_alu_op = ALU_SRAX;
+                        3'b110: nx_alu_op = ALU_SLLX;
+                        3'b111: nx_alu_op = ALU_SRLX;
+                    endcase
+                end
+                10'b1111_1???_00: begin // Shift operations with accumulator
                     nx_regs_we = expand_zz( op_zz );
                     nx_src     = 8'hE0; // current A register
                     nx_keep_we = nx_regs_we;
