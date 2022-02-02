@@ -90,6 +90,7 @@ always @* begin
                     nx_idx_offset    = op[3] ? { {16{op[15]}}, op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
                     nx_reg_dec       = !op[3] && op[15:8]==8'h16; // CPD instruction
+                    nx_reg_inc       = !op[3] && op[15:8]==8'h14; // CPI instruction
                     nx_reg_step      = {1'b0,op[4]};
                     fetched          = op[3] ? 3'd2: 3'd1;
                 end

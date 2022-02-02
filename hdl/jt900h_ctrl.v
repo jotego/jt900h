@@ -540,8 +540,8 @@ always @* begin
                     endcase
                     nx_alu_imm[10:8] = op[2:0];
                 end
-                10'b0001_0110_1?: begin // CPD
-                    nx_alu_op  = ALU_CPD;
+                10'b0001_01?0_1?: begin // CPD/CPI
+                    nx_alu_op  = ALU_CPD; // same for both CPD & CPI
                     nx_dst     = 8'he0;
                     nx_regs_we = expand_zz( op_zz );
                     nx_flag_we = 1;

@@ -113,7 +113,7 @@ always @* begin
                 nx_n = 0;
                 nx_v = rslt_v;
             end
-            if (sel!=ALU_INC) begin
+            if (sel!=ALU_INC ) begin
                 nx_c = rslt_c;
             end
         end
