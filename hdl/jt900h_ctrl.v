@@ -80,6 +80,7 @@ localparam [4:0] FETCH    = 5'd0,
                  PUSH_R   = 5'd9,
                  PUSH_SR  = 5'd10,
                  WAIT_ALU = 5'd11,
+                 POP_PC   = 5'd12,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -363,10 +364,12 @@ always @* begin
                     nx_dec_xsp = 4;
                     nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
                     nx_phase = PUSH_PC;
+                    latch_op = 1;
                 end
                 8'b0001_1110: begin // CALLR
                     nx_alu_imm  = { {16{op[23]}}, op[23:8] };
                     fetched = 3;
+                    latch_op = 1;
                     nx_phase = PUSH_PC;
                     nx_dec_xsp = 4;
                 end
@@ -378,6 +381,13 @@ always @* begin
                     end
                     nx_pc_rel   = jp_ok;
                     nx_phase    = DUMMY;
+                end
+                8'b000_1110: begin // RET
+                    nx_idx_len      = 2;
+                    nx_ram_ren      = 1; // RAM load enable
+                    nx_sel_xsp      = 1;
+                    fetched         = 0;
+                    nx_phase        = POP_PC;
                 end
                 default:;
             endcase
@@ -396,10 +406,20 @@ always @* begin
             nx_ram_wen  = 1;
             nx_idx_len  = 4;
             // jump
-            if( op[1] )
+            if( last_op[3:0]==4'he )
                 nx_pc_rel = 1;  // CALLR
             else
                 nx_pc_we   = 1; // CALL
+            nx_phase   = DUMMY;
+        end
+        POP_PC: begin
+            // retrieve the PC
+            nx_inc_xsp = 4;
+            nx_pc_we   = 1; // return
+            nx_alu_imm = op;
+            // set RAM controller back to normal operation
+            nx_sel_xsp = 0;
+            nx_ram_ren = 0;
             nx_phase   = DUMMY;
         end
         PUSH_R: begin
@@ -473,7 +493,7 @@ always @* begin
                 nx_ram_dsel = 1; // copy the RAM output
                 fetched = 1;  // this will set the RAM wait flag too
             end
-            nx_regs_we  = keep_we;
+            nx_regs_we = keep_we;
             nx_ram_ren = 0;
             nx_data_latch = op; // is it necessary to have it in data_latch
                                 // and alu_imm?

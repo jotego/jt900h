@@ -1,0 +1,51 @@
+    ; RLC
+    main section code
+    org 0
+    ld a,0xbf    ; common header
+    ld w,0
+
+    ld a,1
+    ld xix,data
+    ld xsp,stack
+
+    call func_a
+    cp a,2
+    jp ne,bad_end
+
+    call func_b
+    cp a,5
+    jp ne,bad_end
+
+    call func_c
+    cp a,9
+    jp ne,bad_end
+
+test_end:
+    ; ld (0xffff),0xff
+end_loop:
+    ldf 0
+    ld hl,0xbabe
+    jp end_loop
+bad_end:
+    ld hl,0xdead
+    jp bad_end
+func_a:
+    inc 1,a
+    ret
+func_b:
+    call func_a
+    call func_a
+    call func_a
+    ret
+func_c:
+    call func_b
+    call func_a
+    ret
+data:
+    db 0x81,0x3,0x6,0xc,0x81,0x30,0x60,0xc0
+    db 0x81,0x3,0x6,0xc,0x81,0x30,0x60,0xc0
+    db 0x81,0x3,0x6,0xc,0x81,0x30,0x60,0xc0
+    db 0x81,0x3,0x6,0xc,0x81,0x30,0x60,0xc0
+    dw 0xffff,0xffff,0xffff,0xffff
+stack:
+    end
