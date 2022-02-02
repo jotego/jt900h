@@ -660,6 +660,15 @@ always @* begin
                     nx_alu_smux = 1;
                     fetched     = 2;
                 end
+                10'b1110_1000_0?: begin // RLC #4, r
+                    nx_alu_imm  = { 28'd0,op[11:8] };
+                    nx_alu_smux = 1;
+                    fetched     = 2;
+                    nx_alu_op   = ALU_RLC;
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_keep_we  = nx_regs_we;
+                    nx_phase    = WAIT_ALU;
+                end
                 10'b0010_?011_0?, // LDCF #4,r   - A,r
                 10'b0010_?010_0?, // XORCF #4,r  - A,r
                 10'b0010_?001_0?, // ORCF #4,r   - A,r
