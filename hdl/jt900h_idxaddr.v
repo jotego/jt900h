@@ -22,15 +22,18 @@ module jt900h_idxaddr(
     input             cen,
 
     input      [31:0] op,
+    input             use_last,
     input             idx_en,
     output reg [ 2:0] fetched,
     // To register bank
     // index register
     output reg [ 7:0] idx_rdreg_sel,
     input      [31:0] idx_rdreg,
+    input      [31:0] idx_auxreg,
     output reg [ 1:0] reg_step,
     output reg        reg_inc,
     output reg        reg_dec,
+    input             ldd_write,
     // offset register
     output reg [ 7:0] idx_rdreg_aux,
     input      [15:0] idx_rdaux,
@@ -44,11 +47,19 @@ localparam [7:0] NULL=8'h40;
 reg  [23:0] nx_idx_offset, idx_offset, aux24, nx_idx_addr;
 reg  [ 1:0] ridx_mode, nx_ridx_mode,
             nx_reg_step;
+reg         nx_xdehl_dec;
 reg  [ 4:0] mode, nx_mode;
 reg  [ 7:0] nx_idx_rdreg_sel, nx_idx_rdreg_aux;
 reg         nx_reg_dec, nx_reg_inc,
             nx_pre_inc, pre_inc;
+reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
+wire [31:0] eff_op;
+wire        is_LDD, is_CPD;
+
+assign eff_op = {op[31:8], use_last ? {opl[7:1],1'b0} : op[7:0] };
+assign is_LDD = eff_op[15:8]==8'h12;
+assign is_CPD = eff_op[15:8]==8'h16;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
@@ -69,7 +80,7 @@ always @* begin
     fetched      = 0;
     nx_mode      = {op[6],op[3:0]};
     nx_ridx_mode = 0;
-    nx_reg_step  = op[9:8];
+    nx_reg_step  = reg_step;
     nx_reg_inc   = pre_inc;
     nx_pre_inc   = 0;
     nx_reg_dec   = 0;
@@ -78,21 +89,26 @@ always @* begin
     nx_phase     = 0;
     nx_pre_ok   = pre_ok & idx_en;
     nx_idx_addr = idx_en && !idx_ok ?
-        (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) : idx_addr;
+        (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) :
+        ldd_write ? idx_auxreg[23:0] : idx_addr;
     nx_idx_rdreg_aux = idx_rdreg_aux;
+    nx_opl      = opl;
     if( idx_en && !pre_ok ) begin
         nx_pre_ok = 0;
         if( !phase ) begin
             fetched    = 2;
-            casez( {op[6],op[3:0]} )
-                5'b0_????: begin
-                    nx_idx_rdreg_sel = fullreg(op[2:0]);
-                    nx_idx_offset    = op[3] ? { {16{op[15]}}, op[15:8] } : 24'd0;
+            nx_reg_step= op[9:8];
+            casez( {eff_op[6],eff_op[3:0]} )
+                5'b0_????: begin // this section may operate with the previous op
+                    nx_idx_rdreg_sel = fullreg(eff_op[2:0]);
+                    nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
-                    nx_reg_dec       = !op[3] && op[15:8]==8'h16; // CPD instruction
-                    nx_reg_inc       = !op[3] && op[15:8]==8'h14; // CPI instruction
-                    nx_reg_step      = {1'b0,op[4]};
-                    fetched          = op[3] ? 3'd2: 3'd1;
+                    nx_reg_dec       = !eff_op[3] && (
+                                        is_CPD || is_LDD );
+                    nx_reg_inc       = !eff_op[3] && eff_op[15:8]==8'h14; // CPI instruction
+                    nx_reg_step      = {1'b0,eff_op[4]};
+                    nx_opl           = op[7:0]; // remember it, in case we are in a LDD instruction
+                    fetched          = eff_op[3] ? 3'd2: 3'd1;
                 end
                 5'h10,5'h11,5'h12: begin // memory address as immediate data
                     nx_idx_rdreg_sel = NULL;
@@ -181,6 +197,7 @@ always @(posedge clk, posedge rst) begin
         pre_inc   <= 0;
         reg_dec   <= 0;
         phase     <= 0;
+        opl       <= 0;
         idx_rdreg_sel <= 0;
         idx_rdreg_aux <= 0;
         idx_offset    <= 0;
@@ -197,7 +214,8 @@ always @(posedge clk, posedge rst) begin
         idx_rdreg_sel <= nx_idx_rdreg_sel;
         idx_rdreg_aux <= nx_idx_rdreg_aux;
         idx_offset <= nx_idx_offset;
-        idx_addr <= nx_idx_addr;
+        idx_addr  <= nx_idx_addr;
+        opl       <= nx_opl;
     end
 end
 

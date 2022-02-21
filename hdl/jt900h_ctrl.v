@@ -29,10 +29,12 @@ module jt900h_ctrl(
     output reg        ram_ren,    // read enable
     output reg        ram_wen,    // write enable
     output reg        idx_en,
+    output reg        idx_last,
     input             idx_ok,
     input      [23:0] idx_addr,
-    output reg [ 2:0] idx_len,
+    output reg [ 2:0] wr_len,
     output reg [ 1:0] ram_dsel,
+    output reg        ldd_write,
 
     output reg        dec_bc,
 
@@ -41,6 +43,7 @@ module jt900h_ctrl(
     output reg [ 2:0] inc_xsp,
     output reg [ 2:0] dec_xsp,
 
+    output reg        xdehl_dec,
     output reg [31:0] data_latch,
 
     // RFP
@@ -81,6 +84,7 @@ localparam [4:0] FETCH    = 5'd0,
                  PUSH_SR  = 5'd10,
                  WAIT_ALU = 5'd11,
                  POP_PC   = 5'd12,
+                 LDD_IDX  = 5'd13,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -97,11 +101,12 @@ reg  [4:0] op_phase, nx_phase;
 //reg        illegal;
 reg  [7:0] last_op;
 reg  [7:0] nx_src, nx_dst;
-reg  [2:0] nx_regs_we, nx_idx_len,
+reg  [2:0] nx_regs_we, nx_wr_len,
            nx_keep_we, keep_we;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ram_ren, nx_ram_wen,
-           nx_idx_en;
+           nx_idx_en, nx_xdehl_dec,
+           nx_keep_xdehl_dec, keep_xdehl_dec;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -114,7 +119,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_rfp_we,
            nx_was_load, was_load,
            nx_flag_we,
-           nx_sel_xsp, nx_dec_bc;
+           nx_sel_xsp, nx_dec_bc,
+           nx_idx_last, nx_ldd_write;
 reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
            nx_dec_xsp,
            nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
@@ -193,7 +199,7 @@ always @* begin
     nx_rfp_we        = 0;
     nx_was_load      = was_load;
     nx_flag_we       = flag_we;
-    nx_idx_len       = idx_len;
+    nx_wr_len        = wr_len;
     nx_ram_dsel      = ram_dsel;
     nx_dly_fetch     = dly_fetch;
     nx_inc_xsp       = 0;
@@ -202,6 +208,10 @@ always @* begin
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
+    nx_idx_last      = 0;
+    nx_xdehl_dec     = 0;
+    nx_keep_xdehl_dec = keep_xdehl_dec;
+    nx_ldd_write     = 0;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -211,7 +221,7 @@ always @* begin
             nx_alu_smux = 0;
             nx_alu_wait = 0;
             nx_regs_we  = 0;
-            nx_idx_len  = 0;
+            nx_wr_len   = 0;
             nx_ram_dsel = 0;
             nx_keep_we  = 0;
             nx_exec_imm = 0;
@@ -221,6 +231,7 @@ always @* begin
             nx_dly_fetch= 0;
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
+            nx_keep_xdehl_dec = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
                     fetched = 1;
@@ -277,23 +288,19 @@ always @* begin
                 8'b0011_0???,   // word
                 8'b0100_0???:   // long word
                 begin // LD R,# 0zzz_0RRR, register and immediate value
-                    if( op[7:0]==0 ) begin
-                        fetched = 1; // NOP
+                    nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
+                    nx_dst      = expand_reg(op[2:0], nx_op_zz);
+                    nx_alu_imm  = { 24'd0, op[15:8] };
+                    nx_alu_op   = ALU_MOVE;
+                    nx_alu_smux = 1;
+                    fetched     = 2;
+                    if( nx_op_zz!=0 ) begin
+                        nx_phase = FILL_IMM;
+                        nx_alu_wait = 1;
+                        nx_keep_we  = expand_zz( nx_op_zz );
                     end else begin
-                        nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
-                        nx_dst      = expand_reg(op[2:0], nx_op_zz);
-                        nx_alu_imm  = { 24'd0, op[15:8] };
-                        nx_alu_op   = ALU_MOVE;
-                        nx_alu_smux = 1;
-                        fetched     = 2;
-                        if( nx_op_zz!=0 ) begin
-                            nx_phase = FILL_IMM;
-                            nx_alu_wait = 1;
-                            nx_keep_we  = expand_zz( nx_op_zz );
-                        end else begin
-                            nx_regs_we  = expand_zz( nx_op_zz );
-                            nx_phase = FETCH;
-                        end
+                        nx_regs_we  = expand_zz( nx_op_zz );
+                        nx_phase = FETCH;
                     end
                 end
                 8'b0000_0110: begin // EI num
@@ -303,7 +310,7 @@ always @* begin
                 8'b0000_10?1: begin // PUSH<W> #
                     nx_regs_we  = op[1] ? 3'b10 : 3'b1;
                     nx_dec_xsp  = nx_regs_we;
-                    nx_idx_len  = nx_regs_we;
+                    nx_wr_len   = nx_regs_we;
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = PUSH_R;
                     nx_flag_we  = 1;
@@ -313,7 +320,7 @@ always @* begin
                 end
                 8'b0001_1000,       // PUSH F
                 8'b0000_0010: begin // PUSH SR
-                    nx_idx_len = op[1] ? 3'd2 : 3'd1;
+                    nx_wr_len  = op[1] ? 3'd2 : 3'd1;
                     nx_dec_xsp = op[1] ? 3'd2 : 3'd1;
                     nx_ram_dsel= 2;
                     nx_phase   = PUSH_SR;
@@ -325,7 +332,7 @@ always @* begin
                         8'he0; // A
                     nx_keep_we = !op[6] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
                     nx_keep_inc_xsp = nx_keep_we;
-                    nx_idx_len = nx_keep_we;
+                    nx_wr_len  = nx_keep_we;
                     nx_ram_ren = 1;
                     nx_sel_xsp = 1;
                     nx_phase   = LD_RAM;
@@ -339,7 +346,7 @@ always @* begin
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
                     nx_dec_xsp = nx_regs_we;
-                    nx_idx_len = nx_regs_we;
+                    nx_wr_len  = nx_regs_we;
                     nx_phase   = PUSH_R;
                     nx_flag_we = 1;
                     fetched = 0;
@@ -383,7 +390,7 @@ always @* begin
                     nx_phase    = DUMMY;
                 end
                 8'b000_1110: begin // RET
-                    nx_idx_len      = 2;
+                    nx_wr_len       = 2;
                     nx_ram_ren      = 1; // RAM load enable
                     nx_sel_xsp      = 1;
                     fetched         = 0;
@@ -396,7 +403,7 @@ always @* begin
             nx_sel_xsp  = 1;
             nx_ram_dsel = 2;
             nx_ram_wen  = 1;
-            nx_idx_len  = dec_xsp; // 1 or 2 bytes
+            nx_wr_len   = dec_xsp; // 1 or 2 bytes
             nx_phase    = DUMMY;
         end
         PUSH_PC: begin
@@ -404,7 +411,7 @@ always @* begin
             nx_sel_xsp  = 1;
             nx_ram_dsel = 1;
             nx_ram_wen  = 1;
-            nx_idx_len  = 4;
+            nx_wr_len   = 4;
             // jump
             if( last_op[3:0]==4'he )
                 nx_pc_rel = 1;  // CALLR
@@ -425,7 +432,7 @@ always @* begin
         PUSH_R: begin
             nx_ram_wen = 1;
             nx_sel_xsp = 1;
-            nx_idx_len = regs_we;
+            nx_wr_len  = regs_we;
             nx_phase   = DUMMY;
         end
         IDX: if( idx_ok ) begin
@@ -473,6 +480,18 @@ always @* begin
                 end
             endcase
         end
+        /*
+        LDD_IDX: begin
+            nx_alu_op  = ALU_NOP;
+            nx_regs_we = keep_we;
+            nx_flag_we = 1;
+            if( idx_ok ) begin
+                nx_phase = ST_RAM;
+            end else begin
+                nx_phase = LDD_IDX;
+                nx_idx_last = 1;
+            end
+        end*/
         DUMMY: begin
             if( !nodummy_fetch ) fetched = 1;
             nx_nodummy_fetch = 0;
@@ -486,6 +505,7 @@ always @* begin
                 nx_phase    = EXEC;
                 nx_was_load = 1;
                 nx_exec_imm = 1;
+                nx_ldd_write = 1; // in case this is an LDD instruction
                 // no change to fetched because we will
                 // reuse the last OP code byte
             end else begin
@@ -503,7 +523,8 @@ always @* begin
         ST_RAM: begin
             nx_phase   = FETCH;
             nx_ram_wen = 1;
-            nx_idx_len = regs_we;
+            nx_wr_len  = regs_we;
+            nx_xdehl_dec = keep_xdehl_dec;
             fetched    = dly_fetch;  // this will set the RAM wait flag too
             nx_dly_fetch = 0;
         end
@@ -548,6 +569,17 @@ always @* begin
                     nx_alu_smux= 1;
                     nx_dec_bc  = 1;
                     fetched    = 1;
+                end
+                10'b0001_0010_1?: begin // LDD
+                    nx_alu_op    = ALU_LDD;
+                    nx_regs_we   = expand_zz( op_zz );
+                    nx_keep_we   = nx_regs_we;
+                    nx_flag_we   = 1;
+                    nx_dec_bc    = 1;
+                    nx_dly_fetch = 1;
+                    nx_idx_en    = 0;
+                    nx_keep_xdehl_dec = 1;
+                    nx_phase     = ST_RAM;
                 end
                 10'b1011_0???_11: begin  // RES #3,(mem)
                     nx_alu_op       = ALU_RESX;
@@ -769,7 +801,7 @@ always @* begin
                 10'b0000_0100_10: begin // PUSH<W> mem
                     nx_regs_we  = expand_zz( op_zz );
                     nx_dec_xsp  = nx_regs_we;
-                    nx_idx_len  = nx_regs_we;
+                    nx_wr_len   = nx_regs_we;
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = PUSH_R;
                     nx_flag_we  = 1;
@@ -779,7 +811,7 @@ always @* begin
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = expand_zz( op_zz );
                     nx_dec_xsp = nx_regs_we;
-                    nx_idx_len = nx_dec_xsp;
+                    nx_wr_len  = nx_dec_xsp;
                     nx_phase   = PUSH_R;
                     nx_flag_we = 1;
                     // the dummy state will do the fetching
@@ -788,7 +820,7 @@ always @* begin
                     nx_ram_ren = 1;
                     nx_sel_xsp = 1;
                     nx_keep_we = expand_zz( op_zz );
-                    nx_idx_len = expand_zz( op_zz );
+                    nx_wr_len  = expand_zz( op_zz );
                     nx_dst     = regs_dst;
                     nx_phase   = LD_RAM;
                     nx_keep_inc_xsp = expand_zz( op_zz );
@@ -799,7 +831,7 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
-                10'b0001_001?_??: begin // EXTS, EXTZ
+                10'b0001_001?_0?: begin // EXTS, EXTZ
                     nx_alu_op  = op[0] ? ALU_EXTS : ALU_EXTZ;
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
@@ -961,7 +993,7 @@ always @(posedge clk, posedge rst) begin
         ram_wait <= 0;
         last_op  <= 0;
         ram_wen <= 0;
-        idx_len  <= 0;
+        wr_len   <= 0;
         ram_dsel <= 0;
         data_latch <= 0;
         nodummy_fetch <= 0;
@@ -980,6 +1012,10 @@ always @(posedge clk, posedge rst) begin
         keep_inc_sp <= 0;
         riff     <= 3'b111;
         dec_bc   <= 0;
+        idx_last <= 0;
+        xdehl_dec<= 0;
+        keep_xdehl_dec <= 0;
+        ldd_write  <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -994,7 +1030,7 @@ always @(posedge clk, posedge rst) begin
         op_zz    <= nx_op_zz;
         regs_we  <= nx_regs_we;
         ram_wait <= nx_ram_wait;
-        idx_len  <= nx_idx_len;
+        wr_len   <= nx_wr_len;
         ram_dsel <= nx_ram_dsel;
         data_latch <= nx_data_latch;
         inc_rfp  <= nx_inc_rfp;
@@ -1016,6 +1052,10 @@ always @(posedge clk, posedge rst) begin
         keep_inc_sp <= nx_keep_inc_xsp;
         riff     <= nx_iff;
         dec_bc   <= nx_dec_bc;
+        nx_idx_last <= idx_last;
+        xdehl_dec <= nx_xdehl_dec;
+        keep_xdehl_dec <= nx_keep_xdehl_dec;
+        ldd_write <= nx_ldd_write;
         if( latch_op ) last_op <= op[7:0];
     end
 end

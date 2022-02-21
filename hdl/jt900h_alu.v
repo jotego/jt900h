@@ -185,6 +185,12 @@ always @* begin
                 nx_c = rslt_c;
             end
         end
+        ALU_LDD: begin
+            rslt = imm;
+            nx_h = 0;
+            nx_n = 0;
+            nx_v = bc_unity;
+        end
         ALU_DECX: // DEC on memory
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,imm[ 3: 0]}-{2'b0,imm[18:16]};

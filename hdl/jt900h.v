@@ -35,17 +35,17 @@ wire [15:0] sr;
 // Register bank
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
-wire [31:0] src_out, dst_out;
+wire [31:0] src_out, dst_out, aux_out;
 wire        bc_unity, dec_bc;
 
 // Indexed memory addresser
 wire [ 7:0] idx_rdreg_sel;
 wire [ 1:0] reg_step;
-wire        reg_inc;
-wire        reg_dec;
+wire        reg_inc, reg_dec,
+            xdehl_dec;
 
-wire        idx_en;
-wire        idx_ok, idx_wr;
+wire        idx_en, idx_last;
+wire        idx_ok, idx_wr, ldd_write;
 wire [ 1:0] ram_dsel;
 
 // PC control
@@ -59,7 +59,7 @@ wire [ 2:0] ctl_fetch, idx_fetch,
 wire [23:0] idx_addr;
 wire        rfp_we;
 
-wire [ 2:0] regs_we, idx_len;
+wire [ 2:0] regs_we, wr_len;
 wire [ 7:0] regs_src, regs_dst;
 wire [31:0] data_latch;
 
@@ -101,9 +101,12 @@ jt900h_ctrl u_ctrl(
     .ram_ren        ( ldram_en          ),
     .ram_wen        ( idx_wr            ),
     .idx_en         ( idx_en            ),
+    .idx_last       ( idx_last          ),
     .idx_ok         ( idx_ok            ),
-    .idx_len        ( idx_len           ),
+    .ldd_write      ( ldd_write         ),
+    .wr_len         ( wr_len            ),
     .idx_addr       ( idx_addr          ),
+    .xdehl_dec      ( xdehl_dec         ),
     .ram_dsel       ( ram_dsel          ),
     .data_latch     ( data_latch        ),
 
@@ -151,6 +154,7 @@ jt900h_regs u_regs(
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .data_sel       ( ram_dsel[0]       ),
+    .xdehl_dec      ( xdehl_dec         ),
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
@@ -158,6 +162,7 @@ jt900h_regs u_regs(
     .idx_en         ( idx_en            ),
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
     .src_out        ( src_out           ),
+    .aux_out        ( aux_out           ),
 
     // source register
     .src            ( regs_src          ),
@@ -178,6 +183,7 @@ jt900h_idxaddr u_idxaddr(
     .cen            ( cen               ),
 
     .idx_en         ( idx_en            ),
+    .use_last       ( idx_last          ),
     .op             ( buf_dout          ),
     .fetched        ( idx_fetch         ),
     // To register bank
@@ -187,6 +193,8 @@ jt900h_idxaddr u_idxaddr(
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
     .idx_rdreg      ( src_out           ),
+    .idx_auxreg     ( aux_out           ),
+    .ldd_write      ( ldd_write         ),
     // offset register
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
     .idx_rdaux      ( dst_out[15:0]     ),
@@ -230,7 +238,7 @@ jt900h_ramctl u_ramctl(
     .idx_addr       ( idx_addr          ),
     .alu_dout       ( alu_dout          ),
     .idx_wr         ( idx_wr            ),
-    .len            ( idx_len           ),
+    .len            ( wr_len            ),
     // RAM interface
     .ram_addr       ( ram_addr          ),
     .ram_dout       ( ram_dout          ),

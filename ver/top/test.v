@@ -78,8 +78,10 @@ always @(posedge clk) begin
     `ifdef USECEN
     cen<=~cen;
     `endif
-    if( ram_we !=0 )
+    if( ram_we !=0 ) begin
         mem[ ram_addr>>1 ] <= ram_win;
+        $display("RAM: %X written to %X",ram_win, ram_addr&24'hffffe);
+    end
 end
 
 always @(posedge clk) begin
