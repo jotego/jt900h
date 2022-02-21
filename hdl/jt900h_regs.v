@@ -151,8 +151,12 @@ always @(posedge clk, posedge rst) begin
             { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
               ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
         if( reg_dec ) begin
-            { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out - full_step;
+            if( r0sel[7] ) // pointer
+                { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
+                  ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out - full_step;
+            else // general registers are used by CPD instruction
+                { accs[ {r0sel[5:2],2'd3} ], accs[ {r0sel[5:2],2'd2} ],
+                  accs[ {r0sel[5:2],2'd1} ], accs[ {r0sel[5:2],2'd0} ] } <= src_out - full_step;
         end
 
         if( dec_bc )

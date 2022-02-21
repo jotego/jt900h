@@ -120,7 +120,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_was_load, was_load,
            nx_flag_we,
            nx_sel_xsp, nx_dec_bc,
-           nx_idx_last, nx_ldd_write;
+           nx_idx_last, nx_ldd_write,
+           keep_lddwr, nx_keep_lddwr;
 reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
            nx_dec_xsp,
            nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
@@ -212,6 +213,7 @@ always @* begin
     nx_xdehl_dec     = 0;
     nx_keep_xdehl_dec = keep_xdehl_dec;
     nx_ldd_write     = 0;
+    nx_keep_lddwr    = keep_lddwr;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -232,6 +234,7 @@ always @* begin
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
             nx_keep_xdehl_dec = 0;
+            nx_keep_lddwr = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
                     fetched = 1;
@@ -473,6 +476,7 @@ always @* begin
                 end
                 default: begin // load operand from memory
                     nx_phase   = LD_RAM;
+                    nx_keep_lddwr = op[15:8] == 8'h12;
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
                     nx_dst     = expand_reg(op[2:0],op_zz);
@@ -505,7 +509,7 @@ always @* begin
                 nx_phase    = EXEC;
                 nx_was_load = 1;
                 nx_exec_imm = 1;
-                nx_ldd_write = 1; // in case this is an LDD instruction
+                nx_ldd_write = keep_lddwr;
                 // no change to fetched because we will
                 // reuse the last OP code byte
             end else begin
@@ -1016,6 +1020,7 @@ always @(posedge clk, posedge rst) begin
         xdehl_dec<= 0;
         keep_xdehl_dec <= 0;
         ldd_write  <= 0;
+        keep_lddwr <= 0;
     end else if(cen) begin
         op_phase <= nx_phase;
         idx_en   <= nx_idx_en;
@@ -1056,6 +1061,7 @@ always @(posedge clk, posedge rst) begin
         xdehl_dec <= nx_xdehl_dec;
         keep_xdehl_dec <= nx_keep_xdehl_dec;
         ldd_write <= nx_ldd_write;
+        keep_lddwr <= nx_keep_lddwr;
         if( latch_op ) last_op <= op[7:0];
     end
 end
