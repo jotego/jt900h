@@ -45,14 +45,15 @@ module jt900h_ramctl(
     output            ram_rdy
 );
 
-reg  [23:0] cache_addr;
-reg  [15:0] cache0, cache1; // always keep 4 bytes of data
+reg  [23:0] cache_addr, op_addr;
+reg  [15:0] cache0, cache1, // always keep 4 bytes of data
+            op0, op1;
 reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
 wire [23:0] req_addr, eff_addr;
 reg  [31:0] eff_data;
-reg         wrbusy, idx_wr_l;
+reg         wrbusy, idx_wr_l, ldram_l;
 reg  [ 1:0] wron;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
@@ -79,10 +80,12 @@ always @(posedge clk,posedge rst) begin
         wron       <= 0;
         ram_we     <= 0;
         ram_din    <= 0;
+        ldram_l    <= ldram_en;
     end else if(cen) begin
         idx_wr_l <= idx_wr;
         wrbusy   <= 0;
         ram_we   <= 0;
+        ldram_l  <= ldram_en;
         if( idx_wr || wron!=0 ) begin // Write access
             if( wron==0 ) begin
                 ram_addr <= eff_addr;
@@ -136,7 +139,16 @@ always @(posedge clk,posedge rst) begin
                     we_mask[3]  <= 0;
                 end
             end
-            if( (req_addr != cache_addr || cache_ok!=4'hf) && we_mask==0) begin
+            // The OP code is kept apart while a load RAM
+            // is performed to fetch operands. It is restored afterwards
+            if( ldram_en && !ldram_l ) begin
+                op_addr   <= cache_addr;
+                {op1,op0} <= {cache1,cache0};
+            end
+            if( !ldram_en && ldram_l ) begin
+                cache_addr      <= op_addr;
+                {cache1,cache0} <= {op1,op0};
+            end else if( (req_addr != cache_addr || cache_ok!=4'hf) && we_mask==0) begin
                 if( req_addr==cache_addr+24'd1 && cache_ok[3:1]==3'b111 ) begin
                     cache_addr <= cache_addr+24'd1;
                     { cache1, cache0 } <= { 8'd0, cache1, cache0[15:8] };
