@@ -42,7 +42,7 @@ wire        bc_unity, dec_bc;
 wire [ 7:0] idx_rdreg_sel;
 wire [ 1:0] reg_step;
 wire        reg_inc, reg_dec,
-            xdehl_dec;
+            dec_xde, dec_xix;
 
 wire        idx_en, idx_last;
 wire        idx_ok, idx_wr, ldd_write;
@@ -106,7 +106,10 @@ jt900h_ctrl u_ctrl(
     .ldd_write      ( ldd_write         ),
     .wr_len         ( wr_len            ),
     .idx_addr       ( idx_addr          ),
-    .xdehl_dec      ( xdehl_dec         ),
+    // LDD
+    .dec_xde        ( dec_xde           ),
+    .dec_xix        ( dec_xix           ),
+
     .ram_dsel       ( ram_dsel          ),
     .data_latch     ( data_latch        ),
 
@@ -154,7 +157,9 @@ jt900h_regs u_regs(
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .data_sel       ( ram_dsel[0]       ),
-    .xdehl_dec      ( xdehl_dec         ),
+    // LDD
+    .dec_xde        ( dec_xde           ),
+    .dec_xix        ( dec_xix           ),
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),

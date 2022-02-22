@@ -37,7 +37,8 @@ module jt900h_regs(
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
     input      [ 1:0] reg_step,
-    input             xdehl_dec,    // used by LDD instruction
+    input             dec_xde,    // used by LDD instruction
+    input             dec_xix,    // used by LDD instruction
     input             reg_inc,
     input             reg_dec,
     // offset register
@@ -80,20 +81,20 @@ reg [7:0] r0sel, r1sel, aux_sel;
 wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
 wire [15:0] cur_bc;
-wire [31:0] cur_xde, cur_xhl;
+wire [31:0] cur_xde, cur_xhl, xix;
 
 assign cur_xde = {accs[{rfp,4'hb}],accs[{rfp,4'ha}],accs[{rfp,4'h9}],accs[{rfp,4'h8}]};
 assign cur_xhl = {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]};
 assign cur_bc = { accs[{rfp,4'd5}],accs[{rfp,4'd4}] };
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
+assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
 
 `ifdef SIMULATION
-    wire [31:0] xix, xiy, xiz;
+    wire [31:0] xiy, xiz;
     wire [31:0] cur_xwa, cur_xbc;
 
     assign cur_xwa = {accs[{rfp,4'd3}],accs[{rfp,4'd2}],accs[{rfp,4'd1}],accs[{rfp,4'd0}]};
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
-    assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 `endif
@@ -115,7 +116,7 @@ always @* begin
             accs[ {r0sel[5:1],1'b1}  ], accs[ r0sel[5:0] ] };
     // aux_out is used for instructions with two index registers, like LDD
     // the aux register is the same as src_out but with bit 2 at zero
-    aux_sel = r0sel & ~8'h4;
+    aux_sel = simplify(rfp,idx_rdreg_sel) & ~8'h4;
     aux_out =
         aux_sel[7:4]==4 ? 32'd0 : aux_sel[7] ?
         {   ptrs[ {aux_sel[3:2],2'b11} ], ptrs[ {aux_sel[3:2],2'b10} ],
@@ -162,9 +163,12 @@ always @(posedge clk, posedge rst) begin
         if( dec_bc )
             { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
 
-        if( xdehl_dec ) begin
+        // LDD
+        if( dec_xde ) begin
             { accs[{rfp,4'hb}], accs[{rfp,4'ha}], accs[{rfp,4'h9}], accs[{rfp,4'h8}]} <= cur_xde - full_step;
-            //{ accs[{rfp,4'hf}], accs[{rfp,4'he}], accs[{rfp,4'hd}], accs[{rfp,4'hc}]} <= cur_xhl - full_step;
+        end
+        if( dec_xix ) begin
+            { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] } <= xix - full_step;
         end
 
         // Stack

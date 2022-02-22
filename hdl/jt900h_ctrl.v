@@ -43,7 +43,8 @@ module jt900h_ctrl(
     output reg [ 2:0] inc_xsp,
     output reg [ 2:0] dec_xsp,
 
-    output reg        xdehl_dec,
+    output reg        dec_xde,
+    output reg        dec_xix,
     output reg [31:0] data_latch,
 
     // RFP
@@ -105,8 +106,9 @@ reg  [2:0] nx_regs_we, nx_wr_len,
            nx_keep_we, keep_we;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ram_ren, nx_ram_wen,
-           nx_idx_en, nx_xdehl_dec,
-           nx_keep_xdehl_dec, keep_xdehl_dec;
+           nx_idx_en, nx_dec_xde, nx_dec_xix,
+           nx_keep_dec_xde, keep_dec_xde,
+           nx_keep_dec_xix, keep_dec_xix;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -210,8 +212,10 @@ always @* begin
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
     nx_idx_last      = 0;
-    nx_xdehl_dec     = 0;
-    nx_keep_xdehl_dec = keep_xdehl_dec;
+    nx_dec_xde       = 0;
+    nx_dec_xix       = 0;
+    nx_keep_dec_xde  = keep_dec_xde;
+    nx_keep_dec_xix  = keep_dec_xix;
     nx_ldd_write     = 0;
     nx_keep_lddwr    = keep_lddwr;
     if(op_ok && !ram_wait) case( op_phase )
@@ -233,7 +237,7 @@ always @* begin
             nx_dly_fetch= 0;
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
-            nx_keep_xdehl_dec = 0;
+            nx_keep_dec_xde = 0;
             nx_keep_lddwr = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
@@ -528,7 +532,8 @@ always @* begin
             nx_phase   = FETCH;
             nx_ram_wen = 1;
             nx_wr_len  = regs_we;
-            nx_xdehl_dec = keep_xdehl_dec;
+            nx_dec_xde = keep_dec_xde;
+            nx_dec_xix = keep_dec_xix;
             fetched    = dly_fetch;  // this will set the RAM wait flag too
             nx_dly_fetch = 0;
         end
@@ -582,7 +587,8 @@ always @* begin
                     nx_dec_bc    = 1;
                     nx_dly_fetch = 1;
                     nx_idx_en    = 0;
-                    nx_keep_xdehl_dec = 1;
+                    nx_keep_dec_xde = last_op[1];
+                    nx_keep_dec_xix = last_op[2];
                     nx_phase     = ST_RAM;
                 end
                 10'b1011_0???_11: begin  // RES #3,(mem)
@@ -1017,8 +1023,8 @@ always @(posedge clk, posedge rst) begin
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
-        xdehl_dec      <= 0;
-        keep_xdehl_dec <= 0;
+        dec_xde        <= 0;
+        keep_dec_xde   <= 0;
         ldd_write      <= 0;
         keep_lddwr     <= 0;
     end else if(cen) begin
@@ -1058,8 +1064,10 @@ always @(posedge clk, posedge rst) begin
         riff           <= nx_iff;
         dec_bc         <= nx_dec_bc;
         nx_idx_last    <= idx_last;
-        xdehl_dec      <= nx_xdehl_dec;
-        keep_xdehl_dec <= nx_keep_xdehl_dec;
+        dec_xde        <= nx_dec_xde;
+        dec_xix        <= nx_dec_xix;
+        keep_dec_xde   <= nx_keep_dec_xde;
+        keep_dec_xix   <= nx_keep_dec_xix;
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
         if( latch_op ) last_op <= op[7:0];
