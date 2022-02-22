@@ -71,14 +71,14 @@ end
 
 always @(posedge clk,posedge rst) begin
     if( rst ) begin
-        ram_addr <= 0;
-        cache_ok <= 0;
-        we_mask  <= 0;
+        ram_addr   <= 0;
+        cache_ok   <= 0;
+        we_mask    <= 0;
         cache_addr <= 0;
-        wrbusy <= 0;
-        wron   <= 0;
-        ram_we <= 0;
-        ram_din <= 0;
+        wrbusy     <= 0;
+        wron       <= 0;
+        ram_we     <= 0;
+        ram_din    <= 0;
     end else if(cen) begin
         idx_wr_l <= idx_wr;
         wrbusy   <= 0;

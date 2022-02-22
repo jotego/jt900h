@@ -78,18 +78,18 @@ function [7:0] fullreg( input [2:0] rcode );
 endfunction
 
 always @* begin
-    fetched      = 0;
-    nx_mode      = {op[6],op[3:0]};
-    nx_ridx_mode = 0;
-    nx_reg_step  = reg_step;
-    nx_reg_inc   = pre_inc;
-    nx_pre_inc   = 0;
-    nx_reg_dec   = 0;
-    nx_idx_offset= idx_offset;
+    fetched          = 0;
+    nx_mode          = {op[6],op[3:0]};
+    nx_ridx_mode     = 0;
+    nx_reg_step      = reg_step;
+    nx_reg_inc       = pre_inc;
+    nx_pre_inc       = 0;
+    nx_reg_dec       = 0;
+    nx_idx_offset    = idx_offset;
     nx_idx_rdreg_sel = idx_rdreg_sel;
-    nx_phase     = 0;
-    nx_pre_ok   = pre_ok & idx_en;
-    nx_idx_addr = idx_en && !idx_ok ?
+    nx_phase         = 0;
+    nx_pre_ok        = pre_ok & idx_en;
+    nx_idx_addr      = idx_en && !idx_ok ?
         (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) :
         ldd_write ? idx_auxreg[23:0] : idx_addr;
     nx_idx_rdreg_aux = idx_rdreg_aux;
@@ -188,34 +188,34 @@ end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        pre_ok    <= 0;
-        idx_ok    <= 0;
-        mode      <= 0;
-        ridx_mode <= 0;
-        reg_step  <= 0;
-        reg_inc   <= 0;
-        pre_inc   <= 0;
-        reg_dec   <= 0;
-        phase     <= 0;
-        opl       <= 0;
+        pre_ok        <= 0;
+        idx_ok        <= 0;
+        mode          <= 0;
+        ridx_mode     <= 0;
+        reg_step      <= 0;
+        reg_inc       <= 0;
+        pre_inc       <= 0;
+        reg_dec       <= 0;
+        phase         <= 0;
+        opl           <= 0;
         idx_rdreg_sel <= 0;
         idx_rdreg_aux <= 0;
         idx_offset    <= 0;
     end else if(cen) begin
-        phase     <= nx_phase;
-        mode      <= nx_mode;
-        ridx_mode <= nx_ridx_mode;
-        reg_step  <= nx_reg_step;
-        reg_inc   <= nx_reg_inc;
-        pre_inc   <= nx_pre_inc;
-        reg_dec   <= nx_reg_dec;
-        pre_ok    <= nx_pre_ok;
-        idx_ok    <= pre_ok;
+        phase         <= nx_phase;
+        mode          <= nx_mode;
+        ridx_mode     <= nx_ridx_mode;
+        reg_step      <= nx_reg_step;
+        reg_inc       <= nx_reg_inc;
+        pre_inc       <= nx_pre_inc;
+        reg_dec       <= nx_reg_dec;
+        pre_ok        <= nx_pre_ok;
+        idx_ok        <= pre_ok;
         idx_rdreg_sel <= nx_idx_rdreg_sel;
         idx_rdreg_aux <= nx_idx_rdreg_aux;
-        idx_offset <= nx_idx_offset;
-        idx_addr  <= nx_idx_addr;
-        opl       <= nx_opl;
+        idx_offset    <= nx_idx_offset;
+        idx_addr      <= nx_idx_addr;
+        opl           <= nx_opl;
     end
 end
 
