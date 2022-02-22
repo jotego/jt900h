@@ -55,11 +55,12 @@ reg         nx_reg_dec, nx_reg_inc,
 reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
 wire [31:0] eff_op;
-wire        is_LDD, is_CPD;
+wire        is_LDD, is_CPD, is_CPI;
 
 assign eff_op = {op[31:8], use_last ? {opl[7:1],1'b0} : op[7:0] };
-assign is_LDD = eff_op[15:8]==8'h12;
-assign is_CPD = eff_op[15:8]==8'h16;
+assign is_LDD = !eff_op[3] && eff_op[15:8]==8'h12;
+assign is_CPD = !eff_op[3] && eff_op[15:8]==8'h16;
+assign is_CPI = !eff_op[3] && eff_op[15:8]==8'h14;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
@@ -103,9 +104,8 @@ always @* begin
                     nx_idx_rdreg_sel = fullreg(eff_op[2:0]);
                     nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
-                    nx_reg_dec       = !eff_op[3] && (
-                                        is_CPD || is_LDD );
-                    nx_reg_inc       = !eff_op[3] && eff_op[15:8]==8'h14; // CPI instruction
+                    nx_reg_dec       = is_CPD || is_LDD;
+                    nx_reg_inc       = is_CPI;
                     nx_reg_step      = {1'b0,eff_op[4]};
                     nx_opl           = op[7:0]; // remember it, in case we are in a LDD instruction
                     fetched          = eff_op[3] ? 3'd2: 3'd1;

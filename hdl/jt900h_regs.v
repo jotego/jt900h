@@ -164,7 +164,7 @@ always @(posedge clk, posedge rst) begin
 
         if( xdehl_dec ) begin
             { accs[{rfp,4'hb}], accs[{rfp,4'ha}], accs[{rfp,4'h9}], accs[{rfp,4'h8}]} <= cur_xde - full_step;
-            { accs[{rfp,4'hf}], accs[{rfp,4'he}], accs[{rfp,4'hd}], accs[{rfp,4'hc}]} <= cur_xhl - full_step;
+            //{ accs[{rfp,4'hf}], accs[{rfp,4'he}], accs[{rfp,4'hd}], accs[{rfp,4'hc}]} <= cur_xhl - full_step;
         end
 
         // Stack

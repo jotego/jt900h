@@ -476,7 +476,7 @@ always @* begin
                 end
                 default: begin // load operand from memory
                     nx_phase   = LD_RAM;
-                    nx_keep_lddwr = op[15:8] == 8'h12;
+                    nx_keep_lddwr = op[7:0] == 8'h12;
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
                     nx_dst     = expand_reg(op[2:0],op_zz);
