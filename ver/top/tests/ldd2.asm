@@ -11,6 +11,7 @@
     lddw (xix-),(xiy-)
     lddw (xix-),(xiy-)
     lddw (xix-),(xiy-)
+    jp ov,bad_end
 
     cp bc,0
     jp ne,bad_end

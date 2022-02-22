@@ -179,7 +179,7 @@ always @* begin
                 nx_s = rslt_sign;
                 nx_z = is_zero;
                 nx_n = 1;
-                nx_v = sel==ALU_CPD ? bc_unity : rslt_v;
+                nx_v = sel==ALU_CPD ? ~bc_unity : rslt_v;
             end
             if( sel!=ALU_DEC && sel!=ALU_CPD ) begin
                 nx_c = rslt_c;
@@ -189,7 +189,7 @@ always @* begin
             rslt = imm;
             nx_h = 0;
             nx_n = 0;
-            nx_v = bc_unity;
+            nx_v = ~bc_unity;
         end
         ALU_DECX: // DEC on memory
         begin // checking w prevents executing twice the same inst.

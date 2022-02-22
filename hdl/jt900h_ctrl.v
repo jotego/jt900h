@@ -85,7 +85,6 @@ localparam [4:0] FETCH    = 5'd0,
                  PUSH_SR  = 5'd10,
                  WAIT_ALU = 5'd11,
                  POP_PC   = 5'd12,
-                 LDD_IDX  = 5'd13,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -488,18 +487,6 @@ always @* begin
                 end
             endcase
         end
-        /*
-        LDD_IDX: begin
-            nx_alu_op  = ALU_NOP;
-            nx_regs_we = keep_we;
-            nx_flag_we = 1;
-            if( idx_ok ) begin
-                nx_phase = ST_RAM;
-            end else begin
-                nx_phase = LDD_IDX;
-                nx_idx_last = 1;
-            end
-        end*/
         DUMMY: begin
             if( !nodummy_fetch ) fetched = 1;
             nx_nodummy_fetch = 0;

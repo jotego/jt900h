@@ -11,6 +11,7 @@
     lddw (xde-),(xhl-)
     lddw (xde-),(xhl-)
     lddw (xde-),(xhl-)
+    jp ov,bad_end
 
     cp bc,0
     jp ne,bad_end
