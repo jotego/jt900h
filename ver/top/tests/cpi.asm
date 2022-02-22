@@ -18,7 +18,7 @@
     jp ne,bad_end
 
     cpi a,(xix+)
-    jp nov,bad_end  ; V is set when BC==0 after CPD
+    jp ov,bad_end  ; V is set when BC==0 after CPD
     cp bc,0
     jp ne,bad_end
 
