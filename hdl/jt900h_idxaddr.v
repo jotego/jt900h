@@ -108,7 +108,7 @@ always @* begin
                     nx_reg_inc       = is_CPI;
                     nx_reg_step      = {1'b0,eff_op[4]};
                     nx_opl           = op[7:0]; // remember it, in case we are in a LDD instruction
-                    fetched          = eff_op[3] ? 3'd2: 3'd1;
+                    fetched          = use_last ? 0 : eff_op[3] ? 3'd2: 3'd1;
                 end
                 5'h10,5'h11,5'h12: begin // memory address as immediate data
                     nx_idx_rdreg_sel = NULL;

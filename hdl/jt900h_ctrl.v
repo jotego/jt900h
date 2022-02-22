@@ -62,6 +62,7 @@ module jt900h_ctrl(
     output reg        flag_we, // instructions that only affect the flags
     input             djnz,
     input             alu_busy,
+    input             nx_v,
 
     input      [31:0] op,
     input             op_ok,
@@ -122,7 +123,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_flag_we,
            nx_sel_xsp, nx_dec_bc,
            nx_idx_last, nx_ldd_write,
-           keep_lddwr, nx_keep_lddwr;
+           keep_lddwr, nx_keep_lddwr,
+           rep, nx_rep;
 reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
            nx_dec_xsp,
            nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
@@ -216,6 +218,7 @@ always @* begin
     nx_keep_dec_xde  = keep_dec_xde;
     nx_keep_dec_xix  = keep_dec_xix;
     nx_ldd_write     = 0;
+    nx_rep           = 0;
     nx_keep_lddwr    = keep_lddwr;
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
@@ -479,7 +482,7 @@ always @* begin
                 end
                 default: begin // load operand from memory
                     nx_phase   = LD_RAM;
-                    nx_keep_lddwr = op[7:0] == 8'h12;
+                    nx_keep_lddwr = op[7:1] == 7'h12>>1;
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
                     nx_dst     = expand_reg(op[2:0],op_zz);
@@ -516,12 +519,23 @@ always @* begin
             nx_inc_xsp = nx_keep_inc_xsp;
         end
         ST_RAM: begin
-            nx_phase   = FETCH;
+            if( rep && nx_v ) begin // repeat
+                nx_idx_en   = 1;
+                nx_idx_last = 1;
+                nx_phase    = LD_RAM;
+                nx_rep      = 0;
+                nx_goexec   = 1;
+                fetched     = 0;
+                req_wait    = 1;
+                nx_alu_op   = ALU_NOP;
+            end else begin
+                nx_phase   = FETCH;
+                fetched    = dly_fetch;  // this will set the RAM wait flag too
+            end
             nx_ram_wen = 1;
             nx_wr_len  = regs_we;
             nx_dec_xde = keep_dec_xde;
             nx_dec_xix = keep_dec_xix;
-            fetched    = dly_fetch;  // this will set the RAM wait flag too
             nx_dly_fetch = 0;
         end
         DJNZ: begin
@@ -566,7 +580,7 @@ always @* begin
                     nx_dec_bc  = 1;
                     fetched    = 1;
                 end
-                10'b0001_0010_1?: begin // LDD
+                10'b0001_001?_1?: begin // LDD, LDDR
                     nx_alu_op    = ALU_LDD;
                     nx_regs_we   = expand_zz( op_zz );
                     nx_keep_we   = nx_regs_we;
@@ -576,6 +590,7 @@ always @* begin
                     nx_idx_en    = 0;
                     nx_keep_dec_xde = last_op[1];
                     nx_keep_dec_xix = last_op[2];
+                    nx_rep       = op[0];
                     nx_phase     = ST_RAM;
                 end
                 10'b1011_0???_11: begin  // RES #3,(mem)
@@ -1014,6 +1029,7 @@ always @(posedge clk, posedge rst) begin
         keep_dec_xde   <= 0;
         ldd_write      <= 0;
         keep_lddwr     <= 0;
+        rep            <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1050,13 +1066,14 @@ always @(posedge clk, posedge rst) begin
         keep_inc_sp    <= nx_keep_inc_xsp;
         riff           <= nx_iff;
         dec_bc         <= nx_dec_bc;
-        nx_idx_last    <= idx_last;
+        idx_last       <= nx_idx_last;
         dec_xde        <= nx_dec_xde;
         dec_xix        <= nx_dec_xix;
         keep_dec_xde   <= nx_keep_dec_xde;
         keep_dec_xix   <= nx_keep_dec_xix;
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
+        rep            <= nx_rep;
         if( latch_op ) last_op <= op[7:0];
     end
 end
