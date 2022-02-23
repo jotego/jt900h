@@ -46,6 +46,7 @@ module jt900h_alu(
 reg  [15:0] stcf;
 reg  [31:0] op2, rslt;
 reg         sign, zero, halfc, overflow, negative, carry;
+reg  [ 5:0] fdash, nx_fdash; // shadow flags, F' in the documentation
 reg         nx_s, nx_h, nx_n, nx_c, nx_djnz;
 reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
@@ -90,6 +91,7 @@ always @* begin
     nx_v = overflow;
     nx_n = negative;
     nx_c = carry;
+    nx_fdash = fdash;
     rslt = dout;
     ext_op0 = extend(op0);
     ext_op2 = extend(op2);
@@ -311,6 +313,10 @@ always @* begin
             else
                 rslt       = {16'd0,op0[15:0]};
         end
+        ALU_EXFF: begin // exchange F and F'
+            nx_fdash = { sign, zero, halfc, overflow, negative, carry };
+            { nx_s, nx_z, nx_h, nx_v, nx_n, nx_c } = fdash;
+        end
         ALU_MIRR: begin
             rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
@@ -506,6 +512,7 @@ always @(posedge clk, posedge rst)  begin
         busyl    <= 0;
         busy_cen <= 0;
         cnt      <= 0;
+        fdash    <= 0;
     end else if(cen) begin
         flag_wel <= flag_we;
         busyl    <= busy;
@@ -519,6 +526,7 @@ always @(posedge clk, posedge rst)  begin
             overflow <= nx_v;
             negative <= nx_n;
             carry    <= nx_c;
+            fdash    <= nx_fdash;
             djnz     <= nx_djnz;
             busy     <= nx_busy;
             cnt      <= nx_cnt;

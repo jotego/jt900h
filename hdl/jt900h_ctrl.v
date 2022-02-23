@@ -291,6 +291,11 @@ always @* begin
                     nx_alu_op  = ALU_CCF;
                     fetched    = 1;
                 end
+                8'b0001_0110: begin // EX F,F'
+                    nx_flag_we = 1;
+                    nx_alu_op  = ALU_EXFF;
+                    fetched    = 1;
+                end
                 8'b0001_0111: begin // LDF - LoaD register File pointer
                     nx_rfp_we  = 1;
                     nx_alu_imm = { 24'd0, op[15:8] };
