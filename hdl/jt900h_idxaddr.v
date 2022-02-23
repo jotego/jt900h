@@ -51,14 +51,15 @@ reg         nx_xdehl_dec;
 reg  [ 4:0] mode, nx_mode;
 reg  [ 7:0] nx_idx_rdreg_sel, nx_idx_rdreg_aux;
 reg         nx_reg_dec, nx_reg_inc,
-            nx_pre_inc, pre_inc;
+            nx_pre_inc, pre_inc,
+            nx_was_LDD, was_LDD;
 reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
 wire [31:0] eff_op;
 wire        is_LDD, is_CPD, is_CPI;
 
-assign eff_op = {op[31:8], use_last ? {opl[7:1],1'b0} : op[7:0] };
-assign is_LDD = !eff_op[3] && eff_op[15:8]==8'h12;
+assign eff_op = {op[31:8], use_last ? opl: op[7:0] };
+assign is_LDD = use_last ? was_LDD : !eff_op[3] && eff_op[15:9]==7'h13>>1; // ignore LSB for LDDR
 assign is_CPD = !eff_op[3] && eff_op[15:8]==8'h16;
 assign is_CPI = !eff_op[3] && eff_op[15:8]==8'h14;
 
@@ -93,9 +94,11 @@ always @* begin
         (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) :
         ldd_write ? idx_auxreg[23:0] : idx_addr;
     nx_idx_rdreg_aux = idx_rdreg_aux;
-    nx_opl      = opl;
+    nx_opl           = opl;
+    nx_was_LDD       = was_LDD;
     if( idx_en && !pre_ok ) begin
-        nx_pre_ok = 0;
+        nx_pre_ok  = 0;
+        nx_was_LDD = 0;
         if( !phase ) begin
             fetched    = 2;
             nx_reg_step= op[9:8];
@@ -105,9 +108,10 @@ always @* begin
                     nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
                     nx_reg_dec       = is_CPD || is_LDD;
+                    nx_was_LDD       = use_last ? was_LDD : is_LDD;
                     nx_reg_inc       = is_CPI;
                     nx_reg_step      = {1'b0,eff_op[4]};
-                    nx_opl           = op[7:0]; // remember it, in case we are in a LDD instruction
+                    nx_opl           = use_last ? opl : op[7:0]; // remember it, in case we are in a LDD instruction
                     fetched          = use_last ? 0 : eff_op[3] ? 3'd2: 3'd1;
                 end
                 5'h10,5'h11,5'h12: begin // memory address as immediate data
@@ -201,6 +205,7 @@ always @(posedge clk, posedge rst) begin
         idx_rdreg_sel <= 0;
         idx_rdreg_aux <= 0;
         idx_offset    <= 0;
+        was_LDD       <= 0;
     end else if(cen) begin
         phase         <= nx_phase;
         mode          <= nx_mode;
@@ -216,6 +221,7 @@ always @(posedge clk, posedge rst) begin
         idx_offset    <= nx_idx_offset;
         idx_addr      <= nx_idx_addr;
         opl           <= nx_opl;
+        was_LDD       <= nx_was_LDD;
     end
 end
 

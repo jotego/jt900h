@@ -212,7 +212,7 @@ always @* begin
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
-    nx_idx_last      = 0;
+    nx_idx_last      = idx_last;
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
     nx_keep_dec_xde  = keep_dec_xde;
@@ -241,6 +241,7 @@ always @* begin
             nx_sel_xsp  = 0;
             nx_keep_dec_xde = 0;
             nx_keep_lddwr = 0;
+            nx_idx_last  = 0;
             casez( op[7:0] )
                 8'b0000_0000: begin // NOP
                     fetched = 1;
@@ -522,6 +523,7 @@ always @* begin
             if( rep && nx_v ) begin // repeat
                 nx_idx_en   = 1;
                 nx_idx_last = 1;
+                nx_ram_ren  = 1;
                 nx_phase    = LD_RAM;
                 nx_rep      = 0;
                 nx_goexec   = 1;
