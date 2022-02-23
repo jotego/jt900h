@@ -63,6 +63,7 @@ module jt900h_ctrl(
     input             djnz,
     input             alu_busy,
     input             nx_v,
+    input             nx_z,
 
     input      [31:0] op,
     input             op_ok,
@@ -86,6 +87,7 @@ localparam [4:0] FETCH    = 5'd0,
                  PUSH_SR  = 5'd10,
                  WAIT_ALU = 5'd11,
                  POP_PC   = 5'd12,
+                 CPDR     = 5'd13,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -505,6 +507,7 @@ always @* begin
                 nx_was_load = 1;
                 nx_exec_imm = 1;
                 nx_ldd_write = keep_lddwr;
+                nx_idx_en   = 0;
                 // no change to fetched because we will
                 // reuse the last OP code byte
             end else begin
@@ -518,6 +521,22 @@ always @* begin
                                 // and alu_imm?
             nx_alu_imm    = op; // make it available to the ALU too
             nx_inc_xsp = nx_keep_inc_xsp;
+        end
+        CPDR: begin
+            if( nx_v & ~nx_z) begin // repeat
+                nx_idx_en   = 1;
+                nx_idx_last = 1;
+                nx_ram_ren  = 1;
+                nx_phase    = LD_RAM;
+                nx_rep      = 0;
+                nx_goexec   = 1;
+                fetched     = 0;
+                req_wait    = 1;
+                nx_alu_op   = ALU_NOP;
+            end else begin
+                nx_phase    = FETCH;
+                fetched     = dly_fetch;
+            end
         end
         ST_RAM: begin
             if( rep && nx_v ) begin // repeat
@@ -573,14 +592,21 @@ always @* begin
                     endcase
                     nx_alu_imm[10:8] = op[2:0];
                 end
-                10'b0001_01?0_1?: begin // CPD/CPI
+                10'b0001_01??_1?: begin // CPD/CPI
                     nx_alu_op  = ALU_CPD; // same for both CPD & CPI
                     nx_dst     = 8'he0;
                     nx_regs_we = expand_zz( op_zz );
                     nx_flag_we = 1;
                     nx_alu_smux= 1;
                     nx_dec_bc  = 1;
-                    fetched    = 1;
+                    if( !op[0] ) begin
+                        fetched = 1;
+                    end else begin
+                        nx_phase     = CPDR;
+                        nx_rep       = 1;
+                        fetched      = 0;
+                        nx_dly_fetch = 1;
+                    end
                 end
                 10'b0001_001?_1?: begin // LDD, LDDR
                     nx_alu_op    = ALU_LDD;

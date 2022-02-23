@@ -70,7 +70,7 @@ wire [ 7:0] flags;
 wire [ 2:0] alu_we;
 wire        alu_smux;
 wire        alu_wait, alu_busy;
-wire        flag_we, djnz, flag_only, nx_v;
+wire        flag_we, djnz, flag_only, nx_v, nx_z;
 
 // Memory controller
 wire        ldram_en;
@@ -120,6 +120,7 @@ jt900h_ctrl u_ctrl(
     .alu_busy       ( alu_busy          ),
     .flags          ( flags             ),
     .nx_v           ( nx_v              ),
+    .nx_z           ( nx_z              ),
     .sr             ( sr                ),
     .flag_we        ( flag_we           ),
     .djnz           ( djnz              ),
@@ -226,6 +227,7 @@ jt900h_alu u_alu(
     .bc_unity       ( bc_unity          ),
     .flags          ( flags             ),
     .nx_v           ( nx_v              ),
+    .nx_z           ( nx_z              ),
     .djnz           ( djnz              ),
     .dout           ( alu_dout          )
 );

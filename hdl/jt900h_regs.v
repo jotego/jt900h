@@ -148,14 +148,19 @@ always @(posedge clk, posedge rst) begin
         bc_unity <= 0;
     end else if(cen) begin
         bc_unity <= cur_bc==1;
-        if( reg_inc )
-            { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-              ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
+        if( reg_inc ) begin
+            if( r0sel[7] ) // pointer
+                { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
+                  ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
+            else // general registers are used by CPD/CPI/LDD instruction
+                { accs[ {r0sel[5:2],2'd3} ], accs[ {r0sel[5:2],2'd2} ],
+                  accs[ {r0sel[5:2],2'd1} ], accs[ {r0sel[5:2],2'd0} ] } <= src_out + full_step;
+        end
         if( reg_dec ) begin
             if( r0sel[7] ) // pointer
                 { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
                   ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out - full_step;
-            else // general registers are used by CPD instruction
+            else // general registers are used by CPD/CPI/LDD instruction
                 { accs[ {r0sel[5:2],2'd3} ], accs[ {r0sel[5:2],2'd2} ],
                   accs[ {r0sel[5:2],2'd1} ], accs[ {r0sel[5:2],2'd0} ] } <= src_out - full_step;
         end

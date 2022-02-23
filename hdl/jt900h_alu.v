@@ -35,6 +35,7 @@ module jt900h_alu(
     // Flags
     output     [ 7:0] flags,
     output reg        nx_v,
+    output reg        nx_z,
     output reg        djnz,
 
     output reg [31:0] dout
@@ -45,7 +46,7 @@ module jt900h_alu(
 reg  [15:0] stcf;
 reg  [31:0] op2, rslt;
 reg         sign, zero, halfc, overflow, negative, carry;
-reg         nx_s, nx_z, nx_h, nx_n, nx_c, nx_djnz;
+reg         nx_s, nx_h, nx_n, nx_c, nx_djnz;
 reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
 wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;

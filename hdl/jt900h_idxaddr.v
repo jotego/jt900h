@@ -52,6 +52,8 @@ reg  [ 4:0] mode, nx_mode;
 reg  [ 7:0] nx_idx_rdreg_sel, nx_idx_rdreg_aux;
 reg         nx_reg_dec, nx_reg_inc,
             nx_pre_inc, pre_inc,
+            nx_was_CPI, was_CPI,
+            nx_was_CPD, was_CPD,
             nx_was_LDD, was_LDD;
 reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
@@ -59,9 +61,10 @@ wire [31:0] eff_op;
 wire        is_LDD, is_CPD, is_CPI;
 
 assign eff_op = {op[31:8], use_last ? opl: op[7:0] };
-assign is_LDD = use_last ? was_LDD : !eff_op[3] && eff_op[15:9]==7'h13>>1; // ignore LSB for LDDR
-assign is_CPD = !eff_op[3] && eff_op[15:8]==8'h16;
-assign is_CPI = !eff_op[3] && eff_op[15:8]==8'h14;
+// ignore the op LSB so it matches LDDR/CPDR/CPIR too
+assign is_LDD = use_last ? was_LDD : !eff_op[3] && eff_op[15:9]==7'h13>>1;
+assign is_CPD = use_last ? was_CPD : !eff_op[3] && eff_op[15:9]==7'h16>>1;
+assign is_CPI = use_last ? was_CPI : !eff_op[3] && eff_op[15:9]==7'h14>>1;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
@@ -96,6 +99,8 @@ always @* begin
     nx_idx_rdreg_aux = idx_rdreg_aux;
     nx_opl           = opl;
     nx_was_LDD       = was_LDD;
+    nx_was_CPD       = was_CPD;
+    nx_was_CPI       = was_CPI;
     if( idx_en && !pre_ok ) begin
         nx_pre_ok  = 0;
         nx_was_LDD = 0;
@@ -108,8 +113,10 @@ always @* begin
                     nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
                     nx_reg_dec       = is_CPD || is_LDD;
-                    nx_was_LDD       = use_last ? was_LDD : is_LDD;
                     nx_reg_inc       = is_CPI;
+                    nx_was_LDD       = use_last ? was_LDD : is_LDD;
+                    nx_was_CPD       = use_last ? was_CPD : is_CPD;
+                    nx_was_CPI       = use_last ? was_CPI : is_CPI;
                     nx_reg_step      = {1'b0,eff_op[4]};
                     nx_opl           = use_last ? opl : op[7:0]; // remember it, in case we are in a LDD instruction
                     fetched          = use_last ? 0 : eff_op[3] ? 3'd2: 3'd1;
@@ -206,6 +213,8 @@ always @(posedge clk, posedge rst) begin
         idx_rdreg_aux <= 0;
         idx_offset    <= 0;
         was_LDD       <= 0;
+        was_CPD       <= 0;
+        was_CPI       <= 0;
     end else if(cen) begin
         phase         <= nx_phase;
         mode          <= nx_mode;
@@ -222,6 +231,8 @@ always @(posedge clk, posedge rst) begin
         idx_addr      <= nx_idx_addr;
         opl           <= nx_opl;
         was_LDD       <= nx_was_LDD;
+        was_CPD       <= nx_was_CPD;
+        was_CPI       <= nx_was_CPI;
     end
 end
 
