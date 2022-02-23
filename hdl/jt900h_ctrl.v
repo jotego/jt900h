@@ -243,6 +243,7 @@ always @* begin
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
             nx_keep_dec_xde = 0;
+            nx_keep_inc_xsp = 0;
             nx_keep_lddwr = 0;
             nx_idx_last  = 0;
             casez( op[7:0] )
@@ -251,12 +252,17 @@ always @* begin
                 end
                 8'b10??_????,
                 8'b11??_00??,
-                8'b11??_010?: begin // start indexed addressing
-                    latch_op = 1;
-                    nx_phase = IDX;
+                8'b11??_010?: begin
                     nx_op_zz = op[5:4];
-                    nx_idx_en= 1;
-                    fetched  = 0; // let the indexation module take control
+                    if( op[7:0]==8'hb0 && op[15:12]==4'b1111 ) begin // RET cc
+                        nx_phase = EXEC;
+                        fetched  = 1;
+                    end else begin // start indexed addressing
+                        latch_op = 1;
+                        nx_phase = IDX;
+                        nx_idx_en= 1;
+                        fetched  = 0; // let the indexation module take control
+                    end
                 end
                 8'b11??_1???: begin // two register operand instruction, r part
                     nx_op_zz = op[5:4];
@@ -657,6 +663,17 @@ always @* begin
                         3'b111: nx_alu_op = ALU_SRLX;
                     endcase
                 end
+                10'b1111_????_01: begin // RET cc
+                    if( jp_ok ) begin
+                        nx_wr_len       = 2;
+                        nx_ram_ren      = 1; // RAM load enable
+                        nx_sel_xsp      = 1;
+                        fetched         = 0;
+                        nx_phase        = POP_PC;
+                    end else begin
+                        fetched = 1;
+                    end
+                end
                 10'b1111_1???_00: begin // Shift operations with accumulator
                     nx_regs_we = expand_zz( op_zz );
                     nx_src     = 8'hE0; // current A register
@@ -933,7 +950,7 @@ always @* begin
                     nx_alu_smux      = 1;   // not really needed, left for consistency
                     fetched          = 1;
                 end
-                10'b1111_0???_??, // CP  R,r
+                10'b1111_0???_?0, // CP  R,r
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
                 10'b1100_0???_??, // AND R,r
