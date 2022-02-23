@@ -40,7 +40,7 @@ module jt900h_ctrl(
 
     // XSP
     output reg        sel_xsp,
-    output reg [ 2:0] inc_xsp,
+    output reg [15:0] inc_xsp,
     output reg [ 2:0] dec_xsp,
 
     output reg        dec_xde,
@@ -128,8 +128,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            keep_lddwr, nx_keep_lddwr,
            rep, nx_rep;
 reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
-           nx_dec_xsp,
-           nx_inc_xsp, nx_keep_inc_xsp, keep_inc_sp;
+           nx_dec_xsp;
+reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -219,6 +219,7 @@ always @* begin
     nx_dec_xix       = 0;
     nx_keep_dec_xde  = keep_dec_xde;
     nx_keep_dec_xix  = keep_dec_xix;
+    nx_keep_inc_xsp  = keep_inc_xsp;
     nx_ldd_write     = 0;
     nx_rep           = 0;
     nx_keep_lddwr    = keep_lddwr;
@@ -348,7 +349,7 @@ always @* begin
                         expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
                         8'he0; // A
                     nx_keep_we = !op[6] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
-                    nx_keep_inc_xsp = nx_keep_we;
+                    nx_keep_inc_xsp = {13'd0, nx_keep_we};
                     nx_wr_len  = nx_keep_we;
                     nx_ram_ren = 1;
                     nx_sel_xsp = 1;
@@ -406,11 +407,12 @@ always @* begin
                     nx_pc_rel   = jp_ok;
                     nx_phase    = DUMMY;
                 end
-                8'b000_1110: begin // RET
+                8'b000_111?: begin // RET / RETD
                     nx_wr_len       = 2;
                     nx_ram_ren      = 1; // RAM load enable
                     nx_sel_xsp      = 1;
                     fetched         = 0;
+                    nx_keep_inc_xsp = op[0] ? op[23:8] : 16'd0; // RETD or RET
                     nx_phase        = POP_PC;
                 end
                 default:;
@@ -438,7 +440,7 @@ always @* begin
         end
         POP_PC: begin
             // retrieve the PC
-            nx_inc_xsp = 4;
+            nx_inc_xsp = keep_inc_xsp + 4;
             nx_pc_we   = 1; // return
             nx_alu_imm = op;
             // set RAM controller back to normal operation
@@ -474,6 +476,11 @@ always @* begin
                     end
                 end
                 9'b01??_0???_1: begin // LD (mem),R
+                    nx_phase    = EXEC;
+                    nx_was_load = 1;
+                end
+                9'b1110_????_1: begin // CALL [cc,]mem
+                    nx_alu_imm  = { 8'd0, idx_addr };
                     nx_phase    = EXEC;
                     nx_was_load = 1;
                 end
@@ -525,7 +532,7 @@ always @* begin
             nx_data_latch = op; // is it necessary to have it in data_latch
                                 // and alu_imm?
             nx_alu_imm    = op; // make it available to the ALU too
-            nx_inc_xsp = nx_keep_inc_xsp;
+            nx_inc_xsp = keep_inc_xsp;
         end
         CPDR: begin
             if( nx_v & ~nx_z) begin // repeat
@@ -574,12 +581,12 @@ always @* begin
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
             casez( { op[7:0], was_load, bad_zz } )
-                10'b1???_1???_11: begin // Arithmetic on memory (mem), R
-                    // 9'b1100_1???_1 BIT #3,(mem), only byte length
-                    // 9'b1001_1???_1 LDCF #3,(mem)
-                    // 9'b1000_1???_1 ORCF #3,(mem)
-                    // 9'b1011_1???_1 SET #3,(mem)
-                    // 9'b1010_1???_1 TSET #3,(mem)
+                10'b1100_1???_11,   // BIT #3,(mem), only byte length
+                10'b1001_1???_11,   // LDCF #3,(mem)
+                10'b1000_1???_11,   // ORCF #3,(mem)
+                10'b1011_1???_11,   // SET #3,(mem)
+                10'b1010_1???_11:   // TSET #3,(mem)
+                begin // Arithmetic on memory (mem), R
                     nx_flag_we = 1;
                     fetched    = 1;
                     case( op[6:3] )
@@ -754,6 +761,15 @@ always @* begin
                     nx_alu_smux = 1;
                     fetched     = 2;
                 end
+                10'b1110_????_11: begin // CALL [cc],mem
+                    if( jp_ok ) begin
+                        fetched = 1;
+                        nx_dec_xsp = 4;
+                        nx_phase = PUSH_PC;
+                    end else begin
+                        fetched = 1;
+                    end
+                end
                 10'b1110_1???_0?: // RLC/RRC/RL/RR/SLA/SRA/SLL/SRL #4, r
                 begin
                     nx_alu_imm  = { 28'd0,op[11:8] };
@@ -868,7 +884,7 @@ always @* begin
                     nx_wr_len  = expand_zz( op_zz );
                     nx_dst     = regs_dst;
                     nx_phase   = LD_RAM;
-                    nx_keep_inc_xsp = expand_zz( op_zz );
+                    nx_keep_inc_xsp = { 13'd0, expand_zz( op_zz ) };
                 end
                 10'b0000_111?_??: begin // BS1B, BS1F
                     nx_alu_op  = op[0] ? ALU_BS1B : ALU_BS1F;
@@ -918,7 +934,7 @@ always @* begin
                     fetched          = 1;
                 end
                 10'b1111_0???_??, // CP  R,r
-                10'b1110_0???_??, // OR  R,r
+                10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
                 10'b1100_0???_??, // AND R,r
                 10'b1010_0???_??, // SUB R,r
@@ -1054,7 +1070,7 @@ always @(posedge clk, posedge rst) begin
         sel_xsp        <= 0;
         dec_xsp        <= 0;
         inc_xsp        <= 0;
-        keep_inc_sp    <= 0;
+        keep_inc_xsp   <= 0;
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
@@ -1096,7 +1112,7 @@ always @(posedge clk, posedge rst) begin
         sel_xsp        <= nx_sel_xsp;
         dec_xsp        <= nx_dec_xsp;
         inc_xsp        <= nx_inc_xsp;
-        keep_inc_sp    <= nx_keep_inc_xsp;
+        keep_inc_xsp   <= nx_keep_inc_xsp;
         riff           <= nx_iff;
         dec_bc         <= nx_dec_bc;
         idx_last       <= nx_idx_last;
