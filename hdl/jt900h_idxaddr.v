@@ -54,15 +54,17 @@ reg         nx_reg_dec, nx_reg_inc,
             nx_pre_inc, pre_inc,
             nx_was_CPI, was_CPI,
             nx_was_CPD, was_CPD,
-            nx_was_LDD, was_LDD;
+            nx_was_LDD, was_LDD,
+            nx_was_LDI, was_LDI;
 reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
 wire [31:0] eff_op;
-wire        is_LDD, is_CPD, is_CPI;
+wire        is_LDD, is_LDI, is_CPD, is_CPI;
 
 assign eff_op = {op[31:8], use_last ? opl: op[7:0] };
 // ignore the op LSB so it matches LDDR/CPDR/CPIR too
 assign is_LDD = use_last ? was_LDD : !eff_op[3] && eff_op[15:9]==7'h13>>1;
+assign is_LDI = use_last ? was_LDI : !eff_op[3] && eff_op[15:9]==7'h10>>1;
 assign is_CPD = use_last ? was_CPD : !eff_op[3] && eff_op[15:9]==7'h16>>1;
 assign is_CPI = use_last ? was_CPI : !eff_op[3] && eff_op[15:9]==7'h14>>1;
 
@@ -99,11 +101,13 @@ always @* begin
     nx_idx_rdreg_aux = idx_rdreg_aux;
     nx_opl           = opl;
     nx_was_LDD       = was_LDD;
+    nx_was_LDI       = was_LDI;
     nx_was_CPD       = was_CPD;
     nx_was_CPI       = was_CPI;
     if( idx_en && !pre_ok ) begin
         nx_pre_ok  = 0;
         nx_was_LDD = 0;
+        nx_was_LDI = 0;
         if( !phase ) begin
             fetched    = 2;
             nx_reg_step= op[9:8];
@@ -113,8 +117,9 @@ always @* begin
                     nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                     nx_pre_ok        = 1;
                     nx_reg_dec       = is_CPD || is_LDD;
-                    nx_reg_inc       = is_CPI;
+                    nx_reg_inc       = is_CPI || is_LDI;
                     nx_was_LDD       = use_last ? was_LDD : is_LDD;
+                    nx_was_LDI       = use_last ? was_LDI : is_LDI;
                     nx_was_CPD       = use_last ? was_CPD : is_CPD;
                     nx_was_CPI       = use_last ? was_CPI : is_CPI;
                     nx_reg_step      = {1'b0,eff_op[4]};
@@ -213,6 +218,7 @@ always @(posedge clk, posedge rst) begin
         idx_rdreg_aux <= 0;
         idx_offset    <= 0;
         was_LDD       <= 0;
+        was_LDI       <= 0;
         was_CPD       <= 0;
         was_CPI       <= 0;
     end else if(cen) begin
@@ -231,6 +237,7 @@ always @(posedge clk, posedge rst) begin
         idx_addr      <= nx_idx_addr;
         opl           <= nx_opl;
         was_LDD       <= nx_was_LDD;
+        was_LDI       <= nx_was_LDI;
         was_CPD       <= nx_was_CPD;
         was_CPI       <= nx_was_CPI;
     end

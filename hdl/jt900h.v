@@ -42,7 +42,8 @@ wire        bc_unity, dec_bc;
 wire [ 7:0] idx_rdreg_sel;
 wire [ 1:0] reg_step;
 wire        reg_inc, reg_dec,
-            dec_xde, dec_xix;
+            dec_xde, dec_xix,
+            inc_xde, inc_xix;
 
 wire        idx_en, idx_last;
 wire        idx_ok, idx_wr, ldd_write;
@@ -108,6 +109,8 @@ jt900h_ctrl u_ctrl(
     // LDD
     .dec_xde        ( dec_xde           ),
     .dec_xix        ( dec_xix           ),
+    .inc_xde        ( inc_xde           ),
+    .inc_xix        ( inc_xix           ),
 
     .ram_dsel       ( ram_dsel          ),
     .data_latch     ( data_latch        ),
@@ -161,6 +164,8 @@ jt900h_regs u_regs(
     // LDD
     .dec_xde        ( dec_xde           ),
     .dec_xix        ( dec_xix           ),
+    .inc_xde        ( inc_xde           ),
+    .inc_xix        ( inc_xix           ),
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),

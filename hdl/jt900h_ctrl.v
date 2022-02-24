@@ -45,6 +45,8 @@ module jt900h_ctrl(
 
     output reg        dec_xde,
     output reg        dec_xix,
+    output reg        inc_xde,
+    output reg        inc_xix,
     output reg [31:0] data_latch,
 
     // RFP
@@ -108,9 +110,14 @@ reg  [2:0] nx_regs_we, nx_wr_len,
            nx_keep_we, keep_we;
 reg        nx_alu_smux, nx_alu_wait,
            nx_ram_ren, nx_ram_wen,
-           nx_idx_en, nx_dec_xde, nx_dec_xix,
+           nx_idx_en,
+           // LDD/LDI:
+           nx_dec_xde, nx_dec_xix,
+           nx_inc_xde, nx_inc_xix,
            nx_keep_dec_xde, keep_dec_xde,
-           nx_keep_dec_xix, keep_dec_xix;
+           nx_keep_dec_xix, keep_dec_xix,
+           nx_keep_inc_xde, keep_inc_xde,
+           nx_keep_inc_xix, keep_inc_xix;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -215,10 +222,16 @@ always @* begin
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
     nx_idx_last      = idx_last;
+    // LDD/LDI
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
+    nx_inc_xde       = 0;
+    nx_inc_xix       = 0;
     nx_keep_dec_xde  = keep_dec_xde;
     nx_keep_dec_xix  = keep_dec_xix;
+    nx_keep_inc_xde  = keep_inc_xde;
+    nx_keep_inc_xix  = keep_inc_xix;
+
     nx_keep_inc_xsp  = keep_inc_xsp;
     nx_ldd_write     = 0;
     nx_rep           = 0;
@@ -242,7 +255,11 @@ always @* begin
             nx_dly_fetch= 0;
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
+            // LDD/LDI
             nx_keep_dec_xde = 0;
+            nx_keep_dec_xix = 0;
+            nx_keep_inc_xde = 0;
+            nx_keep_inc_xix = 0;
             nx_keep_inc_xsp = 0;
             nx_keep_lddwr = 0;
             nx_idx_last  = 0;
@@ -503,7 +520,7 @@ always @* begin
                 end
                 default: begin // load operand from memory
                     nx_phase   = LD_RAM;
-                    nx_keep_lddwr = op[7:1] == 7'h12>>1;
+                    nx_keep_lddwr = op[7:2] == 6'h10>>2; // LDD/LDI (R)
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
                     nx_dst     = expand_reg(op[2:0],op_zz);
@@ -575,6 +592,8 @@ always @* begin
             nx_wr_len  = regs_we;
             nx_dec_xde = keep_dec_xde;
             nx_dec_xix = keep_dec_xix;
+            nx_inc_xde = keep_inc_xde;
+            nx_inc_xix = keep_inc_xix;
             nx_dly_fetch = 0;
         end
         DJNZ: begin
@@ -626,7 +645,7 @@ always @* begin
                         nx_dly_fetch = 1;
                     end
                 end
-                10'b0001_001?_1?: begin // LDD, LDDR
+                10'b0001_00??_1?: begin // LDD, LDDR, LDI, LDIR
                     nx_alu_op    = ALU_LDD;
                     nx_regs_we   = expand_zz( op_zz );
                     nx_keep_we   = nx_regs_we;
@@ -634,8 +653,13 @@ always @* begin
                     nx_dec_bc    = 1;
                     nx_dly_fetch = 1;
                     nx_idx_en    = 0;
-                    nx_keep_dec_xde = last_op[1];
-                    nx_keep_dec_xix = last_op[2];
+                    if( op[1] ) begin // LDD
+                        nx_keep_dec_xde = last_op[1];
+                        nx_keep_dec_xix = last_op[2];
+                    end else begin // LDI
+                        nx_keep_inc_xde = last_op[1];
+                        nx_keep_inc_xix = last_op[2];
+                    end
                     nx_rep       = op[0];
                     nx_phase     = ST_RAM;
                 end
@@ -1091,8 +1115,15 @@ always @(posedge clk, posedge rst) begin
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
+        // LDD/LDI
         dec_xde        <= 0;
+        dec_xix        <= 0;
+        inc_xde        <= 0;
+        inc_xix        <= 0;
         keep_dec_xde   <= 0;
+        keep_dec_xix   <= 0;
+        keep_inc_xde   <= 0;
+        keep_inc_xix   <= 0;
         ldd_write      <= 0;
         keep_lddwr     <= 0;
         rep            <= 0;
@@ -1133,10 +1164,16 @@ always @(posedge clk, posedge rst) begin
         riff           <= nx_iff;
         dec_bc         <= nx_dec_bc;
         idx_last       <= nx_idx_last;
+        // LDD/LDI:
         dec_xde        <= nx_dec_xde;
         dec_xix        <= nx_dec_xix;
+        inc_xde        <= nx_inc_xde;
+        inc_xix        <= nx_inc_xix;
         keep_dec_xde   <= nx_keep_dec_xde;
         keep_dec_xix   <= nx_keep_dec_xix;
+        keep_inc_xde   <= nx_keep_inc_xde;
+        keep_inc_xix   <= nx_keep_inc_xix;
+
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
         rep            <= nx_rep;

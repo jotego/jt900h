@@ -37,10 +37,13 @@ module jt900h_regs(
     // From indexed memory addresser
     input      [ 7:0] idx_rdreg_sel,
     input      [ 1:0] reg_step,
-    input             dec_xde,    // used by LDD instruction
-    input             dec_xix,    // used by LDD instruction
     input             reg_inc,
     input             reg_dec,
+    // LDD/LDI:
+    input             dec_xde,
+    input             dec_xix,
+    input             inc_xde,
+    input             inc_xix,
     // offset register
     input      [ 7:0] idx_rdreg_aux,
     input             idx_en,
@@ -174,6 +177,12 @@ always @(posedge clk, posedge rst) begin
         end
         if( dec_xix ) begin
             { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] } <= xix - full_step;
+        end
+        if( inc_xde ) begin
+            { accs[{rfp,4'hb}], accs[{rfp,4'ha}], accs[{rfp,4'h9}], accs[{rfp,4'h8}]} <= cur_xde + full_step;
+        end
+        if( inc_xix ) begin
+            { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] } <= xix + full_step;
         end
 
         // Stack
