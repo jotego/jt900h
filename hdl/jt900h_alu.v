@@ -324,6 +324,9 @@ always @* begin
             nx_fdash = { sign, zero, halfc, overflow, negative, carry };
             { nx_s, nx_z, nx_h, nx_v, nx_n, nx_c } = fdash;
         end
+        ALU_POPF: begin
+            { nx_s, nx_z, nx_h, nx_v, nx_n, nx_c } = { imm[7:6],imm[4],imm[2:0]} ;
+        end
         ALU_MIRR: begin
             rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],

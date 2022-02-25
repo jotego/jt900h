@@ -138,6 +138,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_idx_last, nx_ldd_write,
            keep_lddwr, nx_keep_lddwr,
            link, nx_link,
+           popf, nx_popf,
            rep, nx_rep;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
@@ -229,6 +230,7 @@ always @* begin
     nx_idx_last      = idx_last;
     nx_ld_high       = ld_high;
     nx_link          = 0;
+    nx_popf          = popf;
     // LDD/LDI
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
@@ -264,6 +266,7 @@ always @* begin
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
             nx_ld_high  = 0;
+            nx_popf     = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -375,6 +378,15 @@ always @* begin
                     nx_dec_xsp = {13'd0,op[1] ? 3'd2 : 3'd1};
                     nx_ram_dsel= 2;
                     nx_phase   = PUSH_SR;
+                end
+                8'b0001_1001: begin // POP F
+                    nx_keep_inc_xsp = 1;
+                    nx_wr_len       = 1;
+                    nx_ram_ren      = 1;
+                    nx_sel_xsp      = 1;
+                    nx_phase        = LD_RAM;
+                    nx_popf         = 1;
+                    fetched         = 0;
                 end
                 8'b0001_0101,       // POP A
                 8'b010?_1???: begin // POP R
@@ -576,6 +588,10 @@ always @* begin
             end else begin
                 nx_phase    = FETCH;
                 nx_ram_dsel = 1; // copy the RAM output
+                if( popf ) begin
+                    nx_alu_op = ALU_POPF;
+                    nx_flag_we = 1;
+                end
                 fetched = 1;  // this will set the RAM wait flag too
             end
             nx_regs_we = keep_we;
@@ -1171,6 +1187,7 @@ always @(posedge clk, posedge rst) begin
         idx_last       <= 0;
         ld_high        <= 0;
         link           <= 0;
+        popf           <= 0;
         // LDD/LDI
         dec_xde        <= 0;
         dec_xix        <= 0;
@@ -1237,6 +1254,7 @@ always @(posedge clk, posedge rst) begin
 
         ld_high        <= nx_ld_high;
         link           <= nx_link;
+        popf           <= nx_popf;
 
         if( latch_op ) last_op <= op[7:0];
     end
