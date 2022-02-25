@@ -35,7 +35,7 @@ wire [15:0] sr;
 // Register bank
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
-wire [31:0] src_out, dst_out, aux_out;
+wire [31:0] src_out, dst_out, aux_out, acc;
 wire        bc_unity, dec_bc;
 
 // Indexed memory addresser
@@ -169,6 +169,8 @@ jt900h_regs u_regs(
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
+    // Accumulator
+    .acc            ( acc               ),
     // offset register
     .idx_en         ( idx_en            ),
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
@@ -218,6 +220,7 @@ jt900h_alu u_alu(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
+    .acc            ( acc               ),
     .op0            ( dst_out           ),
     .op1            ( src_out           ),
     .imm            ( alu_imm           ),

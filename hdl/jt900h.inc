@@ -67,5 +67,7 @@ localparam [6:0] ALU_NOP  = 7'd0,
                  ALU_SRLX  = 7'd66,
                  ALU_LDD   = 7'd67,
                  ALU_EXFF  = 7'd68,
+                 ALU_RLD   = 7'd69,
+                 ALU_RRD   = 7'd70,
                  ALU_LAST  = 7'd127
                  ;

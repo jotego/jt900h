@@ -60,6 +60,7 @@ reg  [ 7:0] nx_opl, opl;
 reg         phase, nx_phase, nx_pre_ok, pre_ok;
 wire [31:0] eff_op;
 wire        is_LDD, is_LDI, is_CPD, is_CPI;
+reg  [ 2:0] nx_pre_offset, pre_offset;
 
 assign eff_op = {op[31:8], use_last ? opl: op[7:0] };
 // ignore the op LSB so it matches LDDR/CPDR/CPIR too
@@ -84,6 +85,18 @@ function [7:0] fullreg( input [2:0] rcode );
 endfunction
 
 always @* begin
+    if( nx_reg_dec && !(is_LDD || is_CPD))
+        case( nx_reg_step )
+            0: nx_pre_offset = 1;
+            1: nx_pre_offset = 2;
+            2: nx_pre_offset = 4;
+            default: nx_pre_offset = 0;
+        endcase
+    else
+        nx_pre_offset = 0;
+end
+
+always @* begin
     fetched          = 0;
     nx_mode          = {op[6],op[3:0]};
     nx_ridx_mode     = 0;
@@ -96,7 +109,7 @@ always @* begin
     nx_phase         = 0;
     nx_pre_ok        = pre_ok & idx_en;
     nx_idx_addr      = idx_en && !idx_ok ?
-        (idx_rdreg[23:0] + (ridx_mode[1] ?  aux24 : idx_offset)) :
+        (idx_rdreg[23:0] - {20'd0,pre_offset} + (ridx_mode[1] ?  aux24 : idx_offset)) :
         ldd_write ? idx_auxreg[23:0] : idx_addr;
     nx_idx_rdreg_aux = idx_rdreg_aux;
     nx_opl           = opl;
@@ -221,6 +234,7 @@ always @(posedge clk, posedge rst) begin
         was_LDI       <= 0;
         was_CPD       <= 0;
         was_CPI       <= 0;
+        pre_offset    <= 0;
     end else if(cen) begin
         phase         <= nx_phase;
         mode          <= nx_mode;
@@ -240,6 +254,7 @@ always @(posedge clk, posedge rst) begin
         was_LDI       <= nx_was_LDI;
         was_CPD       <= nx_was_CPD;
         was_CPI       <= nx_was_CPI;
+        pre_offset    <= nx_pre_offset;
     end
 end
 

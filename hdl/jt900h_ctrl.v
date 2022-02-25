@@ -764,8 +764,15 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     // nx_phase    = DUMMY;
                 end
-                10'b0000_0111_??, // NEG dst
-                10'b0000_0110_??: begin // CPL dst
+                10'b0000_011?_10: begin // RRD
+                    nx_alu_op    = op[0] ? ALU_RRD : ALU_RLD;
+                    nx_regs_we   = expand_zz( op_zz );
+                    nx_dst       = 0;
+                    nx_phase     = ST_RAM;
+                    nx_dly_fetch = 1;
+                end
+                10'b0000_0111_0?, // NEG dst
+                10'b0000_0110_0?: begin // CPL dst
                     nx_regs_we = expand_zz( op_zz );
                     case( op[2:0] )
                         3'b110: nx_alu_op  = ALU_CPL;
@@ -1177,6 +1184,7 @@ always @(posedge clk, posedge rst) begin
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
         rep            <= nx_rep;
+
         if( latch_op ) last_op <= op[7:0];
     end
 end

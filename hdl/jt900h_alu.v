@@ -20,6 +20,7 @@ module jt900h_alu(
     input             rst,
     input             clk,
     input             cen,
+    input      [31:0] acc,      // accumulator
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
     input      [31:0] imm,      // alternative source
@@ -55,6 +56,7 @@ wire        imm_s;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
 wire        shr_msb, shl_lsb, shrx_msb, shlx_lsb;
+wire [15:0] rld, rrd, rr_result;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -76,6 +78,11 @@ assign shr_msb  = sel==ALU_RR ? carry : sel==ALU_SRA ? op0_s : 1'b0;
 assign shl_lsb  = sel==ALU_RL && carry;
 assign shrx_msb = sel==ALU_RRX ? carry : sel==ALU_SRAX ? imm_s : 1'b0;
 assign shlx_lsb = sel==ALU_RLX && carry;
+
+assign rld = { acc[7:4], imm[7:0], acc[3:0] };
+assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
+assign rr_result = sel==ALU_RLD ? rld : rrd;
+
 
 always @* begin
 //    stcf = op1;
@@ -396,6 +403,14 @@ always @* begin
         end
         ALU_ANDCFA: begin
             nx_c = carry & imm[ {2'b0,op1[2:0]} ];
+        end
+        ALU_RLD, ALU_RRD: begin
+            rslt = {16'd0, rr_result };
+            nx_s = acc[7];
+            nx_z = rr_result[15:8]==0;
+            nx_h = 0;
+            nx_v = ^rr_result[15:8];
+            nx_n = 0;
         end
         ALU_RLC, ALU_RRC, ALU_RL, ALU_RR, ALU_SLA, ALU_SRA, ALU_SLL, ALU_SRL: begin
             case( sel )

@@ -5,6 +5,7 @@ module test;
 reg         rst, clk;
 reg         cen;
 wire [23:0] ram_addr;
+wire [11:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
 wire        ram_rdy;
@@ -20,6 +21,7 @@ initial begin
     $readmemh("test.hex",mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
 end
 
+assign ram_a    = ram_addr[11:0]; // short version for plotting
 assign ram_dout = mem[ram_addr[9:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
