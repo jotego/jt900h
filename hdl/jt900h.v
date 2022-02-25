@@ -36,7 +36,8 @@ wire [15:0] sr;
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out, aux_out, acc;
-wire        bc_unity, dec_bc;
+wire        bc_unity, dec_bc,
+            ld_high;
 
 // Indexed memory addresser
 wire [ 7:0] idx_rdreg_sel;
@@ -103,7 +104,6 @@ jt900h_ctrl u_ctrl(
     .idx_en         ( idx_en            ),
     .idx_last       ( idx_last          ),
     .idx_ok         ( idx_ok            ),
-    .ldd_write      ( ldd_write         ),
     .wr_len         ( wr_len            ),
     .idx_addr       ( idx_addr          ),
     // LDD
@@ -111,6 +111,9 @@ jt900h_ctrl u_ctrl(
     .dec_xix        ( dec_xix           ),
     .inc_xde        ( inc_xde           ),
     .inc_xix        ( inc_xix           ),
+    .ldd_write      ( ldd_write         ),
+
+    .ld_high        ( ld_high           ),
 
     .ram_dsel       ( ram_dsel          ),
     .data_latch     ( data_latch        ),
@@ -171,6 +174,7 @@ jt900h_regs u_regs(
     .reg_dec        ( reg_dec           ),
     // Accumulator
     .acc            ( acc               ),
+    .ld_high        ( ld_high           ),
     // offset register
     .idx_en         ( idx_en            ),
     .idx_rdreg_aux  ( idx_rdreg_aux     ),

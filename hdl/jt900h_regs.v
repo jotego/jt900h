@@ -35,6 +35,7 @@ module jt900h_regs(
     input      [ 2:0] dec_xsp,
 
     // Direct access to accumulator (RRD, RLD)
+    input             ld_high,
     output     [31:0] acc,
 
     // From indexed memory addresser
@@ -199,8 +200,10 @@ always @(posedge clk, posedge rst) begin
         if( we[0] ) begin
             if( r1sel[7] )
                 ptrs[r1sel[3:0]] <= data_mux[7:0];
-            else
-                accs[r1sel[5:0]] <= data_mux[7:0];
+            else begin
+                // ld_high is used by the RLD/RRD instructions
+                accs[r1sel[5:0]] <= ld_high ? data_mux[15:8] : data_mux[7:0];
+            end
         end
         if( we[1] ) begin
             if( r1sel[7] )

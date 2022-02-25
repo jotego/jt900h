@@ -37,6 +37,7 @@ module jt900h_ctrl(
     output reg        ldd_write,
 
     output reg        dec_bc,
+    output reg        ld_high,  // acc will load the ALU high output byte
 
     // XSP
     output reg        sel_xsp,
@@ -117,7 +118,8 @@ reg        nx_alu_smux, nx_alu_wait,
            nx_keep_dec_xde, keep_dec_xde,
            nx_keep_dec_xix, keep_dec_xix,
            nx_keep_inc_xde, keep_inc_xde,
-           nx_keep_inc_xix, keep_inc_xix;
+           nx_keep_inc_xix, keep_inc_xix,
+           nx_ld_high;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -222,6 +224,7 @@ always @* begin
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
     nx_idx_last      = idx_last;
+    nx_ld_high       = ld_high;
     // LDD/LDI
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
@@ -255,6 +258,7 @@ always @* begin
             nx_dly_fetch= 0;
             nx_flag_we  = 0;
             nx_sel_xsp  = 0;
+            nx_ld_high  = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -769,6 +773,7 @@ always @* begin
                     nx_regs_we   = expand_zz( op_zz );
                     nx_dst       = 0;
                     nx_phase     = ST_RAM;
+                    nx_ld_high   = 1;
                     nx_dly_fetch = 1;
                 end
                 10'b0000_0111_0?, // NEG dst
@@ -1122,6 +1127,7 @@ always @(posedge clk, posedge rst) begin
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
+        ld_high        <= 0;
         // LDD/LDI
         dec_xde        <= 0;
         dec_xix        <= 0;
@@ -1184,6 +1190,8 @@ always @(posedge clk, posedge rst) begin
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
         rep            <= nx_rep;
+
+        ld_high        <= nx_ld_high;
 
         if( latch_op ) last_op <= op[7:0];
     end

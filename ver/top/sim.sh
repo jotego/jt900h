@@ -3,6 +3,7 @@
 TEST=ld_8bit_imm
 EXTRA=
 ACCEPT=
+RAM=0
 
 # Try linting the code first
 cd ../../hdl
@@ -23,6 +24,7 @@ sim.sh <test name> [options]
 -accept     Update the valid output file, used for comparisons
             It will also add it to git
 -cen        Set cen to 50% (default 100%)
+-ram        Shows a short RAM dump before and after the simulation
 EOF
 }
 
@@ -30,6 +32,7 @@ while [ $# -gt 0 ]; do
     case $1 in
         -nodump) EXTRA="$EXTRA -DNODUMP";;
         -accept|-a) ACCEPT=1;;
+        -ram) RAM=1;;
         -cen) EXTRA="$EXTRA -DUSECEN";;
         -help) show_help; exit 0;;
         *) echo "Unsupported argument $1"; exit 1;;
@@ -55,11 +58,19 @@ CODELEN=$((CODELEN-8))
 
 SIMEXE=sim_${RANDOM}_${RANDOM}
 
+if [ $RAM = 1 ]; then
+    xxd test.bin | head
+fi
+
 iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat test.hex|wc -l) \
     -I../../hdl || exit $?
 ./$SIMEXE -lxt
 rm -f $SIMEXE
+
+if [ $RAM = 1 ]; then
+    xxd mem.bin | head
+fi
 
 CMPFILE=tests/$(basename $TEST .asm).out
 
