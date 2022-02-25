@@ -92,6 +92,7 @@ localparam [4:0] FETCH    = 5'd0,
                  POP_PC   = 5'd12,
                  CPDR     = 5'd13,
                  LINK     = 5'd14,
+                 UNLK     = 5'd15,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -485,12 +486,23 @@ always @* begin
             nx_sel_xsp = 1;
             nx_wr_len  = regs_we;
             nx_phase   = link ? LINK : DUMMY;
+            req_wait   = 1; // if xsp is at an odd address, it needs an extra cycle
+                            // for now, it is always taking the worst case
         end
         LINK: begin
             nx_alu_op  = ALU_MOVE;
             nx_regs_we = 4;
             nx_src     = 8'hfc; // xsp
             nx_phase   = DUMMY;
+        end
+        UNLK: begin // like a POP r
+            nx_dst          = regs_src;
+            nx_ram_ren      = 1;
+            nx_sel_xsp      = 1;
+            nx_keep_we      = 4;
+            nx_wr_len       = 4;
+            nx_keep_inc_xsp = 4;
+            nx_phase        = LD_RAM;
         end
         IDX: if( idx_ok ) begin
             nx_idx_en = 0;
@@ -945,12 +957,19 @@ always @* begin
                 10'b0000_1100_00: begin // LINK r, num PUSH r
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = expand_zz( op_zz );
-                    nx_dec_xsp  = {13'd0,nx_regs_we};
+                    nx_dec_xsp = {13'd0,nx_regs_we};
                     nx_keep_dec_xsp = op[23:8];
                     nx_wr_len  = nx_dec_xsp[2:0];
                     nx_phase   = PUSH_R;
                     nx_link    = 1;
                     // the dummy state will do the fetching
+                end
+                10'b0000_1101_00: begin // UNLK dst
+                    nx_alu_op  = ALU_MOVE;
+                    nx_dst     = 8'hfc; // xsp
+                    nx_regs_we = expand_zz( op_zz );
+                    req_wait   = 1; // extra cycle for the MOVE to complete
+                    nx_phase   = UNLK;
                 end
                 10'b0000_0101_00: begin // POP r
                     nx_ram_ren = 1;

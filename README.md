@@ -16,3 +16,9 @@ You can show your appreciation through
 * [ver](ver) verification files, ver/top for top-level verification
 
 Only source files are included in this repository. Binary files can be obtained by compiling the sources.
+
+## RAM controller
+
+The RAM controller always reads 4 bytes now, it should be optimised to read 2 bytes when only 2 bytes are needed
+
+The PUSH operation takes an extra cycle to cater for the case when the XSP is at an odd address. It should be optimised to either check the RAM controller status and finish early, or check XSP LSB and add the extra cycle only if needed
