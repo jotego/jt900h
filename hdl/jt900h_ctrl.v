@@ -42,7 +42,7 @@ module jt900h_ctrl(
     // XSP
     output reg        sel_xsp,
     output reg [15:0] inc_xsp,
-    output reg [ 2:0] dec_xsp,
+    output reg [15:0] dec_xsp,
 
     output reg        dec_xde,
     output reg        dec_xix,
@@ -91,6 +91,7 @@ localparam [4:0] FETCH    = 5'd0,
                  WAIT_ALU = 5'd11,
                  POP_PC   = 5'd12,
                  CPDR     = 5'd13,
+                 LINK     = 5'd14,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -135,9 +136,10 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_sel_xsp, nx_dec_bc,
            nx_idx_last, nx_ldd_write,
            keep_lddwr, nx_keep_lddwr,
+           link, nx_link,
            rep, nx_rep;
-reg  [2:0] nx_dly_fetch, dly_fetch, // fetch update to be run later
-           nx_dec_xsp;
+reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
+reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
 
 reg  [1:0] op_zz, nx_op_zz;
@@ -225,6 +227,7 @@ always @* begin
     nx_dec_bc        = 0;
     nx_idx_last      = idx_last;
     nx_ld_high       = ld_high;
+    nx_link          = 0;
     // LDD/LDI
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
@@ -236,6 +239,7 @@ always @* begin
     nx_keep_inc_xix  = keep_inc_xix;
 
     nx_keep_inc_xsp  = keep_inc_xsp;
+    nx_keep_dec_xsp  = keep_dec_xsp;
     nx_ldd_write     = 0;
     nx_rep           = 0;
     nx_keep_lddwr    = keep_lddwr;
@@ -265,6 +269,7 @@ always @* begin
             nx_keep_inc_xde = 0;
             nx_keep_inc_xix = 0;
             nx_keep_inc_xsp = 0;
+            nx_keep_dec_xsp = 0;
             nx_keep_lddwr = 0;
             nx_idx_last  = 0;
             casez( op[7:0] )
@@ -354,7 +359,7 @@ always @* begin
                 end
                 8'b0000_10?1: begin // PUSH<W> #
                     nx_regs_we  = op[1] ? 3'b10 : 3'b1;
-                    nx_dec_xsp  = nx_regs_we;
+                    nx_dec_xsp  = {13'd0,nx_regs_we};
                     nx_wr_len   = nx_regs_we;
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = PUSH_R;
@@ -366,7 +371,7 @@ always @* begin
                 8'b0001_1000,       // PUSH F
                 8'b0000_0010: begin // PUSH SR
                     nx_wr_len  = op[1] ? 3'd2 : 3'd1;
-                    nx_dec_xsp = op[1] ? 3'd2 : 3'd1;
+                    nx_dec_xsp = {13'd0,op[1] ? 3'd2 : 3'd1};
                     nx_ram_dsel= 2;
                     nx_phase   = PUSH_SR;
                 end
@@ -390,7 +395,7 @@ always @* begin
                         8'he0; // A
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
-                    nx_dec_xsp = nx_regs_we;
+                    nx_dec_xsp = {13'd0,nx_regs_we};
                     nx_wr_len  = nx_regs_we;
                     nx_phase   = PUSH_R;
                     nx_flag_we = 1;
@@ -449,7 +454,7 @@ always @* begin
             nx_sel_xsp  = 1;
             nx_ram_dsel = 2;
             nx_ram_wen  = 1;
-            nx_wr_len   = dec_xsp; // 1 or 2 bytes
+            nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
             nx_phase    = DUMMY;
         end
         PUSH_PC: begin
@@ -479,6 +484,12 @@ always @* begin
             nx_ram_wen = 1;
             nx_sel_xsp = 1;
             nx_wr_len  = regs_we;
+            nx_phase   = link ? LINK : DUMMY;
+        end
+        LINK: begin
+            nx_alu_op  = ALU_MOVE;
+            nx_regs_we = 4;
+            nx_src     = 8'hfc; // xsp
             nx_phase   = DUMMY;
         end
         IDX: if( idx_ok ) begin
@@ -539,6 +550,7 @@ always @* begin
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
             nx_phase   = FETCH;
+            nx_dec_xsp = keep_dec_xsp;
         end
         LD_RAM: begin
             if( goxec ) begin
@@ -914,8 +926,8 @@ always @* begin
                 end
                 10'b0000_0100_10: begin // PUSH<W> mem
                     nx_regs_we  = expand_zz( op_zz );
-                    nx_dec_xsp  = nx_regs_we;
-                    nx_wr_len   = nx_regs_we;
+                    nx_dec_xsp  = {13'd0,nx_regs_we};
+                    nx_wr_len   = nx_regs_we[2:0];
                     nx_alu_op   = ALU_MOVE;
                     nx_phase    = PUSH_R;
                     nx_flag_we  = 1;
@@ -924,10 +936,20 @@ always @* begin
                 10'b0000_0100_00: begin // PUSH r
                     nx_alu_op  = ALU_MOVE;
                     nx_regs_we = expand_zz( op_zz );
-                    nx_dec_xsp = nx_regs_we;
-                    nx_wr_len  = nx_dec_xsp;
+                    nx_dec_xsp  = {13'd0,nx_regs_we};
+                    nx_wr_len  = nx_dec_xsp[2:0];
                     nx_phase   = PUSH_R;
                     nx_flag_we = 1;
+                    // the dummy state will do the fetching
+                end
+                10'b0000_1100_00: begin // LINK r, num PUSH r
+                    nx_alu_op  = ALU_MOVE;
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_dec_xsp  = {13'd0,nx_regs_we};
+                    nx_keep_dec_xsp = op[23:8];
+                    nx_wr_len  = nx_dec_xsp[2:0];
+                    nx_phase   = PUSH_R;
+                    nx_link    = 1;
                     // the dummy state will do the fetching
                 end
                 10'b0000_0101_00: begin // POP r
@@ -1124,10 +1146,12 @@ always @(posedge clk, posedge rst) begin
         dec_xsp        <= 0;
         inc_xsp        <= 0;
         keep_inc_xsp   <= 0;
+        keep_dec_xsp   <= 0;
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
         ld_high        <= 0;
+        link           <= 0;
         // LDD/LDI
         dec_xde        <= 0;
         dec_xix        <= 0;
@@ -1174,6 +1198,7 @@ always @(posedge clk, posedge rst) begin
         dec_xsp        <= nx_dec_xsp;
         inc_xsp        <= nx_inc_xsp;
         keep_inc_xsp   <= nx_keep_inc_xsp;
+        keep_dec_xsp   <= nx_keep_dec_xsp;
         riff           <= nx_iff;
         dec_bc         <= nx_dec_bc;
         idx_last       <= nx_idx_last;
@@ -1192,6 +1217,7 @@ always @(posedge clk, posedge rst) begin
         rep            <= nx_rep;
 
         ld_high        <= nx_ld_high;
+        link           <= nx_link;
 
         if( latch_op ) last_op <= op[7:0];
     end

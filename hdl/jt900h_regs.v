@@ -32,7 +32,7 @@ module jt900h_regs(
     // stack
     output     [31:0] xsp,
     input      [15:0] inc_xsp,
-    input      [ 2:0] dec_xsp,
+    input      [15:0] dec_xsp,
 
     // Direct access to accumulator (RRD, RLD)
     input             ld_high,
@@ -192,7 +192,7 @@ always @(posedge clk, posedge rst) begin
 
         // Stack
         if( dec_xsp != 0 )
-            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - { 29'd0, dec_xsp };
+            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - { 16'd0, dec_xsp };
         if( inc_xsp != 0 )
             { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp + { 16'd0, inc_xsp };
 
