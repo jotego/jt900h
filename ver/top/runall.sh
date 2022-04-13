@@ -4,7 +4,7 @@ K=0
 for i in tests/*.out; do
     TESTNAME=$(basename $i .out)
     figlet "* ${K} *"
-    sim.sh $TESTNAME -nodump || FAIL="$FAIL $TESTNAME"
+    sim.sh $TESTNAME -nodump $* || FAIL="$FAIL $TESTNAME"
     K=$((K+1))
 done
 

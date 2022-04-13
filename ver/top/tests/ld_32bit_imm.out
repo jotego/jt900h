@@ -4,4 +4,4 @@
 0fedcba9 - 00000000 - 00000000 - 00000000
 -- index registers --
 12345678 - 9abcdef0 - 87654321 - 0fedcba9
-SR = 00f8
+SR = f800

@@ -48,7 +48,7 @@ always @(posedge dump_2file) begin
     $fdisplay(file,"-- index registers --");
     $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(64), xreg(68),
                                           xreg(72), xreg(76) );
-    $fdisplay(file,"SR = %02X",{ dmp_buf[81], dmp_buf[80]} );
+    $fdisplay(file,"SR = %02X",{ dmp_buf[80], dmp_buf[81]} );
     $fclose(file);
     // Dump the memory too
     file=$fopen("mem.bin","wb");
