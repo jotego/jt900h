@@ -41,6 +41,7 @@ module jt900h_ctrl(
 
     // XSP
     output reg        sel_xsp,
+    output reg        sel_op16,
     output reg [15:0] inc_xsp,
     output reg [15:0] dec_xsp,
 
@@ -141,6 +142,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            popf, nx_popf, popsr, nx_popsr,
            rep, nx_rep,
            reti, nx_reti,
+           nx_selop16, keep_selop16, nx_keep_selop16,
            intproc, nx_intproc;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
@@ -227,6 +229,8 @@ always @* begin
     nx_inc_xsp       = 0;
     nx_dec_xsp       = 0;
     nx_sel_xsp       = sel_xsp;
+    nx_selop16       = sel_op16;
+    nx_keep_selop16  = keep_selop16;
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
@@ -281,6 +285,9 @@ always @* begin
             nx_popf     = 0;
             nx_popsr    = 0;
             nx_reti     = 0;
+            // RAM CTRL
+            nx_selop16  = 0;
+            nx_keep_selop16=0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -702,6 +709,7 @@ always @* begin
             nx_dec_xix = keep_dec_xix;
             nx_inc_xde = keep_inc_xde;
             nx_inc_xix = keep_inc_xix;
+            nx_selop16 = keep_selop16;
             nx_dly_fetch = 0;
         end
         DJNZ: begin
@@ -1180,6 +1188,14 @@ always @* begin
                         nx_flag_we = 1;
                     end
                 end
+                10'b0001_1001_1?: begin // LD<W> (#16),(mem)
+                    nx_keep_selop16 = 1;
+                    nx_dly_fetch    = 3;
+                    nx_regs_we      = op_zz[0] ? 3'd2 : 3'd1;
+                    nx_alu_op       = ALU_MOVE;
+                    nx_flag_we      = 1;
+                    nx_phase        = ST_RAM;
+                end
                 default:;
             endcase
         end
@@ -1254,11 +1270,15 @@ always @(posedge clk, posedge rst) begin
         was_load       <= 0;
         flag_we        <= 0;
         dly_fetch      <= 0;
+        // RAM Controller
         sel_xsp        <= 0;
         dec_xsp        <= 0;
         inc_xsp        <= 0;
         keep_inc_xsp   <= 0;
         keep_dec_xsp   <= 0;
+        sel_op16       <= 0;
+        keep_selop16   <= 0;
+
         riff           <= 3'b111;
         dec_bc         <= 0;
         idx_last       <= 0;
@@ -1312,6 +1332,8 @@ always @(posedge clk, posedge rst) begin
         flag_we        <= nx_flag_we;
         dly_fetch      <= nx_dly_fetch;
         sel_xsp        <= nx_sel_xsp;
+        sel_op16       <= nx_selop16 ;
+        keep_selop16   <= nx_keep_selop16;
         dec_xsp        <= nx_dec_xsp;
         inc_xsp        <= nx_inc_xsp;
         keep_inc_xsp   <= nx_keep_inc_xsp;

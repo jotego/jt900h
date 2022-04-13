@@ -78,7 +78,7 @@ wire        ldram_en;
 wire        cur_op;
 wire [31:0] buf_dout, xsp;
 wire        buf_rdy;
-wire        sel_xsp;
+wire        sel_xsp, sel_op16;
 
 jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
@@ -92,6 +92,7 @@ jt900h_ctrl u_ctrl(
     .inc_xsp        ( inc_xsp           ),
     .dec_xsp        ( dec_xsp           ),
     .sel_xsp        ( sel_xsp           ),
+    .sel_op16       ( sel_op16          ),
 
     .dec_bc         ( dec_bc            ),
 
@@ -251,7 +252,9 @@ jt900h_ramctl u_ramctl(
     .pc             ( pc[23:0]          ),
     .xsp            ( xsp[23:0]         ),
     .sr             ( sr                ),
+    .op16           ( buf_dout[23:8]    ),
     .sel_xsp        ( sel_xsp           ),
+    .sel_op16       ( sel_op16          ),
     .data_sel       ( ram_dsel          ),
 
     .ldram_en       ( ldram_en          ),

@@ -8,6 +8,8 @@
     ld a,0x40
     add a,0x3f  ; a=0x7f
     jp ov,bad_end
+    cp a,0x7f
+    jp ne,bad_end
     or xiy,1
 
     ; overflow add
@@ -57,11 +59,10 @@
     ; jp nov,bad_end
     ; or xiy,0x80
 
-test_end:
-    ; ld (0xffff),0xff
 end_loop:
     ldf 0
     ld hl,0xbabe
+    ld (0xffff),0xff
     jp end_loop
 bad_end:
     ld hl,0xdead
