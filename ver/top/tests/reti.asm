@@ -4,23 +4,12 @@
     ld a,0xbf    ; common header
 
     ld xsp, stack
+    ld xwa, end_loop
+    push xwa
     ld wa,0x3ff
     push wa
-    ld wa,0 ; clears the imm bus
-    pop sr
-
-    ld bc,3
-    ld wa,0x2ff
-    push wa
-    ld wa,0 ; clears the imm bus
-    pop sr
-
-    ld bc,2
-    ld wa,0x100
-    push wa
-    ld wa,0 ; clears the imm bus
-    pop sr
-    ld bc,1
+    reti
+    jp bad_end
 
 end_loop:
     ld hl,0xbabe
@@ -32,5 +21,6 @@ bad_end:
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     dw 0,0,0,0,0,0,0,0,0,0
+    align 4
 stack:
     end
