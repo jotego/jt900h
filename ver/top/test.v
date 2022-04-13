@@ -87,7 +87,7 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
-    if (ram_addr>=`END_RAM || dump_rdout ) begin
+    if (/*ram_addr>=`END_RAM ||*/ dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
         dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;

@@ -148,7 +148,7 @@ jt900h_regs u_regs(
     .inc_rfp        ( inc_rfp           ),
     .dec_rfp        ( dec_rfp           ),
     .rfp_we         ( rfp_we            ),
-    .imm            ( alu_imm[1:0]      ),  // used for LDF only
+    .imm            ( alu_imm[9:8]      ),  // used for LDF only
 
     // BC
     .bc_unity       ( bc_unity          ),

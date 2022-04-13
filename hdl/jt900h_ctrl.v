@@ -138,11 +138,13 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_idx_last, nx_ldd_write,
            keep_lddwr, nx_keep_lddwr,
            link, nx_link,
-           popf, nx_popf,
-           rep, nx_rep;
+           popf, nx_popf, popsr, nx_popsr,
+           rep, nx_rep,
+           intproc, nx_intproc;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
+reg [15:0] nx_intnest, intnest;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -163,8 +165,8 @@ endfunction
 
 function [7:0] expand_reg(input [2:0] short_reg, input [1:0] zz );
     expand_reg = zz==0 ?       {4'he, short_reg[2:1], 1'b0, ~short_reg[0]} :
-                short_reg[2] ? {4'hf,  short_reg[1:0],2'd0  } :
-                               {4'he, {short_reg[1:0],2'd0} };
+                short_reg[2] ? {4'hf, short_reg[1:0],2'd0 } :
+                               {4'he, short_reg[1:0],2'd0 };
 endfunction
 
 always @* begin
@@ -231,6 +233,7 @@ always @* begin
     nx_ld_high       = ld_high;
     nx_link          = 0;
     nx_popf          = popf;
+    nx_popsr         = popsr;
     // LDD/LDI
     nx_dec_xde       = 0;
     nx_dec_xix       = 0;
@@ -246,6 +249,11 @@ always @* begin
     nx_ldd_write     = 0;
     nx_rep           = 0;
     nx_keep_lddwr    = keep_lddwr;
+
+    // interrupts
+    nx_intproc       = intproc;
+    nx_intnest       = intnest;
+
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
             `ifdef SIMULATION
@@ -267,6 +275,7 @@ always @* begin
             nx_sel_xsp  = 0;
             nx_ld_high  = 0;
             nx_popf     = 0;
+            nx_popsr    = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -294,12 +303,23 @@ always @* begin
                         fetched  = 0; // let the indexation module take control
                     end
                 end
-                8'b11??_1???: begin // two register operand instruction, r part
+                8'b1100_1???,
+                8'b1101_1???,
+                8'b1110_1???: begin // two register operand instruction, r part
                     nx_op_zz = op[5:4];
                     nx_dst   = expand_reg(op[2:0], nx_op_zz);
                     nx_src   = nx_dst;
                     nx_phase = EXEC;
                     fetched  = 1;
+                end
+                8'b1111_1???: begin // SWI
+                    // 1st push PC
+                    fetched    = 1;
+                    nx_phase   = PUSH_PC;
+                    nx_intproc = 1;
+                    nx_intnest = intnest + 16'd1; // The manual doesn't say about this
+                    // but RTI will decrement it, so it makes sense to increment it here
+                    nx_alu_imm = { 24'hffff, 3'd0,op[2:0],2'd0 };
                 end
                 8'b1100_0111,
                 8'b1101_0111,
@@ -335,7 +355,7 @@ always @* begin
                 end
                 8'b0001_0111: begin // LDF - LoaD register File pointer
                     nx_rfp_we  = 1;
-                    nx_alu_imm = { 24'd0, op[15:8] };
+                    nx_alu_imm = { 16'd0, op[15:0] };
                     fetched    = 2;
                 end
                 8'b0010_0???,   // byte
@@ -357,10 +377,13 @@ always @* begin
                         nx_phase = FETCH;
                     end
                 end
-                8'b0000_0110: begin // EI num
+                8'b0000_0110: begin // DI/EI num
                     nx_iff  = op[10:8];
                     fetched = 2;
                 end
+                // 8'b0000_0111: begin // RETI
+                //
+                // end
                 8'b0000_10?1: begin // PUSH<W> #
                     nx_regs_we  = op[1] ? 3'b10 : 3'b1;
                     nx_dec_xsp  = {13'd0,nx_regs_we};
@@ -379,13 +402,15 @@ always @* begin
                     nx_ram_dsel= 2;
                     nx_phase   = PUSH_SR;
                 end
-                8'b0001_1001: begin // POP F
+                8'b0001_1001,  // POP F
+                8'b0000_0011: begin // POP SR
                     nx_keep_inc_xsp = 1;
-                    nx_wr_len       = 1;
+                    nx_wr_len       = op[1] ? 3'd1 : 3'd2;
                     nx_ram_ren      = 1;
                     nx_sel_xsp      = 1;
                     nx_phase        = LD_RAM;
                     nx_popf         = 1;
+                    nx_popsr        = op[1];
                     fetched         = 0;
                 end
                 8'b0001_0101,       // POP A
@@ -469,6 +494,10 @@ always @* begin
             nx_ram_wen  = 1;
             nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
             nx_phase    = DUMMY;
+            nx_intproc  = 0; // interrupt processing stops here
+            if( intproc ) begin
+                nx_pc_we = 1; // Jump to the interrupt procedure
+            end
         end
         PUSH_PC: begin
             // store the PC
@@ -477,10 +506,12 @@ always @* begin
             nx_ram_wen  = 1;
             nx_wr_len   = 4;
             // jump
-            if( last_op[3:0]==4'he )
-                nx_pc_rel = 1;  // CALLR
-            else
-                nx_pc_we   = 1; // CALL
+            if( !intproc ) begin
+                if( last_op[3:0]==4'he )
+                    nx_pc_rel = 1;  // CALLR
+                else
+                    nx_pc_we   = 1; // or CALL
+            end
             nx_phase   = DUMMY;
         end
         POP_PC: begin
@@ -573,8 +604,8 @@ always @* begin
             nx_alu_op  = ALU_NOP;
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
-            nx_phase   = FETCH;
             nx_dec_xsp = keep_dec_xsp;
+            nx_phase   = intproc ? PUSH_SR : FETCH;
         end
         LD_RAM: begin
             if( goxec ) begin
@@ -588,9 +619,13 @@ always @* begin
             end else begin
                 nx_phase    = FETCH;
                 nx_ram_dsel = 1; // copy the RAM output
-                if( popf ) begin
+                if( popf || popsr ) begin
                     nx_alu_op = ALU_POPF;
                     nx_flag_we = 1;
+                end
+                if( popsr ) begin
+                    nx_rfp_we = 1;
+                    nx_iff    = op[14:12];
                 end
                 fetched = 1;  // this will set the RAM wait flag too
             end
@@ -1043,6 +1078,19 @@ always @* begin
                     nx_alu_smux      = 1;   // not really needed, left for consistency
                     fetched          = 1;
                 end
+                10'b0100_0???_00, // MUL  RR,r
+                10'b0100_1???_00: // MULS RR,r
+                begin
+                    nx_src     = regs_dst; // swap R, r
+                    nx_dst     = op_zz[1] ? // 16x16 -> 32
+                        { 3'b111, op[2:0], 2'b0 } :
+                        { 4'he, op[2:1], 2'b0 }; // 8x8 -> 16
+                    nx_alu_op  = op[3] ? ALU_MULS : ALU_MUL;
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_keep_we = nx_regs_we;
+                    nx_phase   = DUMMY;
+                end
+
                 10'b1111_0???_?0, // CP  R,r
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
@@ -1188,6 +1236,7 @@ always @(posedge clk, posedge rst) begin
         ld_high        <= 0;
         link           <= 0;
         popf           <= 0;
+        popsr          <= 0;
         // LDD/LDI
         dec_xde        <= 0;
         dec_xix        <= 0;
@@ -1200,6 +1249,8 @@ always @(posedge clk, posedge rst) begin
         ldd_write      <= 0;
         keep_lddwr     <= 0;
         rep            <= 0;
+        intproc        <= 0;
+        intnest        <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1255,7 +1306,10 @@ always @(posedge clk, posedge rst) begin
         ld_high        <= nx_ld_high;
         link           <= nx_link;
         popf           <= nx_popf;
+        popsr          <= nx_popsr;
 
+        intproc        <= nx_intproc;
+        intnest        <= nx_intnest;
         if( latch_op ) last_op <= op[7:0];
     end
 end
