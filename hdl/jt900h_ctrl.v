@@ -595,6 +595,15 @@ always @* begin
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
                 end
+                9'b0000_00?0_1: begin // LD<B/W> (mem),#
+                    nx_regs_we   = op[1] ? 3'd2 : 3'd1;
+                    nx_dly_fetch = op[1] ? 3'd3 : 3'd2;
+                    nx_phase     = ST_RAM;
+                    nx_alu_smux  = 1;
+                    nx_flag_we   = 1;
+                    nx_alu_op    = ALU_MOVE;
+                    nx_alu_imm   = { 16'd0, op[23:8] };
+                end
                 default: begin // load operand from memory
                     nx_phase   = LD_RAM;
                     nx_keep_lddwr = op[7:2] == 6'h10>>2; // LDD/LDI (R)

@@ -83,16 +83,18 @@ always @(posedge clk) begin
     if( ram_we !=0 ) begin
         mem[ ram_addr>>1 ] <= ram_win;
         $display("RAM: %X written to %X",ram_win, ram_addr&24'hffffe);
+        if( ram_addr=='hffff && ram_we[1] ) begin
+            $display("The CPU sent the stop signal");
+            dump_rdout <= 1;
+        end
     end
-end
 
-always @(posedge clk) begin
     if (/*ram_addr>=`END_RAM ||*/ dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
         dmp_buf[ dmp_addr-1 ] <= dmp_din;
         cen <= 0;
         if( dmp_addr==84 ) begin
-            dump_2file=1;
+            dump_2file<=1;
         end
     end
 end
