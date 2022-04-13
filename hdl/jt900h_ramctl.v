@@ -29,6 +29,7 @@ module jt900h_ramctl(
     input      [23:0] pc,
     input      [15:0] op16,
     input             sel_xsp,
+    input             sel_op8,
     input             sel_op16,
     input      [ 1:0] data_sel,
 
@@ -60,8 +61,9 @@ reg  [ 1:0] wron;
 
 // assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
 assign req_addr = ldram_en ? ( sel_xsp ? xsp : idx_addr ) : pc;
-assign eff_addr = sel_op16 ? {8'd0, op16} :
-                  sel_xsp  ?       xsp    : idx_addr;
+assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
+                  sel_op16 ? { 8'd0, op16      } :
+                  sel_xsp  ?       xsp           : idx_addr;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};
 

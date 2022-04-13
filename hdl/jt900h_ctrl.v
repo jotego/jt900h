@@ -42,6 +42,7 @@ module jt900h_ctrl(
     // XSP
     output reg        sel_xsp,
     output reg        sel_op16,
+    output reg        sel_op8,
     output reg [15:0] inc_xsp,
     output reg [15:0] dec_xsp,
 
@@ -143,6 +144,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            rep, nx_rep,
            reti, nx_reti,
            nx_selop16, keep_selop16, nx_keep_selop16,
+           nx_selop8,
            intproc, nx_intproc;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
@@ -223,6 +225,7 @@ always @* begin
     nx_rfp_we        = 0;
     nx_was_load      = was_load;
     nx_flag_we       = flag_we;
+
     nx_wr_len        = wr_len;
     nx_ram_dsel      = ram_dsel;
     nx_dly_fetch     = dly_fetch;
@@ -230,7 +233,9 @@ always @* begin
     nx_dec_xsp       = 0;
     nx_sel_xsp       = sel_xsp;
     nx_selop16       = sel_op16;
+    nx_selop8        = sel_op8;
     nx_keep_selop16  = keep_selop16;
+
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
     nx_dec_bc        = 0;
@@ -286,6 +291,7 @@ always @* begin
             nx_popsr    = 0;
             nx_reti     = 0;
             // RAM CTRL
+            nx_selop8   = 0;
             nx_selop16  = 0;
             nx_keep_selop16=0;
             // LDD/LDI
@@ -460,6 +466,16 @@ always @* begin
                     nx_phase      = FILL_IMM;
                     nx_keep_pc_we = 1;
                 end
+                8'b0000_10?0: begin // LD<W> (#8),#
+                    nx_selop8    = 1;
+                    nx_dly_fetch = op[1] ? 3'd4 : 3'd3;
+                    nx_alu_imm   = {16'd0,op[31:16]};
+                    nx_regs_we   = op[1] ? 3'd2 : 3'd1;
+                    nx_alu_op    = ALU_MOVE;
+                    nx_flag_we   = 1;
+                    nx_alu_smux  = 1;
+                    nx_phase     = ST_RAM;
+                end
                 8'b0000_1100: begin
                     nx_inc_rfp = 1;
                     fetched    = 1;
@@ -491,7 +507,7 @@ always @* begin
                     nx_pc_rel   = jp_ok;
                     nx_phase    = DUMMY;
                 end
-                8'b000_111?: begin // RET / RETD
+                8'b0000_111?: begin // RET / RETD
                     nx_wr_len       = 2;
                     nx_ram_ren      = 1; // RAM load enable
                     nx_sel_xsp      = 1;
@@ -1277,6 +1293,7 @@ always @(posedge clk, posedge rst) begin
         keep_inc_xsp   <= 0;
         keep_dec_xsp   <= 0;
         sel_op16       <= 0;
+        sel_op8        <= 0;
         keep_selop16   <= 0;
 
         riff           <= 3'b111;
@@ -1332,7 +1349,8 @@ always @(posedge clk, posedge rst) begin
         flag_we        <= nx_flag_we;
         dly_fetch      <= nx_dly_fetch;
         sel_xsp        <= nx_sel_xsp;
-        sel_op16       <= nx_selop16 ;
+        sel_op16       <= nx_selop16;
+        sel_op8        <= nx_selop8;
         keep_selop16   <= nx_keep_selop16;
         dec_xsp        <= nx_dec_xsp;
         inc_xsp        <= nx_inc_xsp;
