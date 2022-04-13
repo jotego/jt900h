@@ -255,7 +255,7 @@ always @* begin
 
     // interrupts
     nx_intproc       = intproc;
-    nx_intnest       = 0;
+    nx_intnest       = intnest;
 
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: begin
