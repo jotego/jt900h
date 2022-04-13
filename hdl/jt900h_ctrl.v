@@ -271,6 +271,7 @@ always @* begin
             nx_keep_we  = 0;
             nx_exec_imm = 0;
             nx_pc_we    = 0;
+            nx_keep_pc_we=0;
             nx_was_load = 0;
             nx_goexec   = 0;
             nx_dly_fetch= 0;
