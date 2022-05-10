@@ -1139,7 +1139,7 @@ always @* begin
                         { 3'b111, op[2:0], 2'b0 } :
                         { 4'he, op[2:1], 2'b0 }; // 8x8 -> 16
                     nx_alu_op  = op[3] ? ALU_MULS : ALU_MUL;
-                    nx_regs_we = expand_zz( op_zz );
+                    nx_regs_we = op_zz[0] ? 3'b100 : 3'b010;
                     nx_keep_we = nx_regs_we;
                     nx_phase   = DUMMY;
                 end

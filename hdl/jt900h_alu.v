@@ -296,12 +296,12 @@ always @* begin
             nx_n = 1;
         end
         ALU_MUL: begin
-            rslt = { w[1] ? op0[15:8] : 8'd0, op0[7:0] } *
-                   { w[1] ? op2[15:8] : 8'd0, op2[7:0] };
+            rslt = { w[2] ? op0[15:8] : 8'd0, op0[7:0] } *
+                   { w[2] ? op2[15:8] : 8'd0, op2[7:0] };
         end
         ALU_MULS: begin
-            rslt = { w[1] ? ext_op0[15:8] : 8'd0, ext_op0[7:0] } *
-                   { w[1] ? ext_op2[15:8] : 8'd0, ext_op2[7:0] };
+            rslt = { w[2] ? ext_op0[15:8] : 8'd0, ext_op0[7:0] } *
+                   { w[2] ? ext_op2[15:8] : 8'd0, ext_op2[7:0] };
         end
         ALU_DJNZ: begin
             if( w[1] ) begin
