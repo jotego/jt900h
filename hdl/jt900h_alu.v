@@ -57,6 +57,7 @@ reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
 wire        shr_msb, shl_lsb, shrx_msb, shlx_lsb;
 wire [15:0] rld, rrd, rr_result;
+wire [63:0] muls16;
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -78,6 +79,7 @@ assign shr_msb  = sel==ALU_RR ? carry : sel==ALU_SRA ? op0_s : 1'b0;
 assign shl_lsb  = sel==ALU_RL && carry;
 assign shrx_msb = sel==ALU_RRX ? carry : sel==ALU_SRAX ? imm_s : 1'b0;
 assign shlx_lsb = sel==ALU_RLX && carry;
+assign muls16   = {{16{op0[15]}}, op0[15:0]} * {{16{op2[15]}}, op2[15:0]};
 
 assign rld = { acc[7:4], imm[7:0], acc[3:0] };
 assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
@@ -300,8 +302,8 @@ always @* begin
                    { w[2] ? op2[15:8] : 8'd0, op2[7:0] };
         end
         ALU_MULS: begin
-            rslt = { w[2] ? ext_op0[15:8] : 8'd0, ext_op0[7:0] } *
-                   { w[2] ? ext_op2[15:8] : 8'd0, ext_op2[7:0] };
+            rslt = w[2] ? muls16[31:0] :
+                          ( {{8{op0[7]}}, op0[7:0]}*{{8{op2[7]}}, op2[7:0]} );
         end
         ALU_DJNZ: begin
             if( w[1] ) begin

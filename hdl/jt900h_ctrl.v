@@ -1135,13 +1135,24 @@ always @* begin
                 10'b0100_1???_00: // MULS RR,r
                 begin
                     nx_src     = regs_dst; // swap R, r
-                    nx_dst     = op_zz[1] ? // 16x16 -> 32
+                    nx_dst     = op_zz[0] ? // 16x16 -> 32
                         { 3'b111, op[2:0], 2'b0 } :
                         { 4'he, op[2:1], 2'b0 }; // 8x8 -> 16
                     nx_alu_op  = op[3] ? ALU_MULS : ALU_MUL;
                     nx_regs_we = op_zz[0] ? 3'b100 : 3'b010;
                     nx_keep_we = nx_regs_we;
                     nx_phase   = DUMMY;
+                end
+                10'b0000_1000_00, // MUL  rr,#
+                10'b0000_1001_00: // MULS rr,#
+                begin
+                    nx_alu_imm[15:0] = op[23:8];
+                    nx_alu_smux= 1;
+                    nx_alu_op  = op[0] ? ALU_MULS : ALU_MUL;
+                    nx_regs_we = op_zz[0] ? 3'b100 : 3'b010;
+                    nx_keep_we = nx_regs_we;
+                    nx_phase   = DUMMY;
+                    fetched    = op_zz[0] ? 3'd2 : 3'd1;
                 end
 
                 10'b1111_0???_?0, // CP  R,r
