@@ -297,6 +297,9 @@ always @* begin
             nx_h = 1;
             nx_n = 1;
         end
+        ALU_PAA: begin
+            rslt = op0 + {31'b0, op0[0]};
+        end
         ALU_MUL: begin
             rslt = { w[2] ? op0[15:8] : 8'd0, op0[7:0] } *
                    { w[2] ? op2[15:8] : 8'd0, op2[7:0] };

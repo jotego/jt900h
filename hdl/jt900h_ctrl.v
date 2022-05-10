@@ -1095,6 +1095,11 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched    = 1;
                 end
+                10'b0001_0100_00: begin // PAA
+                    nx_alu_op  = ALU_PAA;
+                    nx_regs_we = expand_zz( op_zz );
+                    fetched = 1;
+                end
                 10'b0011_1100_??, // MDEC1
                 10'b0011_1101_??, // MDEC2
                 10'b0011_1110_??, // MDEC4
@@ -1131,10 +1136,14 @@ always @* begin
                     nx_alu_smux      = 1;   // not really needed, left for consistency
                     fetched          = 1;
                 end
-                10'b0100_0???_00, // MUL  RR,r
-                10'b0100_1???_00: // MULS RR,r
+                10'b0100_0???_?0, // MUL  RR,r
+                10'b0100_1???_?0: // MULS RR,r
                 begin
-                    nx_src     = regs_dst; // swap R, r
+                    if( was_load ) begin
+                        nx_alu_smux = 1;
+                    end else begin
+                        nx_src = regs_dst; // swap R, r
+                    end
                     nx_dst     = op_zz[0] ? // 16x16 -> 32
                         { 3'b111, op[2:0], 2'b0 } :
                         { 4'he, op[2:1], 2'b0 }; // 8x8 -> 16
@@ -1154,7 +1163,6 @@ always @* begin
                     nx_phase   = DUMMY;
                     fetched    = op_zz[0] ? 3'd2 : 3'd1;
                 end
-
                 10'b1111_0???_?0, // CP  R,r
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
