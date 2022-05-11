@@ -8,18 +8,18 @@
 
     orcf 0,bc
     jp nc,bad_end
-
     or e,1
+
     ld a,1
     andcf a,bc
     jp c,bad_end
-
     or e,2
+
     lda xix,data
     xorcf 1,(xix)
     jp nc,bad_end
-
     or e,4
+
     ld a,0
     andcf a,(xix)
     jp c,bad_end

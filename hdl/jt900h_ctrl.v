@@ -798,6 +798,7 @@ always @* begin
                 10'b1011_0???_11: begin  // RES #3,(mem)
                     nx_alu_op       = ALU_RESX;
                     nx_regs_we      = 1;
+                    nx_flag_we      = 1;
                     nx_alu_imm[10:8] = op[2:0];
                     nx_dly_fetch    = 1;
                     nx_phase        = ST_RAM;
@@ -973,7 +974,8 @@ always @* begin
                 10'b0010_?011_0?, // LDCF #4,r   - A,r
                 10'b0010_?010_0?, // XORCF #4,r  - A,r
                 10'b0010_?001_0?, // ORCF #4,r   - A,r
-                10'b0010_?000_0?: // ANDCF #4,r  - A,r
+                10'b0010_?000_0?, // ANDCF #4,r  - A,r
+                10'b0010_?100_0?: // STCF #4,r   - A,r
                 begin
                     nx_alu_imm = { 28'd0,op[11:8] };
                     nx_src      = 8'he0;    // A
@@ -983,30 +985,58 @@ always @* begin
                     end else begin
                         fetched     = 1;
                     end
-                    case( op[1:0] )
+                    case( op[2:0] )
                         0: nx_alu_op = ALU_ANDCF;
                         1: nx_alu_op = ALU_ORCF;
                         2: nx_alu_op = ALU_XORCF;
                         3: nx_alu_op = ALU_LDCF;
+                        4: nx_alu_op = ALU_STCF;
                     endcase
-                    nx_flag_we = 1;
+                    nx_flag_we = !op[2]; // only STCF alters registers
                     nx_regs_we = expand_zz( op_zz );
                 end
                 10'b0010_1000_1?, // ANDCF A,(mem)
                 10'b0010_1001_1?, // ORCF A,(mem)
                 10'b0010_1010_1?, // XORCF A,(mem)
-                10'b0010_1011_1?: // LDCF A,(mem)
+                10'b0010_1011_1?, // LDCF A,(mem)
+                10'b0010_1100_1?: // STCF A,(mem)
                 begin
                     nx_src = 8'hE0;
-                    case(op[1:0])
+                    case(op[2:0])
                         0: nx_alu_op = ALU_ANDCFA;
                         1: nx_alu_op = ALU_ORCFA;
                         2: nx_alu_op = ALU_XORCFA;
                         3: nx_alu_op = ALU_LDCFA;
+                        4: nx_alu_op = ALU_STCFA;
                     endcase
+                    if( op[2] ) begin
+                        nx_dly_fetch = 1;
+                        nx_phase     = ST_RAM;
+                    end else begin
+                        fetched    = 1;
+                    end
                     nx_flag_we = 1;
                     nx_regs_we = 1;
-                    fetched    = 1;
+                end
+                10'b1000_0???_11, // ANDCF #3,(mem)
+                10'b1001_0???_11, // XORCF #3,(mem)
+                10'b1010_0???_11: // STCF  #3,(mem)
+                begin
+                    case( op[5:4] )
+                        0: nx_alu_op = ALU_ANDCFX;
+                        1: nx_alu_op = ALU_XORCFX;
+                        2: nx_alu_op = ALU_STCFX;
+                    endcase
+                    nx_alu_imm[10:8] = op[2:0];
+                    nx_regs_we       = 1; // expand_zz( op_zz );
+                    nx_flag_we       = 1;
+                    nx_alu_smux      = 1;
+                    if( op[5] ) begin
+                        nx_dly_fetch = 1;
+                        nx_phase     = ST_RAM;
+                    end else begin
+                        fetched = 1;
+                    end
                 end
                 10'b01??_0???_11: begin // LD (mem),R
                     nx_alu_op = ALU_MOVE;
@@ -1123,19 +1153,6 @@ always @* begin
                         nx_phase = FILL_IMM;
                     end
                 end
-                10'b1001_0???_11, // XORCF #3,(mem)
-                10'b1000_0???_11: // ANDCF #3,(mem)
-                begin
-                    case(op[4])
-                        1: nx_alu_op = ALU_XORCFX;
-                        0: nx_alu_op = ALU_ANDCFX;
-                    endcase
-                    nx_alu_imm[10:8] = op[2:0];
-                    nx_regs_we       = expand_zz( op_zz );
-                    nx_flag_we       = 1;
-                    nx_alu_smux      = 1;   // not really needed, left for consistency
-                    fetched          = 1;
-                end
                 10'b0100_0???_?0, // MUL  RR,r
                 10'b0100_1???_?0: // MULS RR,r
                 begin
@@ -1167,7 +1184,7 @@ always @* begin
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
                 10'b1100_0???_??, // AND R,r
-                10'b1010_0???_??, // SUB R,r
+                10'b1010_0???_?0, // SUB R,r
                 10'b100?_0???_?0: // ADD R,r / ADC R,r
                 begin
                     nx_src      = regs_dst; // swap R, r

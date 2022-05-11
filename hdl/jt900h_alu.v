@@ -300,6 +300,14 @@ always @* begin
         ALU_PAA: begin
             rslt = op0 + {31'b0, op0[0]};
         end
+        ALU_STCF: begin
+            rslt[15:0] = op0[15:0];
+            rslt[ {1'b0, op2[3:0] } ] = carry;
+        end
+        ALU_STCFX: begin
+            rslt[7:0] = imm[7:0];
+            rslt[ {2'd0,imm[10:8]} ] = carry;
+        end
         ALU_MUL: begin
             rslt = { w[2] ? op0[15:8] : 8'd0, op0[7:0] } *
                    { w[2] ? op2[15:8] : 8'd0, op2[7:0] };
@@ -415,6 +423,10 @@ always @* begin
         end
         ALU_ANDCFA: begin
             nx_c = carry & imm[ {2'b0,op1[2:0]} ];
+        end
+        ALU_STCFA: begin
+            rslt[7:0] = imm[7:0];
+            rslt[ {2'b0,op1[2:0]} ] = carry;
         end
         ALU_RLD, ALU_RRD: begin
             rslt = {16'd0, rr_result };
