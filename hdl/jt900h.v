@@ -69,7 +69,7 @@ wire [31:0] alu_imm, alu_dout;
 wire [ 6:0] alu_op;
 wire [ 7:0] flags;
 wire [ 2:0] alu_we;
-wire        alu_smux;
+wire        alu_smux, alu_imux;
 wire        alu_wait, alu_busy;
 wire        flag_we, djnz, flag_only, nx_v, nx_z;
 
@@ -123,6 +123,7 @@ jt900h_ctrl u_ctrl(
     .alu_imm        ( alu_imm           ),
     .alu_op         ( alu_op            ),
     .alu_smux       ( alu_smux          ),
+    .alu_imux       ( alu_imux          ),
     .alu_wait       ( alu_wait          ),
     .alu_busy       ( alu_busy          ),
     .flags          ( flags             ),
@@ -231,6 +232,7 @@ jt900h_alu u_alu(
     .op1            ( src_out           ),
     .imm            ( alu_imm           ),
     .sel_imm        ( alu_smux          ),
+    .sel_dual       ( alu_imux          ),
     .busy           ( alu_busy          ),
     .flag_we        ( flag_we           ),
     .w              ( regs_we           ),      // operation width

@@ -62,6 +62,7 @@ module jt900h_ctrl(
     output reg [31:0] alu_imm,
     output reg [ 6:0] alu_op,
     output reg        alu_smux,
+    output reg        alu_imux,
     output reg        alu_wait,
     input      [ 7:0] flags,
     output reg        flag_we, // instructions that only affect the flags
@@ -113,7 +114,7 @@ reg  [7:0] last_op;
 reg  [7:0] nx_src, nx_dst;
 reg  [2:0] nx_regs_we, nx_wr_len,
            nx_keep_we, keep_we;
-reg        nx_alu_smux, nx_alu_wait,
+reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_ram_ren, nx_ram_wen,
            nx_idx_en,
            // LDD/LDI:
@@ -205,6 +206,7 @@ always @* begin
     nx_alu_op        = alu_op;
     nx_alu_imm       = alu_imm;
     nx_alu_smux      = alu_smux;
+    nx_alu_imux      = alu_imux;
     nx_alu_wait      = alu_wait;
     nx_ram_ren       = ram_ren;
     nx_ram_wen       = 0;
@@ -273,6 +275,7 @@ always @* begin
             `endif
             nx_alu_op   = ALU_NOP;
             nx_alu_smux = 0;
+            nx_alu_imux = 0;
             nx_alu_wait = 0;
             nx_regs_we  = 0;
             nx_wr_len   = 0;
@@ -859,14 +862,36 @@ always @* begin
                         3'b010: nx_alu_op = ALU_SUB;
                         3'b001: nx_alu_op = ALU_ADC;
                         3'b000: nx_alu_op = ALU_ADD;
-                        // 3'b111:  nx_alu_op = ALU_CP;
+                        3'b111:  nx_alu_op = ALU_CP;
                         default: nx_alu_op = ALU_NOP;
                     endcase
                     nx_regs_we   = expand_zz( op_zz );
                     nx_flag_we   = 1;
                     nx_alu_smux  = 1;
                     nx_dly_fetch = 1;
-                    nx_phase     = ST_RAM;
+                    nx_phase     = op[6:4]!=3'b111 ? ST_RAM : DUMMY;
+                end
+                10'b0011_1???_10: begin // arithmetic with immediate, to memory
+                    nx_src       = regs_dst;
+                    case( op[2:0] )
+                        3'b110: nx_alu_op = ALU_OR;
+                        3'b101: nx_alu_op = ALU_XOR;
+                        3'b100: nx_alu_op = ALU_AND;
+                        3'b011: nx_alu_op = ALU_SBC;
+                        3'b010: nx_alu_op = ALU_SUB;
+                        3'b001: nx_alu_op = ALU_ADC;
+                        3'b000: nx_alu_op = ALU_ADD;
+                        3'b111:  nx_alu_op = ALU_CP;
+                        default: nx_alu_op = ALU_NOP;
+                    endcase
+                    nx_regs_we   = expand_zz( op_zz );
+                    nx_flag_we   = 1;
+                    nx_alu_smux  = 1;
+                    nx_dly_fetch = op_zz[0] ? 3 : 2;
+                    nx_alu_imm[15: 0] = op[23:8];
+                    nx_alu_imm[31:16] = alu_imm[15:0];
+                    nx_alu_imux  = 1;
+                    nx_phase     = op[6:4]!=3'b111 ? ST_RAM : DUMMY;
                 end
                 10'b1000_1???_0?: begin // LD R,r
                     nx_src     = regs_dst;
@@ -1130,10 +1155,10 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched = 1;
                 end
-                10'b0011_1100_??, // MDEC1
-                10'b0011_1101_??, // MDEC2
-                10'b0011_1110_??, // MDEC4
-                10'b0000_0011_??: // LD r,#
+                10'b0011_1100_0?, // MDEC1
+                10'b0011_1101_0?, // MDEC2
+                10'b0011_1110_0?, // MDEC4
+                10'b0000_0011_0?: // LD r,#
                 begin
                     nx_alu_op   = op[7:0] == 8'b0000_0011 ? ALU_MOVE  :
                                   op[7:0] == 8'b0011_1100 ? ALU_MDEC1 :
@@ -1301,6 +1326,7 @@ always @(posedge clk, posedge rst) begin
         alu_op         <= 0;
         alu_imm        <= 0;
         alu_smux       <= 0;
+        alu_imux       <= 0;
         alu_wait       <= 0;
         ram_ren        <= 0;
         op_zz          <= 0;
@@ -1362,6 +1388,7 @@ always @(posedge clk, posedge rst) begin
         alu_op         <= nx_alu_op;
         alu_imm        <= nx_alu_imm;
         alu_smux       <= nx_alu_smux;
+        alu_imux       <= nx_alu_imux;
         alu_wait       <= nx_alu_wait;
         ram_ren        <= nx_ram_ren;
         ram_wen        <= nx_ram_wen;

@@ -25,7 +25,8 @@ module jt900h_alu(
     input      [31:0] op1,      // source
     input      [31:0] imm,      // alternative source
     input             sel_imm,
-    input             flag_we,   // instructions that affect the flags
+    input             sel_dual, // dual use for immediate input
+    input             flag_we,  // instructions that affect the flags
     output reg        flag_only, // flag_we delayed one clock
     input      [ 2:0] w,        // operation width
     output reg [ 2:0] alu_we,   // w delayed one clock
@@ -57,6 +58,7 @@ reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
 wire        shr_msb, shl_lsb, shrx_msb, shlx_lsb;
 wire [15:0] rld, rrd, rr_result;
+wire [31:0] op0_mux;
 wire [63:0] muls16;
 
 function [32:0] extend( input [31:0] x );
@@ -84,7 +86,7 @@ assign muls16   = {{16{op0[15]}}, op0[15:0]} * {{16{op2[15]}}, op2[15:0]};
 assign rld = { acc[7:4], imm[7:0], acc[3:0] };
 assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
 assign rr_result = sel==ALU_RLD ? rld : rrd;
-
+assign op0_mux = { op0[31:16], sel_dual ? imm[31:16] : op0[15:0] };
 
 always @* begin
 //    stcf = op1;
@@ -102,7 +104,7 @@ always @* begin
     nx_c = carry;
     nx_fdash = fdash;
     rslt = dout;
-    ext_op0 = extend(op0);
+    ext_op0 = extend(op0_mux);
     ext_op2 = extend(op2);
     ext_rslt = 0; // assign it for operations that alter the V bit
     nx_djnz  = djnz;
@@ -115,10 +117,10 @@ always @* begin
         ALU_MOVE: rslt = op2;
         ALU_ADD, ALU_ADC, ALU_INC: // also INC on register, also MULA
         begin // checking w prevents executing twice the same inst.
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
-            { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
-            { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op0_mux[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
+            { cc[0], rslt[ 7: 4] } = {1'b0,op0_mux[ 7: 4]}+{1'b0,op2[ 7: 4]}+{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,op0_mux[15: 8]}+{1'b0,op2[15: 8]}+{ 8'b0,cc[0]};
+            { cc[2], rslt[31:16] } = {1'b0,op0_mux[31:16]}+{1'b0,op2[31:16]}+{16'b0,cc[1]};
             ext_rslt = ext_op0 + ext_op2;
             if( sel!=ALU_INC || w[0]  ) begin
                 nx_s = rslt_sign;
@@ -143,7 +145,7 @@ always @* begin
             nx_v = rslt_sign ^ (w[0] ? ^op2[7] : op2[15]);
         end
         ALU_AND: begin // use it for RES bit,dst too?
-            rslt = op0 & op2;
+            rslt = op0_mux & op2;
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_h = 1;
@@ -152,7 +154,7 @@ always @* begin
             nx_c = 0;
         end
         ALU_OR, ALU_XOR: begin
-            rslt = sel==ALU_OR ? op0 | op2 : op0 ^ op2;
+            rslt = sel==ALU_OR ? op0_mux | op2 : op0_mux ^ op2;
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_h = 0;
@@ -183,10 +185,10 @@ always @* begin
         end
         ALU_SUB, ALU_SBC, ALU_CP, ALU_DEC, ALU_CPD:
         begin
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC?carry : 1'b0};
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
-            { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
-            { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op0_mux[3:0]} - {1'b0,op2[3:0]} - { 4'd0, sel==ALU_SBC && carry };
+            { cc[0], rslt[ 7: 4] } = {1'b0,op0_mux[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,op0_mux[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
+            { cc[2], rslt[31:16] } = {1'b0,op0_mux[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
             ext_rslt = ext_op0 - ext_op2;
             if( sel!=ALU_DEC || w[0]  ) begin
                 nx_s = rslt_sign;
