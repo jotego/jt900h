@@ -77,7 +77,8 @@ module jt900h_ctrl(
     output     [15:0] sr,       // status register
     output reg [ 2:0] regs_we,
     output reg [ 7:0] regs_dst,
-    output reg [ 7:0] regs_src
+    output reg [ 7:0] regs_src,
+    output reg        ex_we
 );
 
 localparam [4:0] FETCH    = 5'd0,
@@ -124,7 +125,8 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_keep_dec_xix, keep_dec_xix,
            nx_keep_inc_xde, keep_inc_xde,
            nx_keep_inc_xix, keep_inc_xix,
-           nx_ld_high;
+           nx_ld_high,
+           nx_ex_we, nx_keep_ex, keep_ex;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -227,6 +229,8 @@ always @* begin
     nx_rfp_we        = 0;
     nx_was_load      = was_load;
     nx_flag_we       = flag_we;
+    nx_ex_we         = keep_ex;
+    nx_keep_ex       = 0;
 
     nx_wr_len        = wr_len;
     nx_ram_dsel      = ram_dsel;
@@ -780,6 +784,14 @@ always @* begin
                     nx_dly_fetch     = 1;
                     nx_phase         = ST_RAM;
                     nx_alu_imm[10:8] = op[2:0];
+                end
+                10'b1011_1???_00: begin // EX R,r
+                    nx_src     = regs_dst;
+                    nx_dst     = expand_reg(op[2:0],op_zz);
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_alu_op  = ALU_NOP;
+                    nx_keep_ex = 1;
+                    fetched    = 1;
                 end
                 10'b0001_01??_1?: begin // CPD/CPI
                     nx_alu_op  = ALU_CPD; // same for both CPD & CPI
@@ -1402,6 +1414,8 @@ always @(posedge clk, posedge rst) begin
         intproc        <= 0;
         intnest        <= 0;
         reti           <= 0;
+        ex_we          <= 0;
+        keep_ex        <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1466,6 +1480,8 @@ always @(posedge clk, posedge rst) begin
         intproc        <= nx_intproc;
         intnest        <= nx_intnest;
         reti           <= nx_reti;
+        ex_we          <= nx_ex_we;
+        keep_ex        <= nx_keep_ex;
         if( latch_op ) last_op <= op[7:0];
     end
 end

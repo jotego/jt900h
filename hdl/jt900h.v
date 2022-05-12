@@ -37,7 +37,7 @@ wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out, aux_out, acc;
 wire        bc_unity, dec_bc,
-            ld_high;
+            ld_high,  ex_we;
 
 // Indexed memory addresser
 wire [ 7:0] idx_rdreg_sel;
@@ -138,7 +138,8 @@ jt900h_ctrl u_ctrl(
 
     .regs_we        ( regs_we           ),
     .regs_dst       ( regs_dst          ),
-    .regs_src       ( regs_src          )
+    .regs_src       ( regs_src          ),
+    .ex_we          ( ex_we             )
 );
 
 jt900h_regs u_regs(
@@ -152,6 +153,7 @@ jt900h_regs u_regs(
     .dec_rfp        ( dec_rfp           ),
     .rfp_we         ( rfp_we            ),
     .imm            ( alu_imm[9:8]      ),  // used for LDF only
+    .ex_we          ( ex_we             ),
 
     // BC
     .bc_unity       ( bc_unity          ),

@@ -29,6 +29,7 @@ module jt900h_regs(
     input      [ 1:0] imm,
     output reg        bc_unity,
     input             dec_bc,
+    input             ex_we,        // Exchange two registers
     // stack
     output     [31:0] xsp,
     input      [15:0] inc_xsp,
@@ -107,7 +108,7 @@ assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 `endif
 
-assign data_mux = data_sel ? ram_dout : alu_dout;
+assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;
 assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
 assign ptr_out  = { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
                     ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] };
@@ -204,12 +205,26 @@ always @(posedge clk, posedge rst) begin
                 // ld_high is used by the RLD/RRD instructions
                 accs[r1sel[5:0]] <= ld_high ? data_mux[15:8] : data_mux[7:0];
             end
+            if( ex_we ) begin
+                if( r0sel[7] )
+                    ptrs[r0sel[3:0]] <= dst_out[7:0];
+                else begin
+                    // ld_high is used by the RLD/RRD instructions
+                    accs[r0sel[5:0]] <= dst_out[7:0];
+                end
+            end
         end
         if( we[1] ) begin
             if( r1sel[7] )
                 { ptrs[{r1sel[3:1],1'b1}], ptrs[r1sel[3:0]] } <= data_mux[15:0];
             else
                 { accs[{r1sel[5:1],1'b1}], accs[r1sel[5:0]] } <= data_mux[15:0];
+            if( ex_we ) begin
+                if( r0sel[7] )
+                    { ptrs[{r0sel[3:1],1'b1}], ptrs[r0sel[3:0]] } <= dst_out[15:0];
+                else
+                    { accs[{r0sel[5:1],1'b1}], accs[r0sel[5:0]] } <= dst_out[15:0];
+            end
         end
         if( we[2] ) begin
             if( r1sel[7] )
