@@ -586,6 +586,14 @@ always @* begin
             // leave the fetched update to the next state
             // either LD_RAM or ST_RAM
             casez( {op[7:0], op_zz==2'b11} )
+                9'b0000_01?0_1: begin // POP<W> (mem)
+                    nx_wr_len    = 1 << op[1];
+                    nx_ram_ren   = 1; // RAM load enable
+                    nx_sel_xsp   = 1;
+                    nx_inc_xsp   = 1 << op[1];
+                    nx_dly_fetch = 1;
+                    nx_phase     = ST_RAM;
+                end
                 9'b001?_0???_?: begin // LD   R,(mem) 0010_0RRR
                                     // LDA  R,mem   001s_0RRR, but first half had zz==11
                     if( op_zz==2'b11 ) begin // LDA
@@ -762,6 +770,15 @@ always @* begin
                         4'b0001: nx_alu_op = ALU_ORCFX;
                         default: nx_alu_op = ALU_NOP;
                     endcase
+                    nx_alu_imm[10:8] = op[2:0];
+                end
+                10'b1100_0???_11: begin // CHG #3,(mem)
+                    nx_flag_we       = 1;
+                    nx_regs_we       = 1;
+                    nx_alu_op        = ALU_CHGX;
+                    fetched          = 0;
+                    nx_dly_fetch     = 1;
+                    nx_phase         = ST_RAM;
                     nx_alu_imm[10:8] = op[2:0];
                 end
                 10'b0001_01??_1?: begin // CPD/CPI
@@ -1208,7 +1225,7 @@ always @* begin
                 10'b1111_0???_?0, // CP  R,r
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
-                10'b1100_0???_??, // AND R,r
+                10'b1100_0???_?0, // AND R,r
                 10'b1010_0???_?0, // SUB R,r
                 10'b100?_0???_?0: // ADD R,r / ADC R,r
                 begin

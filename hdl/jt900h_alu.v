@@ -294,6 +294,10 @@ always @* begin
             rslt = op0;
             rslt[ {1'b0,imm[3:0]} ] = ~rslt[ {1'b0,imm[3:0]} ];
         end
+        ALU_CHGX: begin
+            rslt[7:0] = imm[7:0];
+            rslt[ {2'b0,imm[10:8]} ] = ~rslt[ {2'b0,imm[10:8]} ];
+        end
         ALU_CPL: begin
             rslt = ~op2;
             nx_h = 1;
