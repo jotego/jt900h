@@ -58,6 +58,8 @@ reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
 wire        shr_msb, shl_lsb, shrx_msb, shlx_lsb;
 wire [15:0] rld, rrd, rr_result;
+reg  [ 7:0] daa;
+wire        daa_carry;
 wire [31:0] op0_mux;
 wire [63:0] muls16;
 
@@ -66,6 +68,7 @@ function [32:0] extend( input [31:0] x );
              w[1] ? { {17{x[15]}}, x[15:0] } : { x[31], x };
 endfunction
 
+assign daa_carry= cc[0] | carry;
 assign flags   = {sign, zero, 1'b0, halfc, 1'b0, overflow, negative, carry};
 assign is_zero = w[0] ? rslt[7:0]==0 : w[1] ? rslt[15:0]==0 : rslt[31:0]==0;
 assign rslt_sign = w[0] ? rslt[7] : w[1] ? rslt[15] : rslt[31];
@@ -95,22 +98,35 @@ always @* begin
     op2 = sel_imm ? imm : op1;
 end
 
+// daa is the value to add during the DAA instruction
 always @* begin
-    nx_s = sign;
-    nx_z = zero;
-    nx_h = halfc;
-    nx_v = overflow;
-    nx_n = negative;
-    nx_c = carry;
+    daa = 0;
+    if( negative ) begin
+        if( !carry && halfc && op0[7:4]<9 && op0[3:0]>=6 ) daa=8'hfa;
+        if( carry && ( op0[7:4]>=7 && !halfc && op0[3:0]<10 )) daa=8'ha0;
+        if( carry && ( op0[7:4]>=6 &&  halfc && op0[3:0]>=6 )) daa=8'h9a;
+    end else begin
+        if ((carry || op0[7:4] > 9) || (op0[7:4] > 8) && op0[3:0] > 9) daa[7:4] =  4'd6;
+        if  (halfc || op0[3:0] > 9) daa[3:0] = 6;
+    end
+end
+
+always @* begin
+    nx_s     = sign;
+    nx_z     = zero;
+    nx_h     = halfc;
+    nx_v     = overflow;
+    nx_n     = negative;
+    nx_c     = carry;
     nx_fdash = fdash;
-    rslt = dout;
-    ext_op0 = extend(op0_mux);
-    ext_op2 = extend(op2);
+    rslt     = dout;
+    ext_op0  = extend(op0_mux);
+    ext_op2  = extend(op2);
     ext_rslt = 0; // assign it for operations that alter the V bit
     nx_djnz  = djnz;
     nx_busy  = 0;
     nx_cnt   = 0;
-    cc = 0;
+    cc       = 0;
 
     case( sel )
         default:;
@@ -302,6 +318,15 @@ always @* begin
             rslt = ~op2;
             nx_h = 1;
             nx_n = 1;
+        end
+        ALU_DAA: begin
+            { nx_h, rslt[3:0] } = {1'b0, op0[3:0]} + daa[3:0];
+            { cc[0], rslt[7:4] } = {1'b0, op0[7:4]} + daa[7:4] + {4'd0, nx_h};
+
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_v = rslt_even;
+            nx_c = daa_carry;
         end
         ALU_PAA: begin
             rslt = op0 + {31'b0, op0[0]};

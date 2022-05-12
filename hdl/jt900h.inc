@@ -77,5 +77,6 @@ localparam [6:0] ALU_NOP  = 7'd0,
                  ALU_STCFX = 7'd76,
                  ALU_STCFA = 7'd77,
                  ALU_CHGX  = 7'd78,
+                 ALU_DAA   = 7'd79,
                  ALU_LAST  = 7'd127
                  ;

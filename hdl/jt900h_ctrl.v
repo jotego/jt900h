@@ -1222,6 +1222,11 @@ always @* begin
                     nx_phase   = DUMMY;
                     fetched    = op_zz[0] ? 3'd2 : 3'd1;
                 end
+                10'b0001_0000_00: begin // DAA
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_alu_op  = ALU_DAA;
+                    fetched    = 1;
+                end
                 10'b1111_0???_?0, // CP  R,r
                 10'b1110_0???_?0, // OR  R,r
                 10'b1101_0???_??, // XOR R,r
