@@ -20,13 +20,14 @@ module jt900h_div(
     input             rst,
     input             clk,
     input             cen,
-    input      [15:0] op0,
-    input      [15:0] op1,    
+    input      [15:0] op0, // dividend
+    input      [15:0] op1, // divisor
     input             len,
     input             start,
     output reg [15:0] quot,
     output reg [15:0] rem,
-    output reg        busy
+    output reg        busy,
+    output reg        v
 );
 
 reg  [15:0] divend, divor;
@@ -52,11 +53,10 @@ always @(posedge clk or posedge rst) begin
             busy   <= 1;
             quot   <= 0;
             rem    <= 0;
-            divend <= len ? op0<<1 : { op0[6:0], 9'd0 };
+            { sub, divend } <= { 15'd0, len ? op0 : { op0[7:0], 8'd0 }, 1'b0 };
             divor  <= len ? op1 : { 8'd0, op1[7:0] };
-            sub <= 0;
-            sub[0] <= len ? op0[15] : op0[7];
-            st   <= len ? 0 : 8;
+            st     <= len ? 0 : 8;
+            v      <= op1 == 0;
         end else if( busy ) begin
             quot <= { quot[14:0], larger };
             { sub, divend } <= { larger ? rslt[14:0] : sub[14:0], divend, 1'b0 };

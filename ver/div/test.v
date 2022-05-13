@@ -5,7 +5,7 @@ reg  clk, rst;
 reg  [15:0] op0, op1;
 wire [15:0] quot, rem;
 reg  len, start;
-wire busy;
+wire busy, v;
 
 wire [15:0] vq = op0/op1;
 wire [15:0] vr = op0 - op1*vq;
@@ -30,11 +30,11 @@ initial begin
     len = 0;
     start = 0;
     #30 rst=0;
-    for( k=0; k<256; k=k+1) begin
+    for( k=0; k<1024; k=k+1) begin
         #50 start = 1;
         #60 start = 0;
         wait( !busy );
-        $display("#%0d (%d)   | %d | %d vs %d | %d",k, len, quot,rem, vq, vr);
+        $display("#%4d (%d)   | %d <> %3d ; %d <> %3d",k, len, quot,vq, rem, vr);
         if( quot!= vq || rem != vr ) begin
             $display("Error: results diverged");
             #10 $finish;
@@ -61,7 +61,8 @@ jt900h_div i_jt900h_div (
     .start(start),
     .quot (quot ),
     .rem  (rem  ),
-    .busy (busy )
+    .busy (busy ),
+    .v    (v    )
 );
 
 
