@@ -20,28 +20,30 @@ module jt900h_div(
     input             rst,
     input             clk,
     input             cen,
-    input      [15:0] op0, // dividend
+    input      [31:0] op0, // dividend
     input      [15:0] op1, // divisor
     input             len,
     input             start,
-    output reg [15:0] quot,
+    output     [15:0] quot,
     output reg [15:0] rem,
     output reg        busy,
     output reg        v
 );
 
-reg  [15:0] divend, divor;
-reg  [15:0] sub;
-wire [15:0] rslt;
-reg  [ 3:0] st;
+reg  [31:0] divend, sub, fullq;
+reg  [15:0] divor;
+wire [31:0] rslt, nx_quot;
+reg  [ 4:0] st;
 wire        larger;
 
 assign larger = sub>=divor;
-assign rslt   = sub - divor;
+assign rslt   = sub - { 16'd0, divor };
+assign nx_quot= { fullq[30:0], larger };
+assign quot   = fullq[15:0];
 
 always @(posedge clk or posedge rst) begin 
     if(rst) begin
-        quot   <= 0;
+        fullq  <= 0;
         rem    <= 0;
         busy   <= 0;
         divend <= 0;
@@ -51,19 +53,20 @@ always @(posedge clk or posedge rst) begin
     end else begin
         if( start ) begin
             busy   <= 1;
-            quot   <= 0;
+            fullq  <= 0;
             rem    <= 0;
-            { sub, divend } <= { 15'd0, len ? op0 : { op0[7:0], 8'd0 }, 1'b0 };
+            { sub, divend } <= { 15'd0, len ? op0 : { op0[15:0], 16'd0 }, 1'b0 };
             divor  <= len ? op1 : { 8'd0, op1[7:0] };
-            st     <= len ? 0 : 8;
+            st     <= len ? 0 : 16;
             v      <= op1 == 0;
         end else if( busy ) begin
-            quot <= { quot[14:0], larger };
-            { sub, divend } <= { larger ? rslt[14:0] : sub[14:0], divend, 1'b0 };
-            st <= st+4'd1;
+            fullq <= nx_quot;
+            { sub, divend } <= { larger ? rslt[30:0] : sub[30:0], divend, 1'b0 };
+            st <= st+1'd1;
             if( &st ) begin
                 busy <= 0;
-                rem  <= larger ? rslt : sub;
+                rem  <= larger ? rslt[15:0] : sub[15:0];
+                if( len ? nx_quot[31:16]!=0 : nx_quot[15:8]!=0 ) v <= 1;
             end
         end
     end

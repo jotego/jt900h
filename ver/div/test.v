@@ -1,14 +1,15 @@
 module test;
 
-wire cen = 1;
-reg  clk, rst;
-reg  [15:0] op0, op1;
+wire        cen = 1;
+reg         clk, rst;
+reg  [31:0] op0;
+reg  [15:0] op1;
 wire [15:0] quot, rem;
-reg  len, start;
-wire busy, v;
+reg         len, start;
+wire        busy, v;
 
-wire [15:0] vq = op0/op1;
-wire [15:0] vr = op0 - op1*vq;
+wire [31:0] vq = op0/op1;
+wire [31:0] vr = op0 - op1*vq;
 
 integer k;
 
@@ -34,17 +35,18 @@ initial begin
         #50 start = 1;
         #60 start = 0;
         wait( !busy );
-        $display("#%4d (%d)   | %d <> %3d ; %d <> %3d",k, len, quot,vq, rem, vr);
+        $display("#%4d (len=%d, v=%d) %d/%d  | %d <> %3d ; %d <> %3d",
+            k, len, v, op0, op1, quot,vq, rem, vr);
         if( quot!= vq || rem != vr ) begin
             $display("Error: results diverged");
             #10 $finish;
         end
         op0 = $random;
         op1 = $random;
-        len = $random;
+        len = 0; // $random;
         if( !len ) begin
-            op0[15:8] = 0;
-            op1[15:8] = 0;
+            op0[31:16] = 0;
+            op1[ 15:8] = 0;
         end
     end
     $display("PASS");
