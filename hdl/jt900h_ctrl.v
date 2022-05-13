@@ -598,8 +598,8 @@ always @* begin
                     nx_dly_fetch = 1;
                     nx_phase     = ST_RAM;
                 end
-                9'b001?_0???_?: begin // LD   R,(mem) 0010_0RRR
-                                    // LDA  R,mem   001s_0RRR, but first half had zz==11
+                9'b0010_0???_0,       // LD   R,(mem) 0010_0RRR
+                9'b001?_0???_1: begin // LDA  R,mem   001s_0RRR, but first half had zz==11
                     if( op_zz==2'b11 ) begin // LDA
                         nx_regs_we  = op[4] ? 3'b100 : 3'b010;
                         nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
@@ -775,6 +775,16 @@ always @* begin
                         default: nx_alu_op = ALU_NOP;
                     endcase
                     nx_alu_imm[10:8] = op[2:0];
+                end
+                10'b0011_0???_10: begin // EX (mem),r
+                    nx_dst       = expand_reg(op[2:0],op_zz);
+                    nx_src       = nx_dst;
+                    nx_regs_we   = expand_zz( op_zz );
+                    nx_alu_op    = ALU_MOVE;
+                    fetched      = 0;
+                    nx_dly_fetch = 1;
+                    nx_ram_dsel  = 3;
+                    nx_phase     = ST_RAM;
                 end
                 10'b1100_0???_11: begin // CHG #3,(mem)
                     nx_flag_we       = 1;
@@ -980,11 +990,11 @@ always @* begin
                     fetched   = 1;
                     nx_phase  = DJNZ;
                 end
-                10'b0011_0100_??,       // TSET #4, r
-                10'b0011_0001_??,       // SET #4, r
-                10'b0011_0000_??,       // RES #4, r
-                10'b0011_0011_??,       // BIT #4,r
-                10'b0011_0010_??: begin // CHG #4,dst
+                10'b0011_0100_0?,       // TSET #4, r
+                10'b0011_0001_0?,       // SET #4, r
+                10'b0011_0000_0?,       // RES #4, r
+                10'b0011_0011_0?,       // BIT #4, r
+                10'b0011_0010_0?: begin // CHG #4, dst
                     nx_alu_imm = { 28'd0,op[11:8] };
                     case( op[2:0] )
                         0: nx_alu_op = ALU_RES;

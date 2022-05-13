@@ -268,6 +268,11 @@ jt900h_ramctl u_ramctl(
     .alu_dout       ( alu_dout          ),
     .idx_wr         ( idx_wr            ),
     .len            ( wr_len            ),
+
+    // EX support
+    .src_out        ( src_out           ),
+    .regs_we        ( regs_we[1:0]      ),
+
     // RAM interface
     .ram_addr       ( ram_addr          ),
     .ram_dout       ( ram_dout          ),

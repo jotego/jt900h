@@ -33,6 +33,10 @@ module jt900h_ramctl(
     input             sel_op16,
     input      [ 1:0] data_sel,
 
+    // Make a copy of the source register for the EX instruction
+    input      [ 1:0] regs_we,
+    input      [31:0] src_out,
+
     // RAM writes
     input      [31:0] alu_dout,
     input             idx_wr,   // starts an indexed RAM write
@@ -50,7 +54,8 @@ module jt900h_ramctl(
 
 reg  [23:0] cache_addr, op_addr;
 reg  [15:0] cache0, cache1, // always keep 4 bytes of data
-            op0, op1;
+            op0, op1,
+            src_cpy; // Copy of the last src_out register
 reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
@@ -69,10 +74,19 @@ assign dout = {cache1, cache0};
 
 always @* begin
     case( data_sel )
+        0: eff_data = alu_dout;
         1: eff_data = {8'd0,pc};
         2: eff_data = {16'd0, sr};
-        default: eff_data = alu_dout;
+        3: eff_data = {16'd0, src_cpy }; // EX instruction
     endcase
+end
+
+always @(posedge clk,posedge rst) begin
+    if( rst ) begin
+        src_cpy <= 0;
+    end else if( regs_we!=0 ) begin
+        src_cpy <= src_out[15:0];
+    end
 end
 
 always @(posedge clk,posedge rst) begin
