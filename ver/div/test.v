@@ -37,13 +37,14 @@ initial begin
         wait( !busy );
         $display("#%4d (len=%d, v=%d) %d/%d  | %d <> %3d ; %d <> %3d",
             k, len, v, op0, op1, quot,vq, rem, vr);
-        if( quot!= vq || rem != vr ) begin
+        if( !v && (quot!= vq || rem != vr) ||
+             v && (vq<(len ? 32'h10000 : 32'h100)) ) begin
             $display("Error: results diverged");
             #10 $finish;
         end
         op0 = $random;
         op1 = $random;
-        len = 0; // $random;
+        len = $random;
         if( !len ) begin
             op0[31:16] = 0;
             op1[ 15:8] = 0;
