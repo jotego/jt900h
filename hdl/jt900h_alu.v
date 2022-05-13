@@ -62,6 +62,13 @@ reg  [ 7:0] daa;
 wire        daa_carry;
 wire [31:0] op0_mux;
 wire [63:0] muls16;
+// Divider
+reg         div_start, nx_div_start;
+wire        div_v, div_busy;
+wire [15:0] div_quot, div_rem;
+wire [31:0] div_rslt;
+
+assign div_rslt = w[1] ? { div_rem, div_quot } : { 16'd0, div_rem[7:0], div_quot[7:0] };
 
 function [32:0] extend( input [31:0] x );
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
@@ -90,6 +97,21 @@ assign rld = { acc[7:4], imm[7:0], acc[3:0] };
 assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
 assign rr_result = sel==ALU_RLD ? rld : rrd;
 assign op0_mux = { op0[31:16], sel_dual ? imm[31:16] : op0[15:0] };
+
+jt900h_div u_div (
+    .rst  ( rst         ),
+    .clk  ( clk         ),
+    .cen  ( cen         ),
+    .op0  ( op0         ),
+    .op1  ( op1[15:0]   ), // TODO: Check connection ! Signal/port not matching : Expecting logic [15:0]  -- Found logic [31:0]
+    .len  ( w[1]        ),
+    .start( div_start   ),
+    .quot ( div_quot    ),
+    .rem  ( div_rem     ),
+    .busy ( div_busy    ),
+    .v    ( div_v       )
+);
+
 
 always @* begin
 //    stcf = op1;
@@ -127,10 +149,21 @@ always @* begin
     nx_busy  = 0;
     nx_cnt   = 0;
     cc       = 0;
+    nx_div_start = div_start;
 
     case( sel )
-        default:;
+        default: nx_div_start = 0;
         ALU_MOVE: rslt = op2;
+        ALU_DIV: begin
+            if( !busy ) begin
+                nx_div_start = 1;
+                nx_busy      = 1;
+            end else begin
+                nx_busy = div_busy;
+                rslt    = div_rslt;
+                nx_v    = div_v;
+            end
+        end
         ALU_ADD, ALU_ADC, ALU_INC: // also INC on register, also MULA
         begin // checking w prevents executing twice the same inst.
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0_mux[ 3: 0]}+{1'b0,op2[ 3: 0]} + { 4'd0, sel==ALU_ADC?carry : 1'b0};
@@ -583,9 +616,11 @@ always @(posedge clk, posedge rst)  begin
         busy_cen <= 0;
         cnt      <= 0;
         fdash    <= 0;
+        div_start<= 0;
     end else if(cen) begin
         flag_wel <= flag_we;
         busyl    <= busy;
+        div_start<= nx_div_start;
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout      <= rslt;
         end
@@ -602,7 +637,8 @@ always @(posedge clk, posedge rst)  begin
             cnt      <= nx_cnt;
         end
         flag_only <= flag_we;
-        alu_we    <= (busyl && cnt<=1) ? 0 : w;
+        alu_we    <=  div_start ? w << 1 :
+                     (busyl && cnt<=1 ) ? 0 : w;
         busy_cen  <= busy ? ~busy_cen : 1'b1;
     end
 end

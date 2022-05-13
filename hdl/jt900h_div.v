@@ -35,6 +35,7 @@ reg  [15:0] divor;
 wire [31:0] rslt, nx_quot;
 reg  [ 4:0] st;
 wire        larger;
+reg         start_l;
 
 assign larger = sub>=divor;
 assign rslt   = sub - { 16'd0, divor };
@@ -50,12 +51,15 @@ always @(posedge clk or posedge rst) begin
         divor  <= 0;
         sub    <= 0;
         st     <= 0;
+        start_l<= 0;
+        v      <= 0;
     end else begin
-        if( start ) begin
+        start_l <= start;
+        if( start && !start_l) begin
             busy   <= 1;
             fullq  <= 0;
             rem    <= 0;
-            { sub, divend } <= { 15'd0, len ? op0 : { op0[15:0], 16'd0 }, 1'b0 };
+            { sub, divend } <= { 31'd0, len ? op0 : { op0[15:0], 16'd0 }, 1'b0 };
             divor  <= len ? op1 : { 8'd0, op1[7:0] };
             st     <= len ? 0 : 16;
             v      <= op1 == 0;
