@@ -22,21 +22,50 @@ module jt900h_div(
     input             cen,
     input      [15:0] op0,
     input      [15:0] op1,    
-    input      [ 1:0] len,
+    input             len,
     input             start,
-    output     [15:0] quot,
-    output     [15:0] rem,
-    output            busy
+    output reg [15:0] quot,
+    output reg [15:0] rem,
+    output reg        busy
 );
+
+reg  [15:0] divend, divor;
+reg  [15:0] sub;
+wire [15:0] rslt;
+reg  [ 3:0] st;
+wire        larger;
+
+assign larger = sub>=divor;
+assign rslt   = sub - divor;
 
 always @(posedge clk or posedge rst) begin 
     if(rst) begin
-        quot <= 0;
-        rem  <= 0;
-        busy <= 0;
+        quot   <= 0;
+        rem    <= 0;
+        busy   <= 0;
+        divend <= 0;
+        divor  <= 0;
+        sub    <= 0;
+        st     <= 0;
     end else begin
         if( start ) begin
-            busy <= 1;
+            busy   <= 1;
+            quot   <= 0;
+            rem    <= 0;
+            divend <= len ? op0<<1 : { op0[6:0], 9'd0 };
+            divor  <= len ? op1 : { 8'd0, op1[7:0] };
+            sub <= 0;
+            sub[0] <= len ? op0[15] : op0[7];
+            st   <= len ? 0 : 8;
+        end else if( busy ) begin
+            quot <= { quot[14:0], larger };
+            { sub, divend } <= { larger ? rslt[14:0] : sub[14:0], divend, 1'b0 };
+            st <= st+4'd1;
+            if( &st ) begin
+                busy <= 0;
+                rem  <= larger ? rslt : sub;
+            end
+        end
     end
 end
 

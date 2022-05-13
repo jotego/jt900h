@@ -6,3 +6,6 @@
 *.lxt
 *.log
 *.zip
+.DS_Store
+test.asm
+
