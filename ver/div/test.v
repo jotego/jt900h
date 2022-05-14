@@ -65,6 +65,7 @@ jt900h_div i_jt900h_div (
     .quot (quot ),
     .rem  (rem  ),
     .busy (busy ),
+    .sign (1'b0 ),
     .v    (v    )
 );
 
