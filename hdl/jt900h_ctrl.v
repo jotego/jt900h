@@ -753,7 +753,7 @@ always @* begin
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
             casez( { op[7:0], was_load, bad_zz } )
-                10'b0101_0???_?0: begin // DIV
+                10'b0101_0???_?0: begin // DIV RR,r
                     nx_alu_op  = ALU_DIV;
                     nx_src     = regs_dst; // swap R, r
                     nx_dst     = expand_reg(op[2:0],op_zz);
@@ -761,6 +761,16 @@ always @* begin
                     nx_keep_we = nx_regs_we;
                     nx_phase   = WAIT_ALU;
                     fetched    = 1; // this also gives time to the ALU to set the busy bit
+                end
+                10'b0000_1010_00: begin // DIV rr,#
+                    nx_alu_op  = ALU_DIV;
+                    nx_alu_imm[15:0] = op[23:8];
+                    nx_alu_smux = 1;
+                    nx_dst     = nx_src;
+                    nx_regs_we = expand_zz( op_zz );
+                    nx_keep_we = nx_regs_we;
+                    nx_phase   = WAIT_ALU;
+                    fetched    = op_zz[0] ? 3 : 2; // this also gives time to the ALU to set the busy bit
                 end
                 10'b1100_1???_11,   // BIT #3,(mem), only byte length
                 10'b1001_1???_11,   // LDCF #3,(mem)

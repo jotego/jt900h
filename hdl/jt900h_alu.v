@@ -65,7 +65,7 @@ wire [63:0] muls16;
 // Divider
 reg         div_start, nx_div_start, div_len, nx_div_len;
 wire        div_v, div_busy;
-wire [15:0] div_quot, div_rem;
+wire [15:0] div_quot, div_rem, div_op1;
 wire [31:0] div_rslt;
 
 assign div_rslt = w[1] ? { div_rem, div_quot } : { 16'd0, div_rem[7:0], div_quot[7:0] };
@@ -97,13 +97,14 @@ assign rld = { acc[7:4], imm[7:0], acc[3:0] };
 assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
 assign rr_result = sel==ALU_RLD ? rld : rrd;
 assign op0_mux = { op0[31:16], sel_dual ? imm[31:16] : op0[15:0] };
+assign div_op1 = sel_imm ? imm[15:0] : op1[15:0];
 
 jt900h_div u_div (
     .rst  ( rst         ),
     .clk  ( clk         ),
     .cen  ( cen         ),
     .op0  ( op0         ),
-    .op1  ( op1[15:0]   ), // TODO: Check connection ! Signal/port not matching : Expecting logic [15:0]  -- Found logic [31:0]
+    .op1  ( div_op1     ),
     .len  ( div_len     ),
     .start( div_start   ),
     .quot ( div_quot    ),

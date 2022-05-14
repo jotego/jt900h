@@ -19,6 +19,35 @@
     jp ne,bad_end
     or ra3,4
 
+    ld xbc,100000
+    ld wa,500
+    div xbc,wa
+    jp ov,bad_end
+    cp bc,200
+    jp ne,bad_end
+    cp qbc0,0
+    jp ne,bad_end
+    or ra3,8
+
+    ld xde,564200
+    ld bc,757
+    div xde,bc
+    cp de,745
+    jp ne,bad_end
+    cp qde,235
+    jp ne,bad_end
+    or ra3,0x10
+
+    ld xhl,564200
+    ld bc,757
+    div xhl,bc
+    cp hl,745
+    jp ne,bad_end
+    cp qhl,235
+    jp ne,bad_end
+    or ra3,0x10
+
+
 end_loop:
     ldf 0
     ld hl,0xbabe
