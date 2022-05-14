@@ -63,7 +63,7 @@ wire        daa_carry;
 wire [31:0] op0_mux;
 wire [63:0] muls16;
 // Divider
-reg         div_start, nx_div_start;
+reg         div_start, nx_div_start, div_len, nx_div_len;
 wire        div_v, div_busy;
 wire [15:0] div_quot, div_rem;
 wire [31:0] div_rslt;
@@ -104,7 +104,7 @@ jt900h_div u_div (
     .cen  ( cen         ),
     .op0  ( op0         ),
     .op1  ( op1[15:0]   ), // TODO: Check connection ! Signal/port not matching : Expecting logic [15:0]  -- Found logic [31:0]
-    .len  ( w[1]        ),
+    .len  ( div_len     ),
     .start( div_start   ),
     .quot ( div_quot    ),
     .rem  ( div_rem     ),
@@ -148,16 +148,21 @@ always @* begin
     nx_djnz  = djnz;
     nx_busy  = 0;
     nx_cnt   = 0;
+    nx_div_len = div_len;
     cc       = 0;
     nx_div_start = div_start;
 
     case( sel )
-        default: nx_div_start = 0;
+        default: begin
+            nx_div_start = 0;
+            nx_div_len   = 0;
+        end
         ALU_MOVE: rslt = op2;
         ALU_DIV: begin
             if( !busy ) begin
                 nx_div_start = 1;
                 nx_busy      = 1;
+                nx_div_len   = w[1];
             end else begin
                 nx_busy = div_busy;
                 rslt    = div_rslt;
@@ -617,10 +622,12 @@ always @(posedge clk, posedge rst)  begin
         cnt      <= 0;
         fdash    <= 0;
         div_start<= 0;
+        div_len  <= 0;
     end else if(cen) begin
         flag_wel <= flag_we;
         busyl    <= busy;
         div_start<= nx_div_start;
+        div_len  <= nx_div_len;
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout      <= rslt;
         end
