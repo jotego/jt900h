@@ -1,29 +1,26 @@
-    ; div rr,#
+    ; div rr,# with special register coding
     main section code
     org 0
     ld a,0xbf    ; common header
 
     ; 16-bit number divided by 8-bit number
-    ld wa,37000
-    div wa,224
+    ld ix,37000
+    div ix,224
     jp ov,bad_end
-    cp a,165    ; 0xA5
+    cp ixl,165    ; 0xA5
     jp ne,bad_end
-    cp w,40     ; 0x28
+    cp ixh,40     ; 0x28
     jp ne,bad_end
     or ra3,0x1
 
-    ; 32-bit number divided by 16-bit number
-    ld xix,564200
-    div xix,7890
+    ld rwa2,37000
+    div rwa2,224
     jp ov,bad_end
+    cp ra2,165    ; 0xA5
+    jp ne,bad_end
+    cp rw2,40     ; 0x28
+    jp ne,bad_end
     or ra3,0x2
-    cp ix,71
-    jp ne,bad_end
-    or ra3,0x4
-    cp qix,4010
-    jp ne,bad_end
-    or ra3,0x8
 
 end_loop:
     ldf 0
