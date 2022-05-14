@@ -159,7 +159,7 @@ always @* begin
             nx_div_len   = 0;
         end
         ALU_MOVE: rslt = op2;
-        ALU_DIV: begin
+        ALU_DIV, ALU_DIVS: begin
             if( !busy ) begin
                 nx_div_start = 1;
                 nx_busy      = 1;
