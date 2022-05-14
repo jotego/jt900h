@@ -126,7 +126,8 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_keep_inc_xde, keep_inc_xde,
            nx_keep_inc_xix, keep_inc_xix,
            nx_ld_high,
-           nx_ex_we, nx_keep_ex, keep_ex;
+           nx_ex_we, nx_keep_ex, keep_ex,
+           keep_smux, nx_keep_smux;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -208,6 +209,7 @@ always @* begin
     nx_alu_op        = alu_op;
     nx_alu_imm       = alu_imm;
     nx_alu_smux      = alu_smux;
+    nx_keep_smux     = 0;
     nx_alu_imux      = alu_imux;
     nx_alu_wait      = alu_wait;
     nx_ram_ren       = ram_ren;
@@ -741,6 +743,7 @@ always @* begin
             nx_inc_xde = keep_inc_xde;
             nx_inc_xix = keep_inc_xix;
             nx_selop16 = keep_selop16;
+            nx_alu_smux= keep_smux;
             nx_dly_fetch = 0;
         end
         DJNZ: begin
@@ -776,6 +779,16 @@ always @* begin
                     nx_keep_we = nx_regs_we;
                     nx_phase   = WAIT_ALU;
                     fetched    = op_zz[0] ? 3 : 2; // this also gives time to the ALU to set the busy bit
+                end
+                10'b0001_1001_10: begin // LD<W> (#16),(mem)
+                    nx_alu_op         = ALU_NOP;
+                    nx_alu_imm[31:16] = op[23:8];
+                    nx_regs_we        = expand_zz( op_zz );
+                    nx_keep_we        = nx_regs_we;
+                    nx_flag_we        = 1;
+                    nx_dly_fetch      = 3;
+                    nx_keep_smux      = 1;
+                    nx_phase          = ST_RAM;
                 end
                 10'b1100_1???_11,   // BIT #3,(mem), only byte length
                 10'b1001_1???_11,   // LDCF #3,(mem)
@@ -1333,14 +1346,6 @@ always @* begin
                         nx_flag_we = 1;
                     end
                 end
-                10'b0001_1001_1?: begin // LD<W> (#16),(mem)
-                    nx_keep_selop16 = 1;
-                    nx_dly_fetch    = 3;
-                    nx_regs_we      = op_zz[0] ? 3'd2 : 3'd1;
-                    nx_alu_op       = ALU_MOVE;
-                    nx_flag_we      = 1;
-                    nx_phase        = ST_RAM;
-                end
                 default:;
             endcase
         end
@@ -1394,6 +1399,7 @@ always @(posedge clk, posedge rst) begin
         alu_op         <= 0;
         alu_imm        <= 0;
         alu_smux       <= 0;
+        keep_smux      <= 0;
         alu_imux       <= 0;
         alu_wait       <= 0;
         ram_ren        <= 0;
@@ -1458,6 +1464,7 @@ always @(posedge clk, posedge rst) begin
         alu_op         <= nx_alu_op;
         alu_imm        <= nx_alu_imm;
         alu_smux       <= nx_alu_smux;
+        keep_smux      <= nx_keep_smux;
         alu_imux       <= nx_alu_imux;
         alu_wait       <= nx_alu_wait;
         ram_ren        <= nx_ram_ren;

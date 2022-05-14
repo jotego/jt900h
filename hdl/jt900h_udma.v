@@ -19,7 +19,7 @@
 module jt900h_udma(
     input             rst,
     input             clk,
-    input             cen,
+    input             cen
 );
 
 reg  [31:0] sreg[0:3], dreg[0:3];

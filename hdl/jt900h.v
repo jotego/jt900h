@@ -269,6 +269,10 @@ jt900h_ramctl u_ramctl(
     .idx_wr         ( idx_wr            ),
     .len            ( wr_len            ),
 
+    // Immediate value
+    .imm            ( alu_imm           ),
+    .sel_imm        ( alu_smux          ),
+
     // EX support
     .src_out        ( src_out           ),
     .regs_we        ( regs_we[1:0]      ),

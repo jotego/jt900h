@@ -33,6 +33,10 @@ module jt900h_ramctl(
     input             sel_op16,
     input      [ 1:0] data_sel,
 
+    // Immediate value register
+    input      [31:0] imm,
+    input             sel_imm,
+
     // Make a copy of the source register for the EX instruction
     input      [ 1:0] regs_we,
     input      [31:0] src_out,
@@ -68,7 +72,8 @@ reg  [ 1:0] wron;
 assign req_addr = ldram_en ? ( sel_xsp ? xsp : idx_addr ) : pc;
 assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
                   sel_op16 ? { 8'd0, op16      } :
-                  sel_xsp  ?       xsp           : idx_addr;
+                  sel_xsp  ?       xsp           :
+                  sel_imm  ? { 8'd0, imm[31:16]} : idx_addr;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};
 
@@ -79,6 +84,7 @@ always @* begin
         2: eff_data = {16'd0, sr};
         3: eff_data = {16'd0, src_cpy }; // EX instruction
     endcase
+    if( sel_imm ) eff_data[15:0] = imm[15:0];
 end
 
 always @(posedge clk,posedge rst) begin
