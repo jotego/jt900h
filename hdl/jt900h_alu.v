@@ -63,7 +63,8 @@ wire        daa_carry;
 wire [31:0] op0_mux;
 wire [63:0] muls16;
 // Divider
-reg         div_start, nx_div_start, div_len, nx_div_len;
+reg         div_start, nx_div_start, div_len, nx_div_len,
+            div_sign, nx_div_sign;
 wire        div_v, div_busy;
 wire [15:0] div_quot, div_rem, div_op1;
 wire [31:0] div_rslt;
@@ -106,6 +107,7 @@ jt900h_div u_div (
     .op0  ( op0         ),
     .op1  ( div_op1     ),
     .len  ( div_len     ),
+    .sign ( div_sign    ),
     .start( div_start   ),
     .quot ( div_quot    ),
     .rem  ( div_rem     ),
@@ -152,11 +154,13 @@ always @* begin
     nx_div_len = div_len;
     cc       = 0;
     nx_div_start = div_start;
+    nx_div_sign  = nx_div_sign;
 
     case( sel )
         default: begin
             nx_div_start = 0;
             nx_div_len   = 0;
+            nx_div_sign  = 0;
         end
         ALU_MOVE: rslt = op2;
         ALU_DIV, ALU_DIVS: begin
@@ -164,6 +168,7 @@ always @* begin
                 nx_div_start = 1;
                 nx_busy      = 1;
                 nx_div_len   = w[1];
+                nx_div_sign  = sel==ALU_DIVS;
             end else begin
                 nx_busy = div_busy;
                 rslt    = div_rslt;
@@ -624,11 +629,13 @@ always @(posedge clk, posedge rst)  begin
         fdash    <= 0;
         div_start<= 0;
         div_len  <= 0;
+        div_sign <= 0;
     end else if(cen) begin
         flag_wel <= flag_we;
         busyl    <= busy;
         div_start<= nx_div_start;
         div_len  <= nx_div_len;
+        div_sign <= nx_div_sign;
         if( w!=0 ) begin // checking w prevents executing twice the same inst.
             dout      <= rslt;
         end
