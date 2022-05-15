@@ -2,6 +2,8 @@
 
 module test;
 
+localparam AW=12;
+
 reg         rst, clk;
 reg         cen;
 wire [23:0] ram_addr;
@@ -9,7 +11,7 @@ wire [11:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
 wire        ram_rdy;
-reg  [15:0] mem[0:2**12-1];
+reg  [15:0] mem[0:2**AW-1];
 
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_din;
@@ -25,8 +27,8 @@ initial begin
     for( cnt=0; cnt<256; cnt=cnt+1 ) mem[ 12'h400+cnt[7:0] ] = { cnt[7:0],~cnt[7:0]};
 end
 
-assign ram_a    = ram_addr[11:0]; // short version for plotting
-assign ram_dout = mem[ram_addr[9:1]];
+assign ram_a    = ram_addr[AW-1:0]; // short version for plotting
+assign ram_dout = mem[ram_addr[AW-1:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
 
@@ -56,7 +58,7 @@ always @(posedge dump_2file) begin
 `ifndef NODUMP
     // Dump the memory too
     file=$fopen("mem.bin","wb");
-    for( cnt=0; cnt<1024; cnt=cnt+2) begin
+    for( cnt=0; cnt<2**AW; cnt=cnt+2) begin
         $fwrite(file,"%u",{mem[cnt+1],mem[cnt]});
     end
     $fclose(file);
