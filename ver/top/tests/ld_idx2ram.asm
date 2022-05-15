@@ -31,3 +31,4 @@ bad_end:
     ld hl,0xdead
     ld (0xffff),0xff
     jp bad_end
+end

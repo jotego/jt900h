@@ -64,10 +64,10 @@ reg  [ 2:0] nx_pre_offset, pre_offset;
 
 assign eff_op = {op[31:8], use_last ? opl: op[7:0] };
 // ignore the op LSB so it matches LDDR/CPDR/CPIR too
-assign is_LDD = use_last ? was_LDD : eff_op[5:4]!=2'b11 && !eff_op[3] && eff_op[15:9]==7'h13>>1;
-assign is_LDI = use_last ? was_LDI : eff_op[5:4]!=2'b11 && !eff_op[3] && eff_op[15:9]==7'h10>>1;
-assign is_CPD = use_last ? was_CPD : eff_op[5:4]!=2'b11 && !eff_op[3] && eff_op[15:9]==7'h16>>1;
-assign is_CPI = use_last ? was_CPI : eff_op[5:4]!=2'b11 && !eff_op[3] && eff_op[15:9]==7'h14>>1;
+assign is_LDD = use_last ? was_LDD : /*eff_op[5:4]!=2'b11 &&*/ !eff_op[3] && eff_op[15:9]==7'h13>>1;
+assign is_LDI = use_last ? was_LDI : /*eff_op[5:4]!=2'b11 &&*/ !eff_op[3] && eff_op[15:9]==7'h10>>1;
+assign is_CPD = use_last ? was_CPD : /*eff_op[5:4]!=2'b11 &&*/ !eff_op[3] && eff_op[15:9]==7'h16>>1;
+assign is_CPI = use_last ? was_CPI : /*eff_op[5:4]!=2'b11 &&*/ !eff_op[3] && eff_op[15:9]==7'h14>>1;
 
 always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
