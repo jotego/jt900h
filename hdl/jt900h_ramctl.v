@@ -68,8 +68,12 @@ reg  [31:0] eff_data;
 reg         wrbusy, idx_wr_l, ldram_l;
 reg  [ 1:0] wron;
 
-// assign next_addr = ldram_en ? idx_addr[23:1] : rdup_addr;
-assign req_addr = ldram_en ? ( sel_xsp ? xsp : idx_addr ) : pc;
+// req_addr use for reads
+assign req_addr =  !ldram_en ? pc :
+                    sel_xsp  ? xsp :
+                    //sel_imm  ? { 8'd0, imm[31:16]} :
+                    idx_addr;
+// eff_addr used for writes
 assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
                   sel_op16 ? { 8'd0, op16      } :
                   sel_xsp  ?       xsp           :
