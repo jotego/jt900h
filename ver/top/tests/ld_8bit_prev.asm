@@ -19,4 +19,5 @@
     ld spl,0xfc
     ld sph,0xfd
     nop
+    ld (0xffff),0xff
     end

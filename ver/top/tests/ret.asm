@@ -20,14 +20,14 @@
     cp a,9
     jp ne,bad_end
 
-test_end:
-    ; ld (0xffff),0xff
 end_loop:
     ldf 0
     ld hl,0xbabe
+    ld (0xffff),0xff
     jp end_loop
 bad_end:
     ld hl,0xdead
+    ld (0xffff),0xff
     jp bad_end
 func_a:
     inc 1,a

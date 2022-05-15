@@ -10,4 +10,5 @@
     ld xiy,0x9abcdef0
     ld xiz,0x87654321
     ld xsp,0x0fedcba9
+    ld (0xffff),0xff
     end

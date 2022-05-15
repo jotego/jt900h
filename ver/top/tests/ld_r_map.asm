@@ -24,4 +24,5 @@
     ld xix,0x12345678
     ld xiy,0x9abcdef0
     ld xiz,0x87654321
+    ld (0xffff),0xff
     end

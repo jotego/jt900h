@@ -64,6 +64,7 @@ end_loop:
     jp end_loop
 bad_end:
     ld de,0xdead
+    ld (0xffff),0xff
     jp bad_end
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc

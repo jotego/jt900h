@@ -567,7 +567,6 @@ always @* begin
         PUSH_R: begin
             nx_ram_wen = 1;
             nx_sel_xsp = 1;
-            nx_wr_len  = regs_we;
             nx_phase   = link ? LINK : DUMMY;
             req_wait   = 1; // if xsp is at an odd address, it needs an extra cycle
                             // for now, it is always taking the worst case

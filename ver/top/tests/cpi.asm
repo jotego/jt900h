@@ -25,14 +25,14 @@
     cp xix,data+3
     jp ne,bad_end
 
-test_end:
-    ; ld (0xffff),0xff
 end_loop:
     ldf 0
     ld hl,0xbabe
+    ld (0xffff),0xff
     jp end_loop
 bad_end:
     ld hl,0xdead
+    ld (0xffff),0xff
     jp bad_end
 data:
     db 0xca,0xfe,0xbe,0xef,0,1,2,3

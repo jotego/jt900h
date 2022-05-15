@@ -10,4 +10,5 @@
     ld iy,0x4567
     ld iz,0x89ab
     ld sp,0xcdef
+    ld (0xffff),0xff
     end

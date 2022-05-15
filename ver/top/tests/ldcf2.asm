@@ -11,27 +11,22 @@ test:
     ld wa,0x115
     ldcf 0,a
 
-    ld b,0
-    adc b,0
-    cp b,1
-    jp ne,bad_end
-
-    ldcf 1,a
-    jp c,bad_end
-
-    ldcf 8,wa
-    jp nc,bad_end
+    ; LDCF #3,(mem)
+    ld xix,data
+    ld e,(xix)
+    ldcf 0,(xix)
+    jp c, bad_end
+    ldcf 1,(xix)
+    jp nc, bad_end
     or ra3,1
 
-    ; LDCF A,r
-    ld bc,0xa55
+    ; LDCF A,(mem)
+    ld A,0
+    ldcf A,(xix)
+    jp c, bad_end
     ld A,1
-    ldcf A,c
-    jp c,bad_end
-
-    ld A,11
-    ldcf A,bc
-    jp nc,bad_end
+    ldcf A,(xix)
+    jp nc, bad_end
     or ra3,2
 
 end_loop:

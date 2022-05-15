@@ -28,14 +28,14 @@ loop:
     cp bc,0
     jp ne,loop
 
-test_end:
-    ; ld (0xffff),0xff
 end_loop:
     ldf 0
     ld hl,0xbabe
+    ld (0xffff),0xff
     jp end_loop
 bad_end:
     ld hl,0xdead
+    ld (0xffff),0xff
     jp bad_end
     db 0
 data:

@@ -30,6 +30,7 @@ end_loop:
     jp end_loop
 bad_end:
     ld hl,0xdead
+    ld (0xffff),0xff
     jp bad_end
     align 2
 data:
