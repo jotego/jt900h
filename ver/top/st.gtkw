@@ -1,0 +1,91 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Fri Feb 25 07:05:59 2022
+[*]
+[dumpfile] "/home/jtejada/repo/github/jt900h/ver/top/test.lxt"
+[dumpfile_mtime] "Fri Feb 25 07:04:50 2022"
+[dumpfile_size] 19148
+[savefile] "/home/jtejada/repo/github/jt900h/ver/top/st.gtkw"
+[timestart] 1213800
+[size] 1920 997
+[pos] -2 -28
+*-13.347604 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] test.
+[treeopen] test.uut.
+[treeopen] test.uut.u_ctrl.
+[sst_width] 223
+[signals_width] 234
+[sst_expanded] 1
+[sst_vpaned_height] 616
+@22
+test.uut.u_pc.pc_short[11:0]
+@2022
+^1 /home/jtejada/repo/github/jt900h/ver/top/ctrl.st
+test.uut.u_ctrl.op_phase[4:0]
+@22
+test.uut.u_ctrl.op_rev[31:0]
+@28
+test.uut.u_ctrl.op_ok[0]
+test.uut.u_ctrl.pc_rel[0]
+test.uut.u_ctrl.regs_we[2:0]
+test.uut.u_ctrl.ram_wen[0]
+@200
+-ALU
+@2022
+^2 /home/jtejada/repo/github/jt900h/ver/top/alu.st
+test.uut.u_alu.sel[6:0]
+@28
+test.uut.u_alu.w[2:0]
+@22
+test.uut.u_alu.dout[31:0]
+test.uut.u_alu.op0[31:0]
+test.uut.u_alu.op1[31:0]
+test.uut.u_alu.imm[31:0]
+@200
+-
+@22
+test.uut.u_alu.rslt[31:0]
+@200
+-REGS
+@28
+test.uut.u_regs.we[2:0]
+test.uut.u_regs.flag_only[0]
+@22
+test.uut.u_regs.cur_xwa[31:0]
+test.uut.u_regs.cur_xbc[31:0]
+test.uut.u_regs.cur_xde[31:0]
+test.uut.u_regs.cur_xhl[31:0]
+test.uut.u_regs.src[7:0]
+test.uut.u_regs.dst[7:0]
+test.uut.u_regs.dst_out[31:0]
+test.uut.u_regs.src_out[31:0]
+@200
+-
+@22
+[color] 2
+test.uut.u_regs.xix[31:0]
+@200
+-
+-RAM CTRL
+@28
+test.uut.u_ramctl.idx_wr[0]
+test.uut.u_ramctl.wrbusy[0]
+test.uut.u_ramctl.len[2:0]
+@200
+-
+-RAM
+@22
+test.ram_a[11:0]
+test.ram_din[15:0]
+@28
+test.ram_we[1:0]
+@200
+-
+-IDX
+@28
+test.uut.u_idxaddr.reg_inc[0]
+test.uut.u_idxaddr.reg_step[1:0]
+@22
+test.uut.u_idxaddr.idx_addr[23:0]
+[pattern_trace] 1
+[pattern_trace] 0

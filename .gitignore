@@ -6,6 +6,9 @@
 *.lxt
 *.log
 *.zip
+*.hex
+*.out
+*.bin
 .DS_Store
 test.asm
 

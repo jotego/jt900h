@@ -9,16 +9,20 @@ wire [11:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
 wire        ram_rdy;
-reg  [15:0] mem[0:1023];
+reg  [15:0] mem[0:2**12-1];
 
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_din;
 reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
+integer    cnt,file;
 
 initial begin
-    $readmemh("test.hex",mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
+    $readmemh( {`FNAME,".hex"},mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
+    // memory data region at 100h~1ffh with 16-bit values
+    // upper byte = address, lower byte = ~address
+    for( cnt=0; cnt<256; cnt=cnt+1 ) mem[ 12'h400+cnt[7:0] ] = { cnt[7:0],~cnt[7:0]};
 end
 
 assign ram_a    = ram_addr[11:0]; // short version for plotting
@@ -28,19 +32,18 @@ assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
 
 `ifndef NODUMP
 initial begin
-    $dumpfile("test.lxt");
+    $dumpfile( {`FNAME,".lxt"} );
     $dumpvars;
     $dumpon;
 end
 `endif
 
-integer cnt,file;
 function [31:0] xreg( input [7:0] a );
     xreg = { dmp_buf[a+3], dmp_buf[a+2], dmp_buf[a+1], dmp_buf[a] };
 endfunction
 
 always @(posedge dump_2file) begin
-    file=$fopen("test.out","w");
+    file=$fopen( {`FNAME,".out"},"w");
     for( cnt=0; cnt<16; cnt=cnt+4 ) begin
         $fdisplay(file,"%08X - %08X - %08X - %08X", xreg(cnt), xreg(cnt+16),
                                               xreg(cnt+32), xreg(cnt+48) );
@@ -50,12 +53,14 @@ always @(posedge dump_2file) begin
                                           xreg(72), xreg(76) );
     $fdisplay(file,"SR = %02X",{ dmp_buf[80], dmp_buf[81]} );
     $fclose(file);
+`ifndef NODUMP
     // Dump the memory too
     file=$fopen("mem.bin","wb");
     for( cnt=0; cnt<1024; cnt=cnt+2) begin
         $fwrite(file,"%u",{mem[cnt+1],mem[cnt]});
     end
     $fclose(file);
+`endif
     $finish;
 end
 

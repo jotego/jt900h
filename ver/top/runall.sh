@@ -1,16 +1,22 @@
 #!/bin/bash
 FAIL=
 K=0
-for i in tests/*.out; do
-    TESTNAME=$(basename $i .out)
-    figlet "* ${K} *"
-    sim.sh $TESTNAME -nodump $* || FAIL="$FAIL $TESTNAME"
+ALLTEST=
+for i in tests/*.ref; do
+    TESTNAME=$(basename $i .ref)
+    ALLTEST="$ALLTEST $TESTNAME"
+    # figlet "* ${K} *"
+    # sim.sh $TESTNAME -batch $* || FAIL="$FAIL $TESTNAME"
     K=$((K+1))
 done
 
-if [ -z "$FAIL" ]; then
+parallel sim.sh {} -batch ::: $ALLTEST > runall.log
+FAIL=$(grep FAIL runall.log | wc -l)
+
+if [ $FAIL = 0 ]; then
     figlet PASS
 else
     echo Some tests failed:
+    grep FAIL runall.log
     echo $FAIL
 fi
