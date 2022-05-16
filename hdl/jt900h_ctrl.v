@@ -31,6 +31,7 @@ module jt900h_ctrl(
     output reg        idx_en,
     output reg        idx_last,
     input             idx_ok,
+    input             ldar,
     input      [23:0] idx_addr,
     output reg [ 2:0] wr_len,
     output reg [ 1:0] ram_dsel,
@@ -612,7 +613,7 @@ always @* begin
                         nx_regs_we  = op[4] ? 3'b100 : 3'b010;
                         nx_dst      = expand_reg(op[2:0],op[4] ? 2'b10 : 2'b01);
                         nx_alu_imm  = { 8'd0, idx_addr };
-                        nx_alu_op   = ALU_MOVE;
+                        nx_alu_op   = ldar ? ALU_ADDPC : ALU_MOVE;
                         nx_alu_smux = 1;
                         nx_phase    = DUMMY;
                     end else begin // LD

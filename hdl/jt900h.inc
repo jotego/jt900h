@@ -80,5 +80,6 @@ localparam [6:0] ALU_NOP  = 7'd0,
                  ALU_DAA   = 7'd79,
                  ALU_DIV   = 7'd80,
                  ALU_DIVS  = 7'd81,
+                 ALU_ADDPC = 7'd82,
                  ALU_LAST  = 7'd127
                  ;

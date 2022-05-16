@@ -38,6 +38,7 @@ module jt900h_idxaddr(
     output reg [ 7:0] idx_rdreg_aux,
     input      [15:0] idx_rdaux,
 
+    output reg        ldar,
     output reg        idx_ok,
     output reg [23:0] idx_addr
 );
@@ -57,7 +58,7 @@ reg         nx_reg_dec, nx_reg_inc,
             nx_was_LDD, was_LDD,
             nx_was_LDI, was_LDI;
 reg  [ 7:0] nx_opl, opl;
-reg         phase, nx_phase, nx_pre_ok, pre_ok;
+reg         phase, nx_phase, nx_pre_ok, pre_ok, nx_ldar;
 wire [31:0] eff_op;
 wire        is_LDD, is_LDI, is_CPD, is_CPI;
 reg  [ 2:0] nx_pre_offset, pre_offset;
@@ -108,6 +109,7 @@ always @* begin
     nx_idx_rdreg_sel = idx_rdreg_sel;
     nx_phase         = 0;
     nx_pre_ok        = pre_ok & idx_en;
+    nx_ldar          = ldar & idx_en;
     nx_idx_addr      = idx_en && !idx_ok ?
         (idx_rdreg[23:0] - {20'd0,pre_offset} + (ridx_mode[1] ?  aux24 : idx_offset)) :
         ldd_write ? idx_auxreg[23:0] : idx_addr;
@@ -144,43 +146,51 @@ always @* begin
                     case( op[1:0] )
                         0: begin
                             nx_idx_offset = { 16'd0, op[15:8] };
-                            fetched = 2;
+                            fetched       = 2;
                         end
                         1: begin
                             nx_idx_offset = {  8'd0, op[23:8] };
-                            fetched = 3;
+                            fetched       = 3;
                         end
                         default: begin
                             nx_idx_offset = op[31:8];
-                            fetched = 4;
+                            fetched       = 4;
                         end
                     endcase
                     nx_pre_ok = 1;
                 end
-                5'h13: begin // (r32) (r32+d16) (r32+r8) (r32+r16)
-                    nx_idx_rdreg_sel = {op[15:10],2'd0};
-                    nx_idx_offset = 0;
-                    case( op[9:8] )
-                        0: nx_pre_ok = 1;
-                        1: begin
-                            nx_pre_ok = 0;
-                            nx_phase  = 1;
-                            fetched   = 0; // data fetch will be done in phase 1
-                        end
-                        3: begin
-                            nx_pre_ok = 0;
-                            nx_phase  = 1;
-                            fetched   = 0; // data fetch will be done in phase 1
-                            nx_ridx_mode = { 1'b1, op[10] };
-                        end
-                    endcase
+                5'h13: begin
+                    if( op[15:0]==16'h13f3 ) begin // LDAR
+                        nx_idx_rdreg_sel = NULL;
+                        nx_idx_offset    = { 8'd0, op[31:16] };
+                        fetched          = 4;
+                        nx_ldar          = 1;
+                        nx_pre_ok        = 1;
+                    end else begin // (r32) (r32+d16) (r32+r8) (r32+r16)
+                        nx_idx_rdreg_sel = {op[15:10],2'd0};
+                        nx_idx_offset = 0;
+                        case( op[9:8] )
+                            0: nx_pre_ok = 1;
+                            1: begin
+                                nx_pre_ok = 0;
+                                nx_phase  = 1;
+                                fetched   = 0; // data fetch will be done in phase 1
+                            end
+                            3: begin
+                                nx_pre_ok = 0;
+                                nx_phase  = 1;
+                                fetched   = 0; // data fetch will be done in phase 1
+                                nx_ridx_mode = { 1'b1, op[10] };
+                            end
+                        endcase
+                    end
                 end
                 5'h14,5'h15: begin // (-r32) (r32+)
                     nx_idx_rdreg_sel = {op[15:10],2'd0};
-                    nx_idx_offset = 0;
-                    nx_reg_dec = !op[0];
-                    nx_pre_inc =  op[0];
-                    nx_pre_ok = 1;
+                    nx_idx_offset    = 0;
+                    nx_reg_dec       = !op[0];
+                    nx_pre_inc       =  op[0];
+                    nx_pre_ok        = 1;
                 end
                 default:;
             endcase
@@ -188,25 +198,25 @@ always @* begin
             case(mode)
                 5'h11: begin
                     nx_idx_offset[23:8] = { {8{op[7]}}, op[7:0] };
-                    nx_pre_ok = 1;
-                    fetched    = 1;
+                    nx_pre_ok           = 1;
+                    fetched             = 1;
                 end
                 5'h12: begin
                     nx_idx_offset[23:8] = op[15:0];
-                    nx_pre_ok = 1;
-                    fetched    = 2;
+                    nx_pre_ok           = 1;
+                    fetched             = 2;
                 end
                 5'h13: begin
                     nx_ridx_mode = ridx_mode;
                     if( !ridx_mode[1] ) begin
                         nx_idx_offset = { {8{op[15]}}, op[15:0] };
-                        nx_pre_ok = 1;
-                        fetched = 2;
+                        nx_pre_ok     = 1;
+                        fetched       = 2;
                     end else begin
                         nx_idx_rdreg_sel = op[23:16];
                         nx_idx_rdreg_aux = op[31:24];
-                        nx_pre_ok = 1;
-                        fetched = 4;
+                        nx_pre_ok        = 1;
+                        fetched          = 4;
                     end
                 end
                 default:;
@@ -235,6 +245,7 @@ always @(posedge clk, posedge rst) begin
         was_CPD       <= 0;
         was_CPI       <= 0;
         pre_offset    <= 0;
+        ldar          <= 0;
     end else if(cen) begin
         phase         <= nx_phase;
         mode          <= nx_mode;
@@ -255,6 +266,7 @@ always @(posedge clk, posedge rst) begin
         was_CPD       <= nx_was_CPD;
         was_CPI       <= nx_was_CPI;
         pre_offset    <= nx_pre_offset;
+        ldar          <= nx_ldar;
     end
 end
 

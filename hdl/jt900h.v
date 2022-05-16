@@ -46,7 +46,7 @@ wire        reg_inc, reg_dec,
             dec_xde, dec_xix,
             inc_xde, inc_xix;
 
-wire        idx_en, idx_last;
+wire        idx_en, idx_last, ldar;
 wire        idx_ok, idx_wr, ldd_write;
 wire [ 1:0] ram_dsel;
 
@@ -107,6 +107,7 @@ jt900h_ctrl u_ctrl(
     .idx_en         ( idx_en            ),
     .idx_last       ( idx_last          ),
     .idx_ok         ( idx_ok            ),
+    .ldar           ( ldar              ),
     .wr_len         ( wr_len            ),
     .idx_addr       ( idx_addr          ),
     // LDD
@@ -223,6 +224,7 @@ jt900h_idxaddr u_idxaddr(
     .idx_rdaux      ( dst_out[15:0]     ),
 
     .idx_ok         ( idx_ok            ),
+    .ldar           ( ldar              ),
     .idx_addr       ( idx_addr          )
 );
 
@@ -233,6 +235,7 @@ jt900h_alu u_alu(
     .acc            ( acc               ),
     .op0            ( dst_out           ),
     .op1            ( src_out           ),
+    .pc             ( pc                ),
     .imm            ( alu_imm           ),
     .sel_imm        ( alu_smux          ),
     .sel_dual       ( alu_imux          ),

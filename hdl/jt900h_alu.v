@@ -24,6 +24,7 @@ module jt900h_alu(
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
     input      [31:0] imm,      // alternative source
+    input      [31:0] pc,
     input             sel_imm,
     input             sel_dual, // dual use for immediate input
     input             flag_we,  // instructions that affect the flags
@@ -163,6 +164,7 @@ always @* begin
             nx_div_sign  = 0;
         end
         ALU_MOVE: rslt = op2;
+        ALU_ADDPC: rslt = { {16{imm[15]}}, imm[15:0] } + pc;
         ALU_DIV, ALU_DIVS: begin
             if( !busy ) begin
                 nx_div_start = 1;
