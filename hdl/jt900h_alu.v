@@ -224,25 +224,47 @@ always @* begin
             nx_n = 0;
             nx_c = 0;
         end
+        // op2 for MDEC is always an exact power of 2
         ALU_MDEC1: begin
-            if( (op0[15:0] & op2[15:0]) ==0 )
-                rslt[15:0] = op0[15:0] + op2[15:0];
+            if( (op0[15:0] & imm[15:0]) == 0 )
+                rslt[15:0] = op0[15:0] + imm[15:0];
             else begin
                 rslt[15:0] = op0[15:0] - 16'd1;
             end
         end
         ALU_MDEC2: begin
-            if( (op0[15:0] & op2[15:0]) ==0 )
-                rslt[15:0] = op0[15:0] + op2[15:0];
+            if( (op0[15:0] & imm[15:0]) == 0 )
+                rslt[15:0] = op0[15:0] + imm[15:0];
             else begin
                 rslt[15:0] = op0[15:0] - 16'd2;
             end
         end
         ALU_MDEC4: begin
-            if( (op0[15:0] & op2[15:0]) ==0 )
-                rslt[15:0] = op0[15:0] + op2[15:0];
+            if( (op0[15:0] & imm[15:0]) == 0 )
+                rslt[15:0] = op0[15:0] + imm[15:0];
             else begin
                 rslt[15:0] = op0[15:0] - 16'd4;
+            end
+        end
+        ALU_MINC1: begin
+            if( (op0[15:0] & imm[15:0]) == imm[15:0] )
+                rslt[15:0] = op0[15:0] & ~imm[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] + 16'd1;
+            end
+        end
+        ALU_MINC2: begin
+            if( (op0[15:0] & imm[15:0]) == imm[15:0] )
+                rslt[15:0] = op0[15:0] & ~imm[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] + 16'd2;
+            end
+        end
+        ALU_MINC4: begin
+            if( (op0[15:0] & imm[15:0]) == imm[15:0] )
+                rslt[15:0] = op0[15:0] & ~imm[15:0];
+            else begin
+                rslt[15:0] = op0[15:0] + 16'd4;
             end
         end
         ALU_SUB, ALU_SBC, ALU_CP, ALU_DEC, ALU_CPD:

@@ -1258,15 +1258,18 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     fetched = 1;
                 end
-                10'b0011_1100_0?, // MDEC1
-                10'b0011_1101_0?, // MDEC2
-                10'b0011_1110_0?, // MDEC4
+                10'b0011_1?00_0?, // MINC1/MDEC1
+                10'b0011_1?01_0?, // MINC2/MDEC2
+                10'b0011_1?10_0?, // MINC4/MDEC4
                 10'b0000_0011_0?: // LD r,#
                 begin
                     nx_alu_op   = op[7:0] == 8'b0000_0011 ? ALU_MOVE  :
                                   op[7:0] == 8'b0011_1100 ? ALU_MDEC1 :
                                   op[7:0] == 8'b0011_1101 ? ALU_MDEC2 :
                                   op[7:0] == 8'b0011_1110 ? ALU_MDEC4 :
+                                  op[7:0] == 8'b0011_1000 ? ALU_MINC1 :
+                                  op[7:0] == 8'b0011_1001 ? ALU_MINC2 :
+                                  op[7:0] == 8'b0011_1010 ? ALU_MINC4 :
                                   ALU_NOP;
                     nx_alu_smux = 1;
                     fetched     = 2;
