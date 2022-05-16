@@ -2,6 +2,7 @@
     main section code
     org 0
     ld a,0xbf    ; common header
+data2 equ 0x700
 
     ld xix,data
 
@@ -14,8 +15,8 @@
 
     ; 8-bit write
     ldb (data2),(xix+2)
-    ld a,(xix+2)
-    cp a,(data2)
+    ld b,(xix+2)
+    cp b,(data2)
     jp ne,bad_end
     or ra3,2
 
@@ -30,6 +31,4 @@ bad_end:
     jp bad_end
 data:
     dw 0xcafe,0xbeef,0x1234,0x5678,0x9abc
-data2:
-    dw 0x0000,0x0000,0x0000,0x0000,0x0000
     end

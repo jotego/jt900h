@@ -77,7 +77,7 @@ wire        flag_we, djnz, flag_only, nx_v, nx_z;
 wire        ldram_en;
 wire        cur_op;
 wire [31:0] buf_dout, xsp;
-wire        buf_rdy;
+wire        buf_rdy, rda_imm;
 wire        sel_xsp, sel_op8, sel_op16;
 
 jt900h_ctrl u_ctrl(
@@ -103,6 +103,7 @@ jt900h_ctrl u_ctrl(
 
     .ram_ren        ( ldram_en          ),
     .ram_wen        ( idx_wr            ),
+    .rda_imm        ( rda_imm           ),
     .idx_en         ( idx_en            ),
     .idx_last       ( idx_last          ),
     .idx_ok         ( idx_ok            ),
@@ -272,6 +273,7 @@ jt900h_ramctl u_ramctl(
     // Immediate value
     .imm            ( alu_imm           ),
     .sel_imm        ( alu_smux          ),
+    .rda_imm        ( rda_imm           ),
 
     // EX support
     .src_out        ( src_out           ),

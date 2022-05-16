@@ -35,6 +35,7 @@ module jt900h_ctrl(
     output reg [ 2:0] wr_len,
     output reg [ 1:0] ram_dsel,
     output reg        ldd_write,
+    output reg        rda_imm,
 
     output reg        dec_bc,
     output reg        ld_high,  // acc will load the ALU high output byte
@@ -127,7 +128,8 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_keep_inc_xix, keep_inc_xix,
            nx_ld_high,
            nx_ex_we, nx_keep_ex, keep_ex,
-           keep_smux, nx_keep_smux;
+           keep_smux, nx_keep_smux,
+           nx_imm2idx, imm2idx;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -148,7 +150,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            rep, nx_rep,
            reti, nx_reti,
            nx_selop16, keep_selop16, nx_keep_selop16,
-           nx_selop8,
+           nx_selop8, nx_rda_imm,
            intproc, nx_intproc;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
@@ -243,6 +245,9 @@ always @* begin
     nx_selop16       = sel_op16;
     nx_selop8        = sel_op8;
     nx_keep_selop16  = keep_selop16;
+    nx_rda_imm       = rda_imm;
+
+    nx_imm2idx       = imm2idx;
 
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
@@ -303,6 +308,8 @@ always @* begin
             nx_selop8   = 0;
             nx_selop16  = 0;
             nx_keep_selop16=0;
+            nx_imm2idx  = 0;
+            nx_rda_imm  = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -615,6 +622,16 @@ always @* begin
                         nx_ram_ren = 1;
                     end
                 end
+                9'b0001_01?0_1: begin // LD<W> (mem),(#16)
+                    nx_ram_ren        = 1;
+                    nx_wr_len         = 3'b1 << op[1];
+                    nx_imm2idx        = 1;
+                    nx_dly_fetch      = 3;
+                    // Read from the address in imm
+                    nx_phase          = LD_RAM;
+                    nx_rda_imm        = 1;
+                    nx_alu_imm[31:16] = op[23:8];
+                end
                 9'b01??_0???_1: begin // LD (mem),R
                     nx_phase    = EXEC;
                     nx_was_load = 1;
@@ -674,6 +691,14 @@ always @* begin
                 nx_idx_en   = 0;
                 // no change to fetched because we will
                 // reuse the last OP code byte
+            end else if( imm2idx ) begin
+                nx_ram_wen   = 1;
+                nx_alu_op    = ALU_MOVE;
+                nx_phase     = ST_RAM;
+                nx_rda_imm   = 0;
+                nx_alu_smux  = 1;
+                fetched      = dly_fetch;
+                nx_dly_fetch = 0;
             end else begin
                 nx_phase    = FETCH;
                 nx_ram_dsel = 1; // copy the RAM output
@@ -735,14 +760,16 @@ always @* begin
                 nx_phase   = FETCH;
                 fetched    = dly_fetch;  // this will set the RAM wait flag too
             end
-            nx_ram_wen = 1;
-            nx_wr_len  = regs_we;
-            nx_dec_xde = keep_dec_xde;
-            nx_dec_xix = keep_dec_xix;
-            nx_inc_xde = keep_inc_xde;
-            nx_inc_xix = keep_inc_xix;
-            nx_selop16 = keep_selop16;
-            nx_alu_smux= keep_smux;
+            if( !imm2idx ) begin
+                nx_ram_wen = 1;
+                nx_wr_len  = regs_we;
+                nx_dec_xde = keep_dec_xde;
+                nx_dec_xix = keep_dec_xix;
+                nx_inc_xde = keep_inc_xde;
+                nx_inc_xix = keep_inc_xix;
+                nx_selop16 = keep_selop16;
+                nx_alu_smux= keep_smux;
+            end
             nx_dly_fetch = 0;
         end
         DJNZ: begin
@@ -1455,6 +1482,8 @@ always @(posedge clk, posedge rst) begin
         reti           <= 0;
         ex_we          <= 0;
         keep_ex        <= 0;
+        imm2idx        <= 0;
+        rda_imm        <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1522,6 +1551,8 @@ always @(posedge clk, posedge rst) begin
         reti           <= nx_reti;
         ex_we          <= nx_ex_we;
         keep_ex        <= nx_keep_ex;
+        imm2idx        <= nx_imm2idx;
+        rda_imm        <= nx_rda_imm;
         if( latch_op ) last_op <= op[7:0];
     end
 end
