@@ -253,6 +253,8 @@ always @* begin
     nx_selop8        = sel_op8;
     nx_keep_selop16  = keep_selop16;
     nx_rda_imm       = rda_imm;
+    nx_selxde        = sel_xde;
+    nx_selxhl        = sel_xhl;
 
     nx_imm2idx       = imm2idx;
     nx_popw          = popw;
@@ -319,8 +321,8 @@ always @* begin
             nx_imm2idx  = 0;
             nx_popw     = 0;
             nx_rda_imm  = 0;
-            nx_selxde   = sel_xde;
-            nx_selxhl   = sel_xhl;
+            nx_selxde   = 0;
+            nx_selxhl   = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
