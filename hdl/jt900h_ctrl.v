@@ -54,6 +54,8 @@ module jt900h_ctrl(
     output reg        inc_xix,
     output reg [31:0] data_latch,
 
+    output reg        sel_xde,
+    output reg        sel_xhl,
     // RFP
     input      [ 1:0] rfp,
     output reg        inc_rfp,
@@ -99,6 +101,8 @@ localparam [4:0] FETCH    = 5'd0,
                  CPDR     = 5'd13,
                  LINK     = 5'd14,
                  UNLK     = 5'd15,
+                 LD_XHL   = 5'd16,
+                 MULA     = 5'd17,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -153,7 +157,8 @@ reg        nx_inc_rfp, nx_dec_rfp,
            nx_selop16, keep_selop16, nx_keep_selop16,
            nx_selop8, nx_rda_imm,
            nx_popw, popw,
-           intproc, nx_intproc;
+           intproc, nx_intproc,
+           nx_selxde, nx_selxhl;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
@@ -314,6 +319,8 @@ always @* begin
             nx_imm2idx  = 0;
             nx_popw     = 0;
             nx_rda_imm  = 0;
+            nx_selxde   = sel_xde;
+            nx_selxhl   = sel_xhl;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -812,6 +819,11 @@ always @* begin
                     nx_keep_we = nx_regs_we;
                     nx_phase   = WAIT_ALU;
                     fetched    = op_zz[0] ? 3 : 2; // this also gives time to the ALU to set the busy bit
+                end
+                10'b0001_1001_00: begin // MULA
+                    nx_selxde  = 1;
+                    nx_ram_ren = 1;
+                    nx_phase   = LD_XHL;
                 end
                 10'b0001_1001_10: begin // LD<W> (#16),(mem)
                     nx_alu_op         = ALU_NOP;
@@ -1391,6 +1403,18 @@ always @* begin
                 default:;
             endcase
         end
+        LD_XHL: begin
+            nx_alu_imm[15:0] = op[15:0];
+            nx_selxhl        = 1;
+            nx_phase         = MULA;
+        end
+        MULA: begin
+            nx_selxhl         = 0;
+            nx_alu_op         = ALU_MULA;
+            nx_alu_imm[31:16] = op[15:0];
+            nx_regs_we        = expand_zz( op_zz );
+            nx_phase          = FETCH;
+        end
         WAIT_ALU: begin
             if( alu_busy ) begin
                 nx_regs_we = keep_we;
@@ -1501,6 +1525,8 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= 0;
         rda_imm        <= 0;
         popw           <= 0;
+        sel_xde        <= 0;
+        sel_xhl        <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1571,6 +1597,9 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= nx_imm2idx;
         rda_imm        <= nx_rda_imm;
         popw           <= nx_popw;
+
+        sel_xde        <= nx_selxde;
+        sel_xhl        <= nx_selxhl;
         if( latch_op ) last_op <= op[7:0];
     end
 end

@@ -69,6 +69,8 @@ reg         div_start, nx_div_start, div_len, nx_div_len,
 wire        div_v, div_busy;
 wire [15:0] div_quot, div_rem, div_op1;
 wire [31:0] div_rslt;
+wire signed [31:0] mula_mul;
+wire signed [15:0] imm_lo, imm_hi;
 
 assign div_rslt = w[1] ? { div_rem, div_quot } : { 16'd0, div_rem[7:0], div_quot[7:0] };
 
@@ -100,6 +102,9 @@ assign rrd = { acc[7:4], imm[3:0], acc[3:0], imm[7:4] };
 assign rr_result = sel==ALU_RLD ? rld : rrd;
 assign op0_mux = { op0[31:16], sel_dual ? imm[31:16] : op0[15:0] };
 assign div_op1 = sel_imm ? imm[15:0] : op1[15:0];
+assign imm_lo  = imm[15: 0];
+assign imm_hi  = imm[31:16];
+assign mula_mul = imm_lo * imm_hi;
 
 jt900h_div u_div (
     .rst  ( rst         ),
@@ -176,6 +181,12 @@ always @* begin
                 rslt    = div_rslt;
                 nx_v    = div_v;
             end
+        end
+        ALU_MULA: begin
+            rslt = mula_mul + { {16{op0[15]}}, op0[15:0] };
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_v = rslt_v;
         end
         ALU_ADD, ALU_ADC, ALU_INC: // also INC on register, also MULA
         begin // checking w prevents executing twice the same inst.

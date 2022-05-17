@@ -35,7 +35,8 @@ wire [15:0] sr;
 // Register bank
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
-wire [31:0] src_out, dst_out, aux_out, acc;
+wire [31:0] src_out, dst_out, aux_out, acc,
+            xde, xhl;
 wire        bc_unity, dec_bc,
             ld_high,  ex_we;
 
@@ -78,7 +79,8 @@ wire        ldram_en;
 wire        cur_op;
 wire [31:0] buf_dout, xsp;
 wire        buf_rdy, rda_imm;
-wire        sel_xsp, sel_op8, sel_op16;
+wire        sel_xsp, sel_op8, sel_op16,
+            sel_xde, sel_xhl;
 
 jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
@@ -94,6 +96,8 @@ jt900h_ctrl u_ctrl(
     .sel_xsp        ( sel_xsp           ),
     .sel_op8        ( sel_op8           ),
     .sel_op16       ( sel_op16          ),
+    .sel_xde        ( sel_xde           ),
+    .sel_xhl        ( sel_xhl           ),
 
     .dec_bc         ( dec_bc            ),
 
@@ -168,6 +172,10 @@ jt900h_regs u_regs(
 
     .alu_dout       ( alu_dout          ),
     .ram_dout       ( data_latch        ),
+
+    // MULA support
+    .xde            ( xde               ),
+    .xhl            ( xhl               ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .data_sel       ( ram_dsel[0]       ),
@@ -266,6 +274,12 @@ jt900h_ramctl u_ramctl(
     .sel_op16       ( sel_op16          ),
     .sel_op8        ( sel_op8           ),
     .data_sel       ( ram_dsel          ),
+
+    // MULA support
+    .xde            ( xde[23:0]         ),
+    .xhl            ( xhl[23:0]         ),
+    .sel_xde        ( sel_xde           ),
+    .sel_xhl        ( sel_xhl           ),
 
     .ldram_en       ( ldram_en          ),
     .idx_addr       ( idx_addr          ),
