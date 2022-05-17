@@ -22,7 +22,7 @@ integer    cnt,file;
 
 initial begin
     $readmemh( {`FNAME,".hex"},mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
-    // memory data region at 100h~1ffh with 16-bit values
+    // memory data region at 800h~9ffh with 16-bit values
     // upper byte = address, lower byte = ~address
     for( cnt=0; cnt<256; cnt=cnt+1 ) mem[ 12'h400+cnt[7:0] ] = { cnt[7:0],~cnt[7:0]};
 end

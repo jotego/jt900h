@@ -152,6 +152,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            reti, nx_reti,
            nx_selop16, keep_selop16, nx_keep_selop16,
            nx_selop8, nx_rda_imm,
+           nx_popw, popw,
            intproc, nx_intproc;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
@@ -249,6 +250,7 @@ always @* begin
     nx_rda_imm       = rda_imm;
 
     nx_imm2idx       = imm2idx;
+    nx_popw          = popw;
 
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
@@ -310,6 +312,7 @@ always @* begin
             nx_selop16  = 0;
             nx_keep_selop16=0;
             nx_imm2idx  = 0;
+            nx_popw     = 0;
             nx_rda_imm  = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
@@ -600,12 +603,13 @@ always @* begin
             // either LD_RAM or ST_RAM
             casez( {op[7:0], op_zz==2'b11} )
                 9'b0000_01?0_1: begin // POP<W> (mem)
-                    nx_wr_len    = 1 << op[1];
+                    nx_wr_len    = 3'b1 << op[1];
                     nx_ram_ren   = 1; // RAM load enable
                     nx_sel_xsp   = 1;
-                    nx_inc_xsp   = 1 << op[1];
+                    nx_keep_inc_xsp = 16'd1 << op[1];
                     nx_dly_fetch = 1;
-                    nx_phase     = ST_RAM;
+                    nx_popw      = 1;
+                    nx_phase     = LD_RAM;
                 end
                 9'b0010_0???_0,       // LD   R,(mem) 0010_0RRR
                 9'b001?_0???_1: begin // LDA  R,mem   001s_0RRR, but first half had zz==11
@@ -692,14 +696,15 @@ always @* begin
                 nx_idx_en   = 0;
                 // no change to fetched because we will
                 // reuse the last OP code byte
-            end else if( imm2idx ) begin
-                nx_ram_wen   = 1;
-                nx_alu_op    = ALU_MOVE;
-                nx_phase     = ST_RAM;
-                nx_rda_imm   = 0;
-                nx_alu_smux  = 1;
-                fetched      = dly_fetch;
-                nx_dly_fetch = 0;
+            end else if( imm2idx || popw ) begin
+                nx_ram_wen  = 1;
+                nx_alu_op   = ALU_MOVE;
+                nx_phase    = ST_RAM;
+                nx_rda_imm  = 0;
+                nx_alu_smux = 1;
+                nx_sel_xsp  = 0;
+                // do not fetch before a ST_RAM to
+                // prevent the RAM controller from caching data
             end else begin
                 nx_phase    = FETCH;
                 nx_ram_dsel = 1; // copy the RAM output
@@ -761,7 +766,7 @@ always @* begin
                 nx_phase   = FETCH;
                 fetched    = dly_fetch;  // this will set the RAM wait flag too
             end
-            if( !imm2idx ) begin
+            if( !imm2idx && !popw ) begin
                 nx_ram_wen = 1;
                 nx_wr_len  = regs_we;
                 nx_dec_xde = keep_dec_xde;
@@ -772,6 +777,7 @@ always @* begin
                 nx_alu_smux= keep_smux;
             end
             nx_dly_fetch = 0;
+            nx_popw      = 0;
         end
         DJNZ: begin
             nx_alu_imm = { {24{op[7]}}, op[7:0] };
@@ -990,11 +996,17 @@ always @* begin
                     nx_regs_we   = expand_zz( op_zz );
                     nx_flag_we   = 1;
                     nx_alu_smux  = 1;
-                    nx_dly_fetch = op_zz[0] ? 3 : 2;
                     nx_alu_imm[15: 0] = op[23:8];
                     nx_alu_imm[31:16] = alu_imm[15:0];
                     nx_alu_imux  = 1;
-                    nx_phase     = op[6:4]!=3'b111 ? ST_RAM : DUMMY;
+                    nx_phase     = op[2:0]!=3'b111 ? ST_RAM : DUMMY;
+                    if( op[2:0] != 3'b111 ) begin // all but CP
+                        nx_phase     = ST_RAM;
+                        nx_dly_fetch = op_zz[0] ? 3 : 2;
+                    end else begin // CP
+                        nx_phase = DUMMY;
+                        fetched  = op_zz[0] ? 2 : 1;
+                    end
                 end
                 10'b1000_1???_0?: begin // LD R,r
                     nx_src     = regs_dst;
@@ -1488,6 +1500,7 @@ always @(posedge clk, posedge rst) begin
         keep_ex        <= 0;
         imm2idx        <= 0;
         rda_imm        <= 0;
+        popw           <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1557,6 +1570,7 @@ always @(posedge clk, posedge rst) begin
         keep_ex        <= nx_keep_ex;
         imm2idx        <= nx_imm2idx;
         rda_imm        <= nx_rda_imm;
+        popw           <= nx_popw;
         if( latch_op ) last_op <= op[7:0];
     end
 end
