@@ -158,7 +158,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
            reti, nx_reti,
            nx_selop16, keep_selop16, nx_keep_selop16,
            nx_selop8, nx_rda_imm,
-           nx_popw, popw,
+           nx_popw, popw, ld2imm, nx_ld2imm,
            intproc, nx_intproc,
            nx_sel_xde, nx_sel_xhl, nx_dec_xhl;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
@@ -174,7 +174,7 @@ reg        bad_zz, jp_ok;
 reg  [2:0] riff, nx_iff;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
-assign wra_imm = popw & ram_wen;
+assign wra_imm = ld2imm & ram_wen;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -261,6 +261,7 @@ always @* begin
     nx_dec_xhl       = 0;
 
     nx_imm2idx       = imm2idx;
+    nx_ld2imm        = ld2imm;
     nx_popw          = popw;
 
     nx_iff           = riff;
@@ -327,6 +328,7 @@ always @* begin
             nx_rda_imm  = 0;
             nx_sel_xde   = 0;
             nx_sel_xhl   = 0;
+            nx_ld2imm    = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -839,6 +841,7 @@ always @* begin
                     nx_flag_we        = 1;
                     nx_dly_fetch      = 3;
                     nx_keep_smux      = 1;
+                    nx_ld2imm         = 1;
                     nx_phase          = ST_RAM;
                 end
                 10'b1100_1???_11,   // BIT #3,(mem), only byte length
@@ -1538,6 +1541,7 @@ always @(posedge clk, posedge rst) begin
         sel_xde        <= 0;
         sel_xhl        <= 0;
         dec_xhl        <= 0;
+        ld2imm         <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1612,6 +1616,7 @@ always @(posedge clk, posedge rst) begin
         sel_xde        <= nx_sel_xde;
         sel_xhl        <= nx_sel_xhl;
         dec_xhl        <= nx_dec_xhl;
+        ld2imm         <= nx_ld2imm;
         if( latch_op ) last_op <= op[7:0];
     end
 end
