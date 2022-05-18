@@ -22,7 +22,7 @@ integer    cnt,file;
 
 initial begin
     // Clear all memory
-    for( cnt=0; cnt<2**AW-1; cnt=cnt+1 ) mem[cnt] = 0;
+    for( cnt=0; cnt<2**AW-1; cnt=cnt+1 ) mem[cnt] = $random;
     $readmemh( {`FNAME,".hex"},mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
     // memory data region at 800h~9ffh with 16-bit values
     // upper byte = address, lower byte = ~address

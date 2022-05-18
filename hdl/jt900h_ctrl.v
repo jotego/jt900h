@@ -37,6 +37,7 @@ module jt900h_ctrl(
     output reg [ 1:0] ram_dsel,
     output reg        ldd_write,
     output reg        rda_imm,
+    output            wra_imm,
 
     output reg        dec_bc,
     output reg        ld_high,  // acc will load the ALU high output byte
@@ -173,6 +174,7 @@ reg        bad_zz, jp_ok;
 reg  [2:0] riff, nx_iff;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
+assign wra_imm = popw & ram_wen;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
