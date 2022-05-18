@@ -78,14 +78,14 @@ reg  [ 1:0] wron;
 // req_addr use for reads
 assign req_addr =  !ldram_en ? pc :
                     sel_xsp  ? xsp :
+                    sel_xde  ? xde :
+                    sel_xhl  ? xhl :
                     rda_imm  ? { 8'd0, imm[31:16]} :
                     idx_addr;
 // eff_addr used for writes
 assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
                   sel_op16 ? { 8'd0, op16      } :
                   sel_xsp  ?       xsp           :
-                  sel_xde  ?       xde           :
-                  sel_xhl  ?       xhl           :
                   //sel_imm & (idx_wr|wrbusy) ? { 8'd0, imm[31:16]} :
                   idx_addr;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
