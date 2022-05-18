@@ -35,6 +35,11 @@ module jt900h_regs(
     input      [15:0] inc_xsp,
     input      [15:0] dec_xsp,
 
+    // MULA support
+    output     [31:0] xde,
+    output     [31:0] xhl,
+    input             dec_xhl,
+
     // Direct access to accumulator (RRD, RLD)
     input             ld_high,
     output     [31:0] acc,
@@ -98,6 +103,8 @@ assign cur_xde = {accs[{rfp,4'hb}],accs[{rfp,4'ha}],accs[{rfp,4'h9}],accs[{rfp,4
 assign cur_xhl = {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]};
 assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
 assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
+assign xde = cur_xde;
+assign xhl = cur_xhl;
 
 `ifdef SIMULATION
     wire [31:0] xiy, xiz;
@@ -176,6 +183,10 @@ always @(posedge clk, posedge rst) begin
 
         if( dec_bc )
             { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
+
+        if( dec_xhl )
+            {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]}
+                <= cur_xhl-32'd2;
 
         // LDD
         if( dec_xde ) begin

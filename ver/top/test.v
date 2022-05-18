@@ -21,6 +21,8 @@ reg        dump_rdout, dump_2file;
 integer    cnt,file;
 
 initial begin
+    // Initialize the memory with random values to prevent fluke results
+    for( cnt=0; cnt<2**AW-1; cnt=cnt+1 ) mem[cnt] = $random;
     $readmemh( {`FNAME,".hex"},mem,0,`HEXLEN-1); // pass the length to avoid a warning msg
     // memory data region at 800h~9ffh with 16-bit values
     // upper byte = address, lower byte = ~address

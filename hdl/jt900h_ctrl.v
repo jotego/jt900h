@@ -37,6 +37,7 @@ module jt900h_ctrl(
     output reg [ 1:0] ram_dsel,
     output reg        ldd_write,
     output reg        rda_imm,
+    output            wra_imm,
 
     output reg        dec_bc,
     output reg        ld_high,  // acc will load the ALU high output byte
@@ -54,6 +55,9 @@ module jt900h_ctrl(
     output reg        inc_xix,
     output reg [31:0] data_latch,
 
+    output reg        sel_xde,
+    output reg        sel_xhl,
+    output reg        dec_xhl,
     // RFP
     input      [ 1:0] rfp,
     output reg        inc_rfp,
@@ -99,6 +103,8 @@ localparam [4:0] FETCH    = 5'd0,
                  CPDR     = 5'd13,
                  LINK     = 5'd14,
                  UNLK     = 5'd15,
+                 LD_XHL   = 5'd16,
+                 MULA     = 5'd17,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -152,8 +158,9 @@ reg        nx_inc_rfp, nx_dec_rfp,
            reti, nx_reti,
            nx_selop16, keep_selop16, nx_keep_selop16,
            nx_selop8, nx_rda_imm,
-           nx_popw, popw,
-           intproc, nx_intproc;
+           nx_popw, popw, ld2imm, nx_ld2imm,
+           intproc, nx_intproc,
+           nx_sel_xde, nx_sel_xhl, nx_dec_xhl;
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
@@ -167,6 +174,7 @@ reg        bad_zz, jp_ok;
 reg  [2:0] riff, nx_iff;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
+assign wra_imm = ld2imm & ram_wen;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -248,8 +256,12 @@ always @* begin
     nx_selop8        = sel_op8;
     nx_keep_selop16  = keep_selop16;
     nx_rda_imm       = rda_imm;
+    nx_sel_xde        = sel_xde;
+    nx_sel_xhl        = sel_xhl;
+    nx_dec_xhl       = 0;
 
     nx_imm2idx       = imm2idx;
+    nx_ld2imm        = ld2imm;
     nx_popw          = popw;
 
     nx_iff           = riff;
@@ -314,6 +326,9 @@ always @* begin
             nx_imm2idx  = 0;
             nx_popw     = 0;
             nx_rda_imm  = 0;
+            nx_sel_xde   = 0;
+            nx_sel_xhl   = 0;
+            nx_ld2imm    = 0;
             // LDD/LDI
             nx_keep_dec_xde = 0;
             nx_keep_dec_xix = 0;
@@ -813,6 +828,11 @@ always @* begin
                     nx_phase   = WAIT_ALU;
                     fetched    = op_zz[0] ? 3 : 2; // this also gives time to the ALU to set the busy bit
                 end
+                10'b0001_1001_00: begin // MULA
+                    nx_sel_xde  = 1;
+                    nx_ram_ren = 1;
+                    nx_phase   = LD_XHL;
+                end
                 10'b0001_1001_10: begin // LD<W> (#16),(mem)
                     nx_alu_op         = ALU_NOP;
                     nx_alu_imm[31:16] = op[23:8];
@@ -821,6 +841,7 @@ always @* begin
                     nx_flag_we        = 1;
                     nx_dly_fetch      = 3;
                     nx_keep_smux      = 1;
+                    nx_ld2imm         = 1;
                     nx_phase          = ST_RAM;
                 end
                 10'b1100_1???_11,   // BIT #3,(mem), only byte length
@@ -1391,6 +1412,22 @@ always @* begin
                 default:;
             endcase
         end
+        LD_XHL: begin
+            nx_alu_imm[15:0] = op[15:0];
+            nx_sel_xhl       = 1;
+            nx_sel_xde       = 0;
+            nx_phase         = MULA;
+        end
+        MULA: begin
+            nx_sel_xhl        = 0;
+            nx_dec_xhl        = 1;
+            nx_ram_ren        = 0;
+            nx_alu_op         = ALU_MULA;
+            nx_alu_imm[31:16] = op[15:0];
+            nx_regs_we        = 3'b100; // long word
+            nx_phase          = FETCH;
+            fetched           = 1;
+        end
         WAIT_ALU: begin
             if( alu_busy ) begin
                 nx_regs_we = keep_we;
@@ -1501,6 +1538,10 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= 0;
         rda_imm        <= 0;
         popw           <= 0;
+        sel_xde        <= 0;
+        sel_xhl        <= 0;
+        dec_xhl        <= 0;
+        ld2imm         <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1571,6 +1612,11 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= nx_imm2idx;
         rda_imm        <= nx_rda_imm;
         popw           <= nx_popw;
+
+        sel_xde        <= nx_sel_xde;
+        sel_xhl        <= nx_sel_xhl;
+        dec_xhl        <= nx_dec_xhl;
+        ld2imm         <= nx_ld2imm;
         if( latch_op ) last_op <= op[7:0];
     end
 end

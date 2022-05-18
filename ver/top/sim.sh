@@ -63,6 +63,7 @@ else
         asm900 ${TEST}.asm || exit $?
         dd bs=16 oflag=append if=/dev/zero of=${TEST}.bin conv=notrunc count=1 status=none
         hexdump -v -e "1 / 2 "\"%04X\\n\" ${TEST}.bin > ${TEST}.hex
+        rm -f ${TEST}.rel ${TEST}.abs ${TEST}.lst
     fi
     cd ..
     FNAME=tests/$TEST

@@ -37,6 +37,13 @@ module jt900h_ramctl(
     input      [31:0] imm,
     input             sel_imm,
     input             rda_imm, // read address from immediate value
+    input             wra_imm, // write address from immediate value
+
+    // MULA support
+    input      [23:0] xde,
+    input      [23:0] xhl,
+    input             sel_xde,
+    input             sel_xhl,
 
     // Make a copy of the source register for the EX instruction
     input      [ 1:0] regs_we,
@@ -72,13 +79,15 @@ reg  [ 1:0] wron;
 // req_addr use for reads
 assign req_addr =  !ldram_en ? pc :
                     sel_xsp  ? xsp :
+                    sel_xde  ? xde :
+                    sel_xhl  ? xhl :
                     rda_imm  ? { 8'd0, imm[31:16]} :
                     idx_addr;
 // eff_addr used for writes
 assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
                   sel_op16 ? { 8'd0, op16      } :
                   sel_xsp  ?       xsp           :
-                  //sel_imm & (idx_wr|wrbusy) ? { 8'd0, imm[31:16]} :
+                  wra_imm & (idx_wr|wrbusy) ? { 8'd0, imm[31:16]} :
                   idx_addr;
 assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
 assign dout = {cache1, cache0};
