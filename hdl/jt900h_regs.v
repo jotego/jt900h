@@ -38,6 +38,7 @@ module jt900h_regs(
     // MULA support
     output     [31:0] xde,
     output     [31:0] xhl,
+    input             dec_xhl,
 
     // Direct access to accumulator (RRD, RLD)
     input             ld_high,
@@ -182,6 +183,10 @@ always @(posedge clk, posedge rst) begin
 
         if( dec_bc )
             { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
+
+        if( dec_xhl )
+            {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]}
+                <= cur_xhl-32'd2;
 
         // LDD
         if( dec_xde ) begin

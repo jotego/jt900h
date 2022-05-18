@@ -37,7 +37,7 @@ wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out, aux_out, acc,
             xde, xhl;
-wire        bc_unity, dec_bc,
+wire        bc_unity, dec_bc, dec_xhl,
             ld_high,  ex_we;
 
 // Indexed memory addresser
@@ -100,6 +100,7 @@ jt900h_ctrl u_ctrl(
     .sel_xhl        ( sel_xhl           ),
 
     .dec_bc         ( dec_bc            ),
+    .dec_xhl        ( dec_xhl           ),
 
     .fetched        ( ctl_fetch         ),
     .pc_we          ( pc_we             ),
@@ -176,6 +177,7 @@ jt900h_regs u_regs(
     // MULA support
     .xde            ( xde               ),
     .xhl            ( xhl               ),
+    .dec_xhl        ( dec_xhl           ),
     // From indexed memory addresser
     .idx_rdreg_sel  ( idx_rdreg_sel     ),
     .data_sel       ( ram_dsel[0]       ),

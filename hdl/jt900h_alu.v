@@ -183,7 +183,7 @@ always @* begin
             end
         end
         ALU_MULA: begin
-            rslt = mula_mul + { {16{op0[15]}}, op0[15:0] };
+            rslt = mula_mul + op0; // 32 bit operation
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_v = rslt_v;
