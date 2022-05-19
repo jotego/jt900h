@@ -4,20 +4,33 @@
     ld a,0xbf    ; common header
 
     ; 32-bit number divided by 16-bit number
-    ; xwa / bc
-    ld xwa,354236
-    ld bc,1050   ; 0x41a
-    div xwa,bc
+    ld xbc,100000
+    ld wa,500
+    div xbc,wa
     jp ov,bad_end
+    cp bc,200
+    jp ne,bad_end
+    cp qbc0,0
+    jp ne,bad_end
     or ra3,1
 
-    cp wa,337
+    ld xde,564200
+    ld bc,757
+    div xde,bc
+    cp de,745
     jp ne,bad_end
-    or ra3,2
+    cp qde,235
+    jp ne,bad_end
+    or ra3,0x2
 
-    cp qwa0,386
+    ld xhl,564200
+    ld bc,757
+    div xhl,bc
+    cp hl,745
     jp ne,bad_end
-    or ra3,4
+    cp qhl,235
+    jp ne,bad_end
+    or ra3,0x4
 
 
 end_loop:
