@@ -162,6 +162,7 @@ always @(posedge clk, posedge rst) begin
             ptrs[gen_cnt] <= 0;
         end
         bc_unity <= 0;
+        { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= 32'h100; // XSP initial value
     end else if(cen) begin
         bc_unity <= cur_bc==1;
         if( reg_inc ) begin

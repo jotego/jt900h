@@ -10,7 +10,7 @@ for i in tests/*.ref; do
     K=$((K+1))
 done
 
-parallel sim.sh {} -batch ::: $ALLTEST > runall.log
+parallel --jobs 4 sim.sh {} $* -batch ::: $ALLTEST > runall.log
 FAIL=$(grep FAIL runall.log | wc -l)
 
 if [ $FAIL = 0 ]; then
