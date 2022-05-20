@@ -113,10 +113,12 @@ jt900h uut(
     .clk        ( clk       ),
     .cen        ( cen       ),
 
-    .ram_addr   ( ram_addr  ),
-    .ram_dout   ( ram_dout  ),
-    .ram_din    ( ram_din   ),
-    .ram_we     ( ram_we    ),
+    .addr       ( ram_addr  ),
+    .din        ( ram_dout  ),
+    .dout       ( ram_din   ),
+    .we         ( ram_we    ),
+
+    .intrq      ( 3'd0      ),
 
     .dmp_addr   ( dmp_addr  ),
     .dmp_din    ( dmp_din   )

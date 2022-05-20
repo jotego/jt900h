@@ -21,10 +21,10 @@ module jt900h(
     input             clk,
     input             cen,
 
-    output     [23:0] ram_addr,
-    input      [15:0] ram_dout,
-    output     [15:0] ram_din,
-    output     [ 1:0] ram_we,
+    output     [23:0] addr,
+    input      [15:0] din,
+    output     [15:0] dout,
+    output     [ 1:0] we,
 
     input      [ 2:0] intrq,        // interrupt request
     // Register dump
@@ -307,11 +307,11 @@ jt900h_ramctl u_ramctl(
     .src_out        ( src_out           ),
     .regs_we        ( regs_we[1:0]      ),
 
-    // RAM interface
-    .ram_addr       ( ram_addr          ),
-    .ram_dout       ( ram_dout          ),
-    .ram_din        ( ram_din           ),
-    .ram_we         ( ram_we            ),
+    // bus interface
+    .ram_addr       ( addr              ),
+    .ram_dout       ( din               ),
+    .ram_din        ( dout              ),
+    .ram_we         ( we                ),
 
     .dout           ( buf_dout          ),
     .ram_rdy        ( buf_rdy           )
