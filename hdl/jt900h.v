@@ -25,9 +25,11 @@ module jt900h(
     input      [15:0] ram_dout,
     output     [15:0] ram_din,
     output     [ 1:0] ram_we,
+
+    input      [ 2:0] intrq,        // interrupt request
     // Register dump
-    input      [7:0] dmp_addr,
-    output     [7:0] dmp_din
+    input      [ 7:0] dmp_addr,
+    output     [ 7:0] dmp_din
 );
 
 wire [15:0] sr;
@@ -78,7 +80,7 @@ wire        flag_we, djnz, flag_only, nx_v, nx_z;
 wire        ldram_en;
 wire        cur_op;
 wire [31:0] buf_dout, xsp;
-wire        buf_rdy, rda_imm, wra_imm;
+wire        buf_rdy, rda_imm, wra_imm, rda_irq;
 wire        sel_xsp, sel_op8, sel_op16,
             sel_xde, sel_xhl;
 
@@ -86,6 +88,10 @@ jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),
+
+    // interrupt processing
+    .intrq          ( intrq             ),
+    .rda_irq        ( rda_irq           ),
 
     .rfp            ( rfp               ),
     .inc_rfp        ( inc_rfp           ),
@@ -295,6 +301,7 @@ jt900h_ramctl u_ramctl(
     .sel_imm        ( alu_smux          ),
     .rda_imm        ( rda_imm           ),
     .wra_imm        ( wra_imm           ),
+    .rda_irq        ( rda_irq           ),
 
     // EX support
     .src_out        ( src_out           ),

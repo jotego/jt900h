@@ -90,8 +90,8 @@ always @(posedge clk) begin
     cen<=~cen;
     `endif
     if( ram_we !=0 ) begin
-        mem[ ram_addr>>1 ] <= ram_win;
-        $display("RAM: %X written to %X",ram_win, ram_addr&24'hffffe);
+        mem[ ram_a>>1 ] <= ram_win;
+        $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
         if( ram_addr=='hffff && ram_we[1] ) begin
             $display("The CPU sent the stop signal");
             dump_rdout <= 1;

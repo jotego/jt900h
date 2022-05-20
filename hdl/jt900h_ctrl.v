@@ -21,6 +21,7 @@ module jt900h_ctrl(
     input             clk,
     input             cen,
 
+    input      [ 2:0] intrq,      // interrupt request
     // PC
     output reg [ 2:0] fetched,    // number of bytes consumed
     output reg        pc_we,      // absolute value write
@@ -37,6 +38,7 @@ module jt900h_ctrl(
     output reg [ 1:0] ram_dsel,
     output reg        ldd_write,
     output reg        rda_imm,
+    output reg        rda_irq,
     output            wra_imm,
 
     output reg        dec_bc,
@@ -105,6 +107,8 @@ localparam [4:0] FETCH    = 5'd0,
                  UNLK     = 5'd15,
                  LD_XHL   = 5'd16,
                  MULA     = 5'd17,
+                 IRQ      = 5'd18,
+                 IRQ_JP   = 5'd19,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -136,7 +140,7 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_ld_high,
            nx_ex_we, nx_keep_ex, keep_ex,
            keep_smux, nx_keep_smux,
-           nx_imm2idx, imm2idx;
+           nx_imm2idx, imm2idx, nx_rda_irq;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -256,8 +260,9 @@ always @* begin
     nx_selop8        = sel_op8;
     nx_keep_selop16  = keep_selop16;
     nx_rda_imm       = rda_imm;
-    nx_sel_xde        = sel_xde;
-    nx_sel_xhl        = sel_xhl;
+    nx_rda_irq       = rda_irq;
+    nx_sel_xde       = sel_xde;
+    nx_sel_xhl       = sel_xhl;
     nx_dec_xhl       = 0;
 
     nx_imm2idx       = imm2idx;
@@ -366,13 +371,16 @@ always @* begin
                     fetched  = 1;
                 end
                 8'b1111_1???: begin // SWI
-                    // 1st push PC
+                    // 1st push SR
+                    nx_dec_xsp = 6;
                     fetched    = 1;
-                    nx_phase   = PUSH_PC;
+                    nx_wr_len  = 2;
+                    nx_phase   = PUSH_SR;
+                    // Set up the rest of the process
                     nx_intproc = 1;
                     nx_intnest = intnest + 16'd1; // The manual doesn't say about this
                     // but RTI will decrement it, so it makes sense to increment it here
-                    nx_alu_imm = { 24'hffff, 3'd0,op[2:0],2'd0 };
+                    nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
                 end
                 8'b1100_0111,
                 8'b1101_0111,
@@ -555,13 +563,13 @@ always @* begin
         end
         PUSH_SR: begin // PUSH_F is done here too
             nx_sel_xsp  = 1;
-            nx_ram_dsel = 2;
+            nx_ram_dsel = 2; // Select SR as ram_din
             nx_ram_wen  = 1;
-            nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
-            nx_phase    = DUMMY;
-            nx_intproc  = 0; // interrupt processing stops here
             if( intproc ) begin
-                nx_pc_we = 1; // Jump to the interrupt procedure
+                nx_phase = PUSH_PC;
+            end else begin
+                nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
+                nx_phase    = DUMMY;
             end
         end
         PUSH_PC: begin
@@ -571,24 +579,43 @@ always @* begin
             nx_ram_wen  = 1;
             nx_wr_len   = 4;
             // jump
-            if( !intproc ) begin
+            if( intproc ) begin
+                nx_phase = IRQ;
+            end else begin
+                nx_phase = DUMMY;
                 if( last_op[3:0]==4'he )
                     nx_pc_rel = 1;  // CALLR
                 else
                     nx_pc_we   = 1; // or CALL
             end
-            nx_phase   = DUMMY;
+        end
+        IRQ: begin
+            nx_ram_wen = 0;
+            nx_ram_ren = 1;
+            nx_rda_irq = 1;
+            nx_sel_xsp = 0;
+            nx_iff     = alu_imm[4:2]==3'd7 ? 3'd7 : alu_imm[4:2]+3'd1; // good for SWI
+            nx_wr_len  = 4; // misnomer: it really is a read len, not a wr len...
+            nx_phase   = IRQ_JP;
+            nx_intproc = 0; // interrupt processing stops here
+        end
+        IRQ_JP: begin
+            nx_alu_imm[23:0] = op[23:0];
+            nx_pc_we         = 1;
+            nx_ram_ren       = 0;
+            nx_rda_irq       = 0;
+            nx_phase         = DUMMY;
         end
         POP_PC: begin
             // retrieve the PC
-            nx_inc_xsp = keep_inc_xsp + 4;
-            nx_pc_we   = 1; // return
-            nx_alu_imm = op;
+            nx_inc_xsp       = keep_inc_xsp + 4;
+            nx_pc_we         = 1; // return
+            nx_alu_imm[23:0] = op[23:0];
             // set RAM controller back to normal operation
-            nx_sel_xsp = 0;
-            nx_ram_ren = 0;
-            nx_reti    = 0;
-            nx_phase   = DUMMY;
+            nx_sel_xsp       = 0;
+            nx_ram_ren       = 0;
+            nx_reti          = 0;
+            nx_phase         = DUMMY;
         end
         PUSH_R: begin
             nx_ram_wen = 1;
@@ -698,8 +725,7 @@ always @* begin
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
             nx_dec_xsp = keep_dec_xsp;
-            nx_phase   = reti    ? POP_PC  :
-                         intproc ? PUSH_SR : FETCH;
+            nx_phase   = reti ? POP_PC : FETCH;
         end
         LD_RAM: begin
             nx_ram_ren = 0;
@@ -1537,6 +1563,7 @@ always @(posedge clk, posedge rst) begin
         keep_ex        <= 0;
         imm2idx        <= 0;
         rda_imm        <= 0;
+        rda_irq        <= 0;
         popw           <= 0;
         sel_xde        <= 0;
         sel_xhl        <= 0;
@@ -1611,6 +1638,7 @@ always @(posedge clk, posedge rst) begin
         keep_ex        <= nx_keep_ex;
         imm2idx        <= nx_imm2idx;
         rda_imm        <= nx_rda_imm;
+        rda_irq        <= nx_rda_irq;
         popw           <= nx_popw;
 
         sel_xde        <= nx_sel_xde;

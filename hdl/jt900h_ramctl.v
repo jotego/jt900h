@@ -36,8 +36,9 @@ module jt900h_ramctl(
     // Immediate value register
     input      [31:0] imm,
     input             sel_imm,
-    input             rda_imm, // read address from immediate value
-    input             wra_imm, // write address from immediate value
+    input             rda_imm, // read-address from immediate value
+    input             wra_imm, // write-address from immediate value
+    input             rda_irq, // read-address from vector table
 
     // MULA support
     input      [23:0] xde,
@@ -71,25 +72,26 @@ reg  [15:0] cache0, cache1, // always keep 4 bytes of data
 reg  [ 3:0] cache_ok, we_mask;
 wire [23:1] next_addr;
 
-wire [23:0] req_addr, eff_addr;
+wire [23:0] rd_addr, wr_addr;
 reg  [31:0] eff_data;
 reg         wrbusy, idx_wr_l, ldram_l;
 reg  [ 1:0] wron;
 
-// req_addr use for reads
-assign req_addr =  !ldram_en ? pc :
+// rd_addr use for reads
+assign rd_addr =  !ldram_en ? pc :
                     sel_xsp  ? xsp :
                     sel_xde  ? xde :
                     sel_xhl  ? xhl :
-                    rda_imm  ? { 8'd0, imm[31:16]} :
+                    rda_imm  ? { 8'd0, imm[31:16]   } :
+                    rda_irq  ? { 16'hffff, imm[7:0] } :
                     idx_addr;
-// eff_addr used for writes
-assign eff_addr = sel_op8  ? {16'd0, op16[7:0] } :
+// wr_addr used for writes
+assign wr_addr = sel_op8  ? {16'd0, op16[7:0] } :
                   sel_op16 ? { 8'd0, op16      } :
                   sel_xsp  ?       xsp           :
                   wra_imm & (idx_wr|wrbusy) ? { 8'd0, imm[31:16]} :
                   idx_addr;
-assign ram_rdy  = &cache_ok && cache_addr==req_addr && !wrbusy;
+assign ram_rdy  = &cache_ok && cache_addr==rd_addr && !wrbusy;
 assign dout = {cache1, cache0};
 
 always @* begin
@@ -128,12 +130,12 @@ always @(posedge clk,posedge rst) begin
         ldram_l  <= ldram_en;
         if( idx_wr || wron!=0 ) begin // Write access
             if( wron==0 ) begin
-                ram_addr <= eff_addr;
-                ram_din  <= len[0] || eff_addr[0] ? {2{eff_data[7:0]}} : eff_data[15:0];
-                ram_we   <= len[0] ? { eff_addr[0], ~eff_addr[0] } :
-                            eff_addr[0] ? 2'b10 : 2'b11;
+                ram_addr <= wr_addr;
+                ram_din  <= len[0] || wr_addr[0] ? {2{eff_data[7:0]}} : eff_data[15:0];
+                ram_we   <= len[0] ? { wr_addr[0], ~wr_addr[0] } :
+                            wr_addr[0] ? 2'b10 : 2'b11;
                 wrbusy   <= 1;
-                if( (eff_addr[0] && len[1]) || len[2] ) wron <= 1;
+                if( (wr_addr[0] && len[1]) || len[2] ) wron <= 1;
             end else if( wron!=0 ) begin
                 ram_addr <= ram_addr+24'd2;
                 wrbusy <= 1;
@@ -142,7 +144,7 @@ always @(posedge clk,posedge rst) begin
                     ram_we  <= 2'b01;
                     wron    <= 0;
                 end else begin
-                    if( eff_addr[0] ) begin
+                    if( wr_addr[0] ) begin
                         ram_din <= len[1] ? {2{eff_data[15:8]}} :
                                   eff_data[23:8];
                         wron <= len[2] ? 2 : 0;
@@ -158,29 +160,29 @@ always @(posedge clk,posedge rst) begin
             if( we_mask!=0 ) begin // assume 0 bus waits for now
                 ram_addr <= ram_addr+24'd2;
                 if( we_mask[0] ) begin
-                    cache0[7:0] <= req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+                    cache0[7:0] <= rd_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                     cache_ok[0] <= 1;
                     we_mask[0]  <= 0;
                 end
-                if( we_mask[1] && (!req_addr[0] || !we_mask[0]) ) begin
-                    cache0[15:8] <= !req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+                if( we_mask[1] && (!rd_addr[0] || !we_mask[0]) ) begin
+                    cache0[15:8] <= !rd_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                     cache_ok[1] <= 1;
                     we_mask[1]  <= 0;
                 end
-                //if( we_mask[2] && !we_mask[0] && ( !req_addr[0] || we_mask[1] ) ) begin
-                if( we_mask[2] && !we_mask[0] && ( !we_mask[1] || req_addr[0] ) ) begin
-                    cache1[7:0] <= req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+                //if( we_mask[2] && !we_mask[0] && ( !rd_addr[0] || we_mask[1] ) ) begin
+                if( we_mask[2] && !we_mask[0] && ( !we_mask[1] || rd_addr[0] ) ) begin
+                    cache1[7:0] <= rd_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                     cache_ok[2] <= 1;
                     we_mask[2]  <= 0;
                 end
-                if( we_mask[3] && !we_mask[1] && (!req_addr[0] || !we_mask[2]) ) begin
-                    cache1[15:8] <= !req_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
+                if( we_mask[3] && !we_mask[1] && (!rd_addr[0] || !we_mask[2]) ) begin
+                    cache1[15:8] <= !rd_addr[0] ? ram_dout[15:8] : ram_dout[7:0];
                     cache_ok[3] <= 1;
                     we_mask[3]  <= 0;
                 end
             end
-            // The OP code is kept apart while a load RAM
-            // is performed to fetch operands. It is restored afterwards
+            // The OP code is kept apart while a load-RAM operation
+            // is executed to fetch operands. It is restored afterwards
             if( ldram_en && !ldram_l ) begin
                 op_addr   <= cache_addr;
                 {op1,op0} <= {cache1,cache0};
@@ -188,28 +190,28 @@ always @(posedge clk,posedge rst) begin
             if( !ldram_en && ldram_l ) begin
                 cache_addr      <= op_addr;
                 {cache1,cache0} <= {op1,op0};
-            end else if( (req_addr != cache_addr || cache_ok!=4'hf) && we_mask==0) begin
-                if( req_addr==cache_addr+24'd1 && cache_ok[3:1]==3'b111 ) begin
+            end else if( (rd_addr != cache_addr || cache_ok!=4'hf) && we_mask==0) begin
+                if( rd_addr==cache_addr+24'd1 && cache_ok[3:1]==3'b111 ) begin
                     cache_addr <= cache_addr+24'd1;
                     { cache1, cache0 } <= { 8'd0, cache1, cache0[15:8] };
-                    ram_addr <= req_addr + 24'd3;
+                    ram_addr <= rd_addr + 24'd3;
                     we_mask  <= 4'b1000;
                     cache_ok <= 4'b0111;
-                end else if( req_addr==cache_addr+24'd2 && cache_ok[3:2]==2'b11 ) begin
+                end else if( rd_addr==cache_addr+24'd2 && cache_ok[3:2]==2'b11 ) begin
                     cache_addr <= cache_addr+24'd2;
                     cache0 <= cache1;
-                    ram_addr <= req_addr + 24'd2;
+                    ram_addr <= rd_addr + 24'd2;
                     we_mask  <= 4'b1100;
                     cache_ok <= 4'b0011;
-                end else if( req_addr==cache_addr+24'd3 && cache_ok[3] ) begin
+                end else if( rd_addr==cache_addr+24'd3 && cache_ok[3] ) begin
                     cache_addr <= cache_addr+24'd3;
                     cache0[7:0] <= cache1[15:8];
-                    ram_addr <= req_addr + {23'd0,req_addr[0]};
+                    ram_addr <= rd_addr + {23'd0,rd_addr[0]};
                     we_mask  <= 4'b1110;
                     cache_ok <= 4'b0001;
                 end else begin
-                    ram_addr <= req_addr;
-                    cache_addr <= req_addr;
+                    ram_addr <= rd_addr;
+                    cache_addr <= rd_addr;
                     we_mask  <= 4'b1111;
                     cache_ok <= 4'b0000;
                 end
