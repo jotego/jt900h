@@ -21,7 +21,11 @@ module jt900h_ctrl(
     input             clk,
     input             cen,
 
-    input      [ 2:0] intrq,      // interrupt request
+    input             irq,
+    output            irq_ack,
+    input      [ 2:0] intlvl,     // interrupt level
+                                  // 0-6 maskable
+                                  // 7   NMI
     // PC
     output reg [ 2:0] fetched,    // number of bytes consumed
     output reg        pc_we,      // absolute value write
@@ -343,223 +347,238 @@ always @* begin
             nx_keep_dec_xsp = 0;
             nx_keep_lddwr = 0;
             nx_idx_last  = 0;
-            casez( op[7:0] )
-                8'b0000_0000: begin // NOP
-                    fetched = 1;
-                end
-                8'b10??_????,
-                8'b11??_00??,
-                8'b11??_010?: begin
-                    nx_op_zz = op[5:4];
-                    if( op[7:0]==8'hb0 && op[15:12]==4'b1111 ) begin // RET cc
+            if( irq && intlvl > riff ) begin
+                // Interrupt accepted
+                nx_iff    = intlvl==7 ? intlvl : intlvl+3'd1;
+                nx_irqack = 1;
+                // 1st push SR
+                nx_dec_xsp = 6;
+                nx_wr_len  = 2;
+                nx_phase   = PUSH_SR;
+                // Set up the rest of the process
+                nx_intproc = 1;
+                nx_intnest = intnest + 16'd1;
+                nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
+                fetched   = 0;
+            end else begin
+                casez( op[7:0] )
+                    8'b0000_0000: begin // NOP
+                        fetched = 1;
+                    end
+                    8'b10??_????,
+                    8'b11??_00??,
+                    8'b11??_010?: begin
+                        nx_op_zz = op[5:4];
+                        if( op[7:0]==8'hb0 && op[15:12]==4'b1111 ) begin // RET cc
+                            nx_phase = EXEC;
+                            fetched  = 1;
+                        end else begin // start indexed addressing
+                            latch_op = 1;
+                            nx_phase = IDX;
+                            nx_idx_en= 1;
+                            fetched  = 0; // let the indexation module take control
+                        end
+                    end
+                    8'b1100_1???,
+                    8'b1101_1???,
+                    8'b1110_1???: begin // two register operand instruction, r part
+                        nx_op_zz = op[5:4];
+                        nx_dst   = expand_reg(op[2:0], nx_op_zz);
+                        nx_src   = nx_dst;
                         nx_phase = EXEC;
                         fetched  = 1;
-                    end else begin // start indexed addressing
+                    end
+                    8'b1111_1???: begin // SWI
+                        // 1st push SR
+                        nx_dec_xsp = 6;
+                        fetched    = 1;
+                        nx_wr_len  = 2;
+                        nx_phase   = PUSH_SR;
+                        // Set up the rest of the process
+                        nx_intproc = 1;
+                        nx_intnest = intnest + 16'd1; // The manual doesn't say about this
+                        // but RTI will decrement it, so it makes sense to increment it here
+                        nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
+                    end
+                    8'b1100_0111,
+                    8'b1101_0111,
+                    8'b1110_0111: begin // two operand, r with arbitraty register
+                        nx_op_zz = op[5:4];
+                        nx_dst   = op[15:8];
+                        nx_src   = nx_dst;
+                        fetched  = 2;
+                        nx_phase = EXEC;
+                    end
+                    8'b0001_0000, // RCF
+                    8'b0001_0001, // SCF
+                    8'b0001_0011: // ZCF
+                    begin
+                        nx_flag_we = 1;
+                        case( op[1:0] )
+                            0: nx_alu_op = ALU_RCF;
+                            1: nx_alu_op = ALU_SCF;
+                            3: nx_alu_op = ALU_ZCF;
+                            default: nx_alu_op = ALU_NOP;
+                        endcase
+                        fetched    = 1;
+                    end
+                    8'b0001_0010: begin // CCF
+                        nx_flag_we = 1;
+                        nx_alu_op  = ALU_CCF;
+                        fetched    = 1;
+                    end
+                    8'b0001_0110: begin // EX F,F'
+                        nx_flag_we = 1;
+                        nx_alu_op  = ALU_EXFF;
+                        fetched    = 1;
+                    end
+                    8'b0001_0111: begin // LDF - LoaD register File pointer
+                        nx_rfp_we  = 1;
+                        nx_alu_imm = { 16'd0, op[15:0] };
+                        fetched    = 2;
+                    end
+                    8'b0010_0???,   // byte
+                    8'b0011_0???,   // word
+                    8'b0100_0???:   // long word
+                    begin // LD R,# 0zzz_0RRR, register and immediate value
+                        nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
+                        nx_dst      = expand_reg(op[2:0], nx_op_zz);
+                        nx_alu_imm  = { 24'd0, op[15:8] };
+                        nx_alu_op   = ALU_MOVE;
+                        nx_alu_smux = 1;
+                        fetched     = 2;
+                        if( nx_op_zz!=0 ) begin
+                            nx_phase = FILL_IMM;
+                            nx_alu_wait = 1;
+                            nx_keep_we  = expand_zz( nx_op_zz );
+                        end else begin
+                            nx_regs_we  = expand_zz( nx_op_zz );
+                            nx_phase = FETCH;
+                        end
+                    end
+                    8'b0000_0110: begin // DI/EI num
+                        nx_iff  = op[10:8];
+                        fetched = 2;
+                    end
+                    8'b0000_10?1: begin // PUSH<W> #
+                        nx_regs_we  = op[1] ? 3'b10 : 3'b1;
+                        nx_dec_xsp  = {13'd0,nx_regs_we};
+                        nx_wr_len   = nx_regs_we;
+                        nx_alu_op   = ALU_MOVE;
+                        nx_phase    = PUSH_R;
+                        nx_flag_we  = 1;
+                        nx_alu_smux = 1;
+                        fetched     = op[1] ? 3'd2 : 3'd1;
+                        nx_alu_imm[15:0] = op[23:8];
+                    end
+                    8'b0001_1000,       // PUSH F
+                    8'b0000_0010: begin // PUSH SR
+                        nx_wr_len  = op[1] ? 3'd2 : 3'd1;
+                        nx_dec_xsp = {13'd0,op[1] ? 3'd2 : 3'd1};
+                        nx_ram_dsel= 2;
+                        nx_phase   = PUSH_SR;
+                    end
+                    8'b0001_1001,  // POP F
+                    8'b0000_0111,  // RETI
+                    8'b0000_0011: begin // POP SR
+                        nx_keep_inc_xsp = op[1] ? 16'd2 : 16'd1;
+                        nx_wr_len       = op[1] ? 3'd1 : 3'd2;
+                        nx_ram_ren      = 1;
+                        nx_sel_xsp      = 1;
+                        nx_phase        = LD_RAM;
+                        nx_popf         = 1;
+                        nx_popsr        = op[1];
+                        nx_reti         = op[2];
+                        if( nx_reti ) begin
+                            nx_intnest = intnest - 16'd1;
+                        end
+                        fetched         = 0;
+                    end
+                    8'b0001_0101,       // POP A
+                    8'b010?_1???: begin // POP R
+                        nx_dst     = op[6] ?
+                            expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
+                            8'he0; // A
+                        nx_keep_we = !op[6] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
+                        nx_keep_inc_xsp = {13'd0, nx_keep_we};
+                        nx_wr_len  = nx_keep_we;
+                        nx_ram_ren = 1;
+                        nx_sel_xsp = 1;
+                        nx_phase   = LD_RAM;
+                        fetched = 0;
+                    end
+                    8'b0001_0100,       // PUSH A
+                    8'b001?_1???: begin // PUSH R
+                        nx_src     = op[5] ?
+                            expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
+                            8'he0; // A
+                        nx_alu_op  = ALU_MOVE;
+                        nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
+                        nx_dec_xsp = {13'd0,nx_regs_we};
+                        nx_wr_len  = nx_regs_we;
+                        nx_phase   = PUSH_R;
+                        nx_flag_we = 1;
+                        fetched = 0;
+                    end
+                    8'b0001_101?: begin // JP 16/24-bit immediate value
+                        fetched       = 2;
+                        nx_alu_imm    = { 24'd0, op[15:8] };
+                        nx_op_zz      = !op[0] ? 2'd1: 2'd3; // 3 = special case to load 24 bits
+                        nx_phase      = FILL_IMM;
+                        nx_keep_pc_we = 1;
+                    end
+                    8'b0000_10?0: begin // LD<W> (#8),#
+                        nx_selop8    = 1;
+                        nx_dly_fetch = op[1] ? 3'd4 : 3'd3;
+                        nx_alu_imm   = {16'd0,op[31:16]};
+                        nx_regs_we   = op[1] ? 3'd2 : 3'd1;
+                        nx_alu_op    = ALU_MOVE;
+                        nx_flag_we   = 1;
+                        nx_alu_smux  = 1;
+                        nx_phase     = ST_RAM;
+                    end
+                    8'b0000_1100: begin
+                        nx_inc_rfp = 1;
+                        fetched    = 1;
+                    end
+                    8'b0000_1101: begin
+                        nx_dec_rfp = 1;
+                        fetched    = 1;
+                    end
+                    8'b0001_110?: begin // CALL
+                        fetched = op[0] ? 3'd4 : 3'd3;
                         latch_op = 1;
-                        nx_phase = IDX;
-                        nx_idx_en= 1;
-                        fetched  = 0; // let the indexation module take control
+                        nx_dec_xsp = 4;
+                        nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
+                        nx_phase = PUSH_PC;
                     end
-                end
-                8'b1100_1???,
-                8'b1101_1???,
-                8'b1110_1???: begin // two register operand instruction, r part
-                    nx_op_zz = op[5:4];
-                    nx_dst   = expand_reg(op[2:0], nx_op_zz);
-                    nx_src   = nx_dst;
-                    nx_phase = EXEC;
-                    fetched  = 1;
-                end
-                8'b1111_1???: begin // SWI
-                    // 1st push SR
-                    nx_dec_xsp = 6;
-                    fetched    = 1;
-                    nx_wr_len  = 2;
-                    nx_phase   = PUSH_SR;
-                    // Set up the rest of the process
-                    nx_intproc = 1;
-                    nx_intnest = intnest + 16'd1; // The manual doesn't say about this
-                    // but RTI will decrement it, so it makes sense to increment it here
-                    nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
-                end
-                8'b1100_0111,
-                8'b1101_0111,
-                8'b1110_0111: begin // two operand, r with arbitraty register
-                    nx_op_zz = op[5:4];
-                    nx_dst   = op[15:8];
-                    nx_src   = nx_dst;
-                    fetched  = 2;
-                    nx_phase = EXEC;
-                end
-                8'b0001_0000, // RCF
-                8'b0001_0001, // SCF
-                8'b0001_0011: // ZCF
-                begin
-                    nx_flag_we = 1;
-                    case( op[1:0] )
-                        0: nx_alu_op = ALU_RCF;
-                        1: nx_alu_op = ALU_SCF;
-                        3: nx_alu_op = ALU_ZCF;
-                        default: nx_alu_op = ALU_NOP;
-                    endcase
-                    fetched    = 1;
-                end
-                8'b0001_0010: begin // CCF
-                    nx_flag_we = 1;
-                    nx_alu_op  = ALU_CCF;
-                    fetched    = 1;
-                end
-                8'b0001_0110: begin // EX F,F'
-                    nx_flag_we = 1;
-                    nx_alu_op  = ALU_EXFF;
-                    fetched    = 1;
-                end
-                8'b0001_0111: begin // LDF - LoaD register File pointer
-                    nx_rfp_we  = 1;
-                    nx_alu_imm = { 16'd0, op[15:0] };
-                    fetched    = 2;
-                end
-                8'b0010_0???,   // byte
-                8'b0011_0???,   // word
-                8'b0100_0???:   // long word
-                begin // LD R,# 0zzz_0RRR, register and immediate value
-                    nx_op_zz    = op[6:4]==2 ? 2'd0 : op[6:4]==3 ? 2'd1 : 2'd2;
-                    nx_dst      = expand_reg(op[2:0], nx_op_zz);
-                    nx_alu_imm  = { 24'd0, op[15:8] };
-                    nx_alu_op   = ALU_MOVE;
-                    nx_alu_smux = 1;
-                    fetched     = 2;
-                    if( nx_op_zz!=0 ) begin
-                        nx_phase = FILL_IMM;
-                        nx_alu_wait = 1;
-                        nx_keep_we  = expand_zz( nx_op_zz );
-                    end else begin
-                        nx_regs_we  = expand_zz( nx_op_zz );
-                        nx_phase = FETCH;
+                    8'b0001_1110: begin // CALLR
+                        nx_alu_imm  = { {16{op[23]}}, op[23:8] };
+                        fetched = 3;
+                        latch_op = 1;
+                        nx_dec_xsp = 4;
+                        nx_phase = PUSH_PC;
                     end
-                end
-                8'b0000_0110: begin // DI/EI num
-                    nx_iff  = op[10:8];
-                    fetched = 2;
-                end
-                8'b0000_10?1: begin // PUSH<W> #
-                    nx_regs_we  = op[1] ? 3'b10 : 3'b1;
-                    nx_dec_xsp  = {13'd0,nx_regs_we};
-                    nx_wr_len   = nx_regs_we;
-                    nx_alu_op   = ALU_MOVE;
-                    nx_phase    = PUSH_R;
-                    nx_flag_we  = 1;
-                    nx_alu_smux = 1;
-                    fetched     = op[1] ? 3'd2 : 3'd1;
-                    nx_alu_imm[15:0] = op[23:8];
-                end
-                8'b0001_1000,       // PUSH F
-                8'b0000_0010: begin // PUSH SR
-                    nx_wr_len  = op[1] ? 3'd2 : 3'd1;
-                    nx_dec_xsp = {13'd0,op[1] ? 3'd2 : 3'd1};
-                    nx_ram_dsel= 2;
-                    nx_phase   = PUSH_SR;
-                end
-                8'b0001_1001,  // POP F
-                8'b0000_0111,  // RETI
-                8'b0000_0011: begin // POP SR
-                    nx_keep_inc_xsp = op[1] ? 16'd2 : 16'd1;
-                    nx_wr_len       = op[1] ? 3'd1 : 3'd2;
-                    nx_ram_ren      = 1;
-                    nx_sel_xsp      = 1;
-                    nx_phase        = LD_RAM;
-                    nx_popf         = 1;
-                    nx_popsr        = op[1];
-                    nx_reti         = op[2];
-                    if( nx_reti ) begin
-                        nx_intnest = intnest - 16'd1;
+                    8'b011?_????: begin // JR
+                        if( op[4] ) begin
+                            nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
+                        end else begin
+                            nx_alu_imm  = { {24{op[15]}}, op[15:8] } + 2;
+                        end
+                        nx_pc_rel   = jp_ok;
+                        nx_phase    = DUMMY;
                     end
-                    fetched         = 0;
-                end
-                8'b0001_0101,       // POP A
-                8'b010?_1???: begin // POP R
-                    nx_dst     = op[6] ?
-                        expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
-                        8'he0; // A
-                    nx_keep_we = !op[6] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
-                    nx_keep_inc_xsp = {13'd0, nx_keep_we};
-                    nx_wr_len  = nx_keep_we;
-                    nx_ram_ren = 1;
-                    nx_sel_xsp = 1;
-                    nx_phase   = LD_RAM;
-                    fetched = 0;
-                end
-                8'b0001_0100,       // PUSH A
-                8'b001?_1???: begin // PUSH R
-                    nx_src     = op[5] ?
-                        expand_reg(op[2:0], op[4] ? 2'b10 : 2'b01 ) :
-                        8'he0; // A
-                    nx_alu_op  = ALU_MOVE;
-                    nx_regs_we = !op[5] ? 3'b001 : op[4] ? 3'b100 : 3'b010;
-                    nx_dec_xsp = {13'd0,nx_regs_we};
-                    nx_wr_len  = nx_regs_we;
-                    nx_phase   = PUSH_R;
-                    nx_flag_we = 1;
-                    fetched = 0;
-                end
-                8'b0001_101?: begin // JP 16/24-bit immediate value
-                    fetched       = 2;
-                    nx_alu_imm    = { 24'd0, op[15:8] };
-                    nx_op_zz      = !op[0] ? 2'd1: 2'd3; // 3 = special case to load 24 bits
-                    nx_phase      = FILL_IMM;
-                    nx_keep_pc_we = 1;
-                end
-                8'b0000_10?0: begin // LD<W> (#8),#
-                    nx_selop8    = 1;
-                    nx_dly_fetch = op[1] ? 3'd4 : 3'd3;
-                    nx_alu_imm   = {16'd0,op[31:16]};
-                    nx_regs_we   = op[1] ? 3'd2 : 3'd1;
-                    nx_alu_op    = ALU_MOVE;
-                    nx_flag_we   = 1;
-                    nx_alu_smux  = 1;
-                    nx_phase     = ST_RAM;
-                end
-                8'b0000_1100: begin
-                    nx_inc_rfp = 1;
-                    fetched    = 1;
-                end
-                8'b0000_1101: begin
-                    nx_dec_rfp = 1;
-                    fetched    = 1;
-                end
-                8'b0001_110?: begin // CALL
-                    fetched = op[0] ? 3'd4 : 3'd3;
-                    nx_dec_xsp = 4;
-                    nx_alu_imm = op[0] ? { 8'd0, op[31:8] } : { 16'd0, op[23:8] };
-                    nx_phase = PUSH_PC;
-                    latch_op = 1;
-                end
-                8'b0001_1110: begin // CALLR
-                    nx_alu_imm  = { {16{op[23]}}, op[23:8] };
-                    fetched = 3;
-                    latch_op = 1;
-                    nx_phase = PUSH_PC;
-                    nx_dec_xsp = 4;
-                end
-                8'b011?_????: begin // JR
-                    if( op[4] ) begin
-                        nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
-                    end else begin
-                        nx_alu_imm  = { {24{op[15]}}, op[15:8] } + 2;
+                    8'b0000_111?: begin // RET / RETD
+                        nx_wr_len       = 2;
+                        nx_ram_ren      = 1; // RAM load enable
+                        nx_sel_xsp      = 1;
+                        fetched         = 0;
+                        nx_keep_inc_xsp = op[0] ? op[23:8] : 16'd0; // RETD or RET
+                        nx_phase        = POP_PC;
                     end
-                    nx_pc_rel   = jp_ok;
-                    nx_phase    = DUMMY;
-                end
-                8'b0000_111?: begin // RET / RETD
-                    nx_wr_len       = 2;
-                    nx_ram_ren      = 1; // RAM load enable
-                    nx_sel_xsp      = 1;
-                    fetched         = 0;
-                    nx_keep_inc_xsp = op[0] ? op[23:8] : 16'd0; // RETD or RET
-                    nx_phase        = POP_PC;
-                end
-                default:;
-            endcase
+                    default:;
+                endcase
+            end
         end
         PUSH_SR: begin // PUSH_F is done here too
             nx_sel_xsp  = 1;
