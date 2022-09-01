@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License
     along with JT900H.  If not, see <http://www.gnu.org/licenses/>.
 
-    Author: Jose Tejada Gomez. https://patreon.com/topapate
+    Author: Jose Tejada Gomez. https://patreon.com/jotego
     Version: 1.0
     Date: 30-11-2021 */
 
