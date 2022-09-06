@@ -74,7 +74,8 @@ wire signed [15:0] imm_lo, imm_hi;
 
 assign div_rslt = w[1] ? { div_rem, div_quot } : { 16'd0, div_rem[7:0], div_quot[7:0] };
 
-function [32:0] extend( input [31:0] x );
+function [32:0] extend;
+    input [31:0] x;
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
              w[1] ? { {17{x[15]}}, x[15:0] } : { x[31], x };
 endfunction

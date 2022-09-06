@@ -74,7 +74,8 @@ always @* begin
     aux24 = ridx_mode[0] ? { {8{idx_rdaux[15]}}, idx_rdaux} : { {16{idx_rdaux[7]}}, idx_rdaux[7:0]};
 end
 
-function [7:0] fullreg( input [2:0] rcode );
+function [7:0] fullreg;
+    input [2:0] rcode;
     fullreg = rcode==0 ? 8'he0 : // XWA
               rcode==1 ? 8'he4 : // XBC
               rcode==2 ? 8'he8 : // XDE

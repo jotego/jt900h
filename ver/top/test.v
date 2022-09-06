@@ -36,7 +36,7 @@ assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
 
 `ifndef NODUMP
 initial begin
-    $dumpfile( {`FNAME,".lxt"} );
+    $dumpfile( {`FNAME,".vcd"} );
     $dumpvars;
     $dumpon;
 end

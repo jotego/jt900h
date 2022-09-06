@@ -249,7 +249,9 @@ always @(posedge clk, posedge rst) begin
     end
 end
 
-function [7:0] simplify( input [1:0] rfp, input [7:0] rsel );
+function [7:0] simplify;
+    input [1:0] rfp;
+    input [7:0] rsel;
     simplify = {
                rsel[7:4]==CURBANK  ? { 2'd0, rfp } :
                rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
