@@ -11,19 +11,15 @@ cd ../../hdl
 verilator --lint-only *.v --top-module jt900h || exit $?
 cd -
 
-if [ $# -ge 1 ]; then
-    TEST=$1
-    echo test: $TEST
-    shift
-fi
 
 function show_help() {
     cat << EOF
+JT900H Simulation script. (c) Jose Tejada 2022
 sim.sh <test name> [options]
 
 -nodump     Do not dump waveforms
 -batch      Do not use test.* filenames (batch mode)
--accept     Update the valid output file, used for comparisons
+-accept|-a  Update the valid output file, used for comparisons
             It will also add it to git
 -cen        Set cen to 50% (default 100%)
 -ram        Shows a short RAM dump before and after the simulation
@@ -37,8 +33,18 @@ while [ $# -gt 0 ]; do
         -accept|-a) ACCEPT=1;;
         -ram) RAM=1;;
         -cen) EXTRA="$EXTRA -DUSECEN";;
-        -help) show_help; exit 0;;
-        *) echo "Unsupported argument $1"; exit 1;;
+        -help|-h) show_help; exit 0;;
+        *)
+            if [ -e tests/$1.asm ]; then
+                TEST=$1
+                echo "test: $TEST"
+            else
+                if [ ${1:0:1} = "-" ]; then
+                    echo "Unsupported argument $1"; exit 1
+                else
+                    echo "Test $1 not found"; exit 1
+                fi
+            fi;;
     esac
     shift
 done
