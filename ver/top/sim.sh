@@ -5,6 +5,7 @@ EXTRA=
 ACCEPT=
 RAM=0
 BATCH=0
+VERBOSE=0
 COVERAGE=0
 NODUMP=
 
@@ -30,6 +31,7 @@ sim.sh <test name> [options]
 -cen        Set cen to 50% (default 100%)
 -ram        Shows a short RAM dump before and after the simulation
 -cov        Runs coverage. Requires 'covered' installed
+-v          Verbose
 EOF
 }
 
@@ -41,7 +43,8 @@ while [ $# -gt 0 ]; do
         -ram) RAM=1;;
         -cen) EXTRA="$EXTRA -DUSECEN";;
         -cov) COVERAGE=1;;
-        -help) show_help; exit 0;;
+        -v|--verbose) VERBOSE=1;;
+        -help|-h) show_help; exit 0;;
         *) >&2 echo "Unsupported argument $1"; exit 1;;
     esac
     shift
@@ -122,13 +125,16 @@ if sdiff --suppress-common-lines --width=90 ${FNAME}.out $CMPFILE >/dev/null; th
     if [ $COVERAGE = 1 ]; then
         coverage.sh $FNAME
     fi
+    if [ $VERBOSE = 1 ]; then
+        cat $FNAME.out
+    fi
     exit 0
 else
     if [ $BATCH = 0 ]; then
         echo ======== EXPECTED =========
         cat $CMPFILE
         echo ======== BUT GOT ==========
-        cat test.out
+        cat $FNAME.out
         echo see $CMPFILE
     fi
     echo $FNAME FAIL
