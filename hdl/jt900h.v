@@ -221,6 +221,8 @@ jt900h_regs u_regs(
     .dmp_dout       ( dmp_dout          )
     `ifdef SIMULATION
     ,.sim_xix       ( sim_xix           )
+    ,.sim_xiy       ( sim_xiy           )
+    ,.sim_xiz       ( sim_xiz           )
     `endif    
 );
 

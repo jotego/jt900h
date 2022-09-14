@@ -83,6 +83,8 @@ module jt900h_regs(
     output reg [7:0] dmp_dout
     `ifdef SIMULATION
     ,output   [15:0] sim_xix
+    ,output   [15:0] sim_xiy // new line 
+    ,output   [15:0] sim_xiz
     `endif
 );
 
@@ -117,6 +119,8 @@ assign xhl = cur_xhl;
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
     assign sim_xix = xix;
+    assign sim_xiy = xiy;
+    assign sim_xiz = xiz;
 `endif
 
 assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;
