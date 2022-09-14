@@ -80,7 +80,7 @@ module jt900h_regs(
     //input      [31:0] din
     // Register dump
     input      [7:0] dmp_addr,
-    output reg [7:0] dmp_din
+    output reg [7:0] dmp_dout
 );
 
 localparam [3:0] CURBANK  = 4'he,
@@ -271,14 +271,14 @@ end
 // Status dump
 always @(posedge clk) begin
     if( dmp_addr < 8'h40 )
-        dmp_din <= accs[dmp_addr[5:0]];
+        dmp_dout <= accs[dmp_addr[5:0]];
     else if( dmp_addr < 8'h50 )
-        dmp_din <= ptrs[dmp_addr[3:0]];
+        dmp_dout <= ptrs[dmp_addr[3:0]];
     else begin
         case( dmp_addr )
-            8'h51: dmp_din <= sr[ 7:0];
-            8'h50: dmp_din <= sr[15:8];
-            default: dmp_din <= 0;
+            8'h51: dmp_dout <= sr[ 7:0];
+            8'h50: dmp_dout <= sr[15:8];
+            default: dmp_dout <= 0;
         endcase
     end
 end

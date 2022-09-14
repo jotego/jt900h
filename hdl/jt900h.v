@@ -28,8 +28,8 @@ module jt900h(
 
     input      [ 2:0] intrq,        // interrupt request
     // Register dump
-    input      [ 7:0] dmp_addr,
-    output     [ 7:0] dmp_din
+    input      [ 7:0] dmp_addr,     // dump
+    output     [ 7:0] dmp_dout
 );
 
 wire [15:0] sr;
@@ -215,7 +215,7 @@ jt900h_regs u_regs(
     .dst_out        ( dst_out           ),
     // Register dump
     .dmp_addr       ( dmp_addr          ),
-    .dmp_din        ( dmp_din           )
+    .dmp_dout        ( dmp_dout           )
 );
 
 jt900h_idxaddr u_idxaddr(
