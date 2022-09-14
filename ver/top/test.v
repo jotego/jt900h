@@ -18,6 +18,10 @@ wire [7:0] dmp_dout;
 reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
+// CPU registers
+wire [31:0] sim_xix;
+wire [15:0] mem_xix;
+
 integer    cnt,file;
 
 initial begin
@@ -33,6 +37,7 @@ assign ram_a    = ram_addr[AW-1:0]; // short version for plotting
 assign ram_dout = mem[ram_addr[AW-1:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
+assign mem_xix  = mem[sim_xix];
 
 `ifndef NODUMP
 initial begin
@@ -121,7 +126,8 @@ jt900h uut(
     .intrq      ( 3'd0      ),
 
     .dmp_addr   ( dmp_addr  ),
-    .dmp_dout   ( dmp_dout  )
+    .dmp_dout   ( dmp_dout  ),
+    .sim_xix    ( sim_xix   )
 );
 
 endmodule

@@ -30,6 +30,9 @@ module jt900h(
     // Register dump
     input      [ 7:0] dmp_addr,     // dump
     output     [ 7:0] dmp_dout
+    `ifdef SIMULATION
+    ,output   [15:0] sim_xix
+    `endif    
 );
 
 wire [15:0] sr;
@@ -215,7 +218,10 @@ jt900h_regs u_regs(
     .dst_out        ( dst_out           ),
     // Register dump
     .dmp_addr       ( dmp_addr          ),
-    .dmp_dout        ( dmp_dout           )
+    .dmp_dout       ( dmp_dout          )
+    `ifdef SIMULATION
+    ,.sim_xix       ( sim_xix           )
+    `endif    
 );
 
 jt900h_idxaddr u_idxaddr(
