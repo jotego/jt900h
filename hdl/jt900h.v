@@ -31,7 +31,10 @@ module jt900h(
     input      [ 7:0] dmp_addr,     // dump
     output     [ 7:0] dmp_dout
     `ifdef SIMULATION
-    ,output   [15:0] sim_xix
+    ,output   [31:0] sim_xix
+    ,output   [31:0] sim_xiy
+    ,output   [31:0] sim_xiz
+    ,output   [31:0] sim_xsp
     `endif    
 );
 
@@ -223,6 +226,7 @@ jt900h_regs u_regs(
     ,.sim_xix       ( sim_xix           )
     ,.sim_xiy       ( sim_xiy           )
     ,.sim_xiz       ( sim_xiz           )
+    ,.sim_xsp       ( sim_xsp           )
     `endif    
 );
 
