@@ -1,4 +1,4 @@
-    ; Add operations with complex addressing
+; Add operations with complex addressing
     main section code
     org 0
     ld a,0xbf    ; common header

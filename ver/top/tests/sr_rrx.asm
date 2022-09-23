@@ -10,18 +10,18 @@
     ld xix,(data)
     ld bc,0x01
 
-    rrc a,bc    ; bc = 0x8000
-    rrc 3,wa    ; wa = 0x3304
+    rrc a,bc
+    rrc 3,wa
     rrc (xbc)
 
-    rlc 2,wa    ; wa = 0xCC10
+    rlc 2,wa
     ld a,1
-    rlc a,bc    ; wb = 0x01
+    rlc a,bc
     rlc (xix)
     ld e,0x01
 
-    sra a,de   ; de = 0x8000
-    sra 4,de   ; de = 0x0800
+    sra a,de
+    sra 4,de
     sra (xix) 
 
 end_loop:
