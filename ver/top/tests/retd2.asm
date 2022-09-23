@@ -14,8 +14,8 @@
     jp end_loop
 
 mymove:
-    ld bc,(xsp+32767)
-    ld de,(xsp+32767)
+    ld bc,(xsp+32)
+    ld de,(xsp+32)
     retd 65535
     jp bad_end
 

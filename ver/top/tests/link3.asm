@@ -7,7 +7,7 @@
     ld xwa,0x1234678
     
     link xwa,0xffffffff
-    unlk xwugo2a   
+    unlk xwa   
     link xbc,0xffffffff
     unlk xbc   
     link xde,0xffffffff
