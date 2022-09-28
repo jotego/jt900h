@@ -20,6 +20,7 @@ Freely distributable under the GPL license
 * Report generated from CDD file that was merged from the following files:
     Filename                                           Leading Hierarchy
     -----------------------------------------------------------------------------------------------------------------
+    tests/add1.cdd                                     test                                                          
     tests/add2.cdd                                     test                                                          
     tests/add4.cdd                                     test                                                          
     tests/add.cdd                                      test                                                          
@@ -67,6 +68,7 @@ Freely distributable under the GPL license
     tests/ei.cdd                                       test                                                          
     tests/ex2.cdd                                      test                                                          
     tests/ex.cdd                                       test                                                          
+    tests/exff.cdd                                     test                                                          
     tests/exts.cdd                                     test                                                          
     tests/extz.cdd                                     test                                                          
     tests/idx.cdd                                      test                                                          
@@ -74,6 +76,7 @@ Freely distributable under the GPL license
     tests/jp2.cdd                                      test                                                          
     tests/jp.cdd                                       test                                                          
     tests/jr2.cdd                                      test                                                          
+    tests/jr3.cdd                                      test                                                          
     tests/jr.cdd                                       test                                                          
     tests/ld_16bit_imm.cdd                             test                                                          
     tests/ld_32bit_imm.cdd                             test                                                          
@@ -163,14 +166,48 @@ Freely distributable under the GPL license
     tests/scf.cdd                                      test                                                          
     tests/set.cdd                                      test                                                          
     tests/shift_mem.cdd                                test                                                          
+    tests/shifts2.cdd                                  test                                                          
+    tests/shifts3.cdd                                  test                                                          
+    tests/shifts4.cdd                                  test                                                          
+    tests/shifts5.cdd                                  test                                                          
+    tests/shifts6.cdd                                  test                                                          
+    tests/shifts.cdd                                   test                                                          
+    tests/srl.cdd                                      test                                                          
+    tests/sr_rrx2.cdd                                  test                                                          
+    tests/sr_rrx.cdd                                   test                                                          
+    tests/stcf2.cdd                                    test                                                          
+    tests/stcf.cdd                                     test                                                          
+    tests/sub.cdd                                      test                                                          
+    tests/swi.cdd                                      test                                                          
+    tests/test_memory_1.cdd                            test                                                          
+    tests/test_memory_2.cdd                            test                                                          
+    tests/test_memory_3.cdd                            test                                                          
+    tests/test_memory_4.cdd                            test                                                          
+    tests/tset.cdd                                     test                                                          
+    tests/unlk.cdd                                     test                                                          
+    tests/xor2.cdd                                     test                                                          
+    tests/xor.cdd                                      test                                                          
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   LINE COVERAGE RESULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hit
 ---------------------------------------------------------------------------------------------------------------------
+  jt900h                  jt900h.v                   0/    0/    0      100%
+  jt900h_ctrl             jt900h_ctrl.v           1006/    4/ 1010      100%
+  jt900h_ctrl.expand_z    jt900h_ctrl.v              1/    0/    1      100%
+  jt900h_ctrl.expand_r    jt900h_ctrl.v              1/    0/    1      100%
+  jt900h_regs             jt900h_regs.v             96/    2/   98       98%
+  jt900h_regs.simplify    jt900h_regs.v              1/    0/    1      100%
+  jt900h_idxaddr          jt900h_idxaddr.v         128/   11/  139       92%
+  jt900h_idxaddr.fullr    jt900h_idxaddr.v           1/    0/    1      100%
+  jt900h_alu              jt900h_alu.v             377/    0/  377      100%
+  jt900h_alu.extend       jt900h_alu.v               1/    0/    1      100%
+  jt900h_div              jt900h_div.v              47/    0/   47      100%
+  jt900h_ramctl           jt900h_ramctl.v          102/    0/  102      100%
+  jt900h_pc               jt900h_pc.v               10/    0/   10      100%
 ---------------------------------------------------------------------------------------------------------------------
-  Accumulated                                        0/    0/    0      100%
+  Accumulated                                     1771/   17/ 1788       99%
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,8 +216,21 @@ Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hi
                                                            Toggle 0 -> 1                       Toggle 1 -> 0
 Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hit      Hit/ Miss/Total    Percent hit
 ---------------------------------------------------------------------------------------------------------------------
+  jt900h                  jt900h.v                 616/   46/  662       93%           614/   48/  662       93%
+  jt900h_ctrl             jt900h_ctrl.v            558/   39/  597       93%           549/   48/  597       92%
+  jt900h_ctrl.expand_z    jt900h_ctrl.v              5/    0/    5      100%             5/    0/    5      100%
+  jt900h_ctrl.expand_r    jt900h_ctrl.v             13/    0/   13      100%            13/    0/   13      100%
+  jt900h_regs             jt900h_regs.v            688/   27/  715       96%           686/   29/  715       96%
+  jt900h_regs.simplify    jt900h_regs.v             18/    0/   18      100%            18/    0/   18      100%
+  jt900h_idxaddr          jt900h_idxaddr.v         354/   17/  371       95%           349/   22/  371       94%
+  jt900h_idxaddr.fullr    jt900h_idxaddr.v          11/    0/   11      100%            11/    0/   11      100%
+  jt900h_alu              jt900h_alu.v             727/   19/  746       97%           726/   20/  746       97%
+  jt900h_alu.extend       jt900h_alu.v              65/    0/   65      100%            65/    0/   65      100%
+  jt900h_div              jt900h_div.v             301/   21/  322       93%           296/   26/  322       92%
+  jt900h_ramctl           jt900h_ramctl.v          568/   13/  581       98%           566/   15/  581       97%
+  jt900h_pc               jt900h_pc.v               75/    2/   77       97%            77/    0/   77      100%
 ---------------------------------------------------------------------------------------------------------------------
-  Accumulated                                        0/    0/    0      100%             0/    0/    0      100%
+  Accumulated                                     3999/  184/ 4183       96%          3975/  208/ 4183       95%
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,8 +239,21 @@ Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hi
                                                                             Logic Combinations
 Module/Task/Function                Filename                          Hit/Miss/Total    Percent hit
 ---------------------------------------------------------------------------------------------------------------------
+  jt900h                            jt900h.v                            0/   0/   0      100%
+  jt900h_ctrl                       jt900h_ctrl.v                     811/ 158/ 969       84%
+  jt900h_ctrl.expand_zz             jt900h_ctrl.v                       4/   0/   4      100%
+  jt900h_ctrl.expand_reg            jt900h_ctrl.v                       6/   0/   6      100%
+  jt900h_regs                       jt900h_regs.v                     217/  49/ 266       82%
+  jt900h_regs.simplify              jt900h_regs.v                      14/   0/  14      100%
+  jt900h_idxaddr                    jt900h_idxaddr.v                  248/  19/ 267       93%
+  jt900h_idxaddr.fullreg            jt900h_idxaddr.v                   14/   0/  14      100%
+  jt900h_alu                        jt900h_alu.v                      889/ 140/1029       86%
+  jt900h_alu.extend                 jt900h_alu.v                       14/   0/  14      100%
+  jt900h_div                        jt900h_div.v                       94/  13/ 107       88%
+  jt900h_ramctl                     jt900h_ramctl.v                   263/  29/ 292       90%
+  jt900h_pc                         jt900h_pc.v                        28/   0/  28      100%
 ---------------------------------------------------------------------------------------------------------------------
-  Accumulated                                                           0/   0/   0      100%
+  Accumulated                                                        2602/ 408/3010       86%
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -199,6 +262,19 @@ Module/Task/Function                Filename                          Hit/Miss/T
                                                                State                             Arc
 Module/Task/Function      Filename                Hit/Miss/Total    Percent Hit    Hit/Miss/Total    Percent hit
 ---------------------------------------------------------------------------------------------------------------------
+  jt900h                  jt900h.v                  0/   0/   0      100%            0/   0/   0      100%
+  jt900h_ctrl             jt900h_ctrl.v             0/   0/   0      100%            0/   0/   0      100%
+  jt900h_ctrl.expand_z    jt900h_ctrl.v             0/   0/   0      100%            0/   0/   0      100%
+  jt900h_ctrl.expand_r    jt900h_ctrl.v             0/   0/   0      100%            0/   0/   0      100%
+  jt900h_regs             jt900h_regs.v             0/   0/   0      100%            0/   0/   0      100%
+  jt900h_regs.simplify    jt900h_regs.v             0/   0/   0      100%            0/   0/   0      100%
+  jt900h_idxaddr          jt900h_idxaddr.v          0/   0/   0      100%            0/   0/   0      100%
+  jt900h_idxaddr.fullr    jt900h_idxaddr.v          0/   0/   0      100%            0/   0/   0      100%
+  jt900h_alu              jt900h_alu.v              0/   0/   0      100%            0/   0/   0      100%
+  jt900h_alu.extend       jt900h_alu.v              0/   0/   0      100%            0/   0/   0      100%
+  jt900h_div              jt900h_div.v              0/   0/   0      100%            0/   0/   0      100%
+  jt900h_ramctl           jt900h_ramctl.v           0/   0/   0      100%            0/   0/   0      100%
+  jt900h_pc               jt900h_pc.v               0/   0/   0      100%            0/   0/   0      100%
 ---------------------------------------------------------------------------------------------------------------------
   Accumulated                                       0/   0/   0      100%            0/   0/   0      100%
 
