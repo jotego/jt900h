@@ -18,6 +18,8 @@ if [ $FAIL = 0 ]; then
     # Merge coverage results
     if which covered >/dev/null; then
         covered merge -o merged.cdd tests/*.cdd
+        covered exclude -f waivers
+        covered report merged.cdd > covered.txt
     else
         echo "Install covered to run coverage sims"
     fi 
