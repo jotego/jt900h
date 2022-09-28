@@ -1,0 +1,205 @@
+
+Covered covered-0.7.10 -- Verilog Code Coverage Utility
+Written by Trevor Williams  (phase1geo@gmail.com)
+Freely distributable under the GPL license
+
+                            :::::::::::::::::::::::::::::::::::::::::::::::::::::
+                            ::                                                 ::
+                            ::  Covered -- Verilog Coverage Summarized Report  ::
+                            ::                                                 ::
+                            :::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   GENERAL INFORMATION   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Report generated from CDD file : merged.cdd
+
+* Reported by                    : Module
+
+* Report generated from CDD file that was merged from the following files:
+    Filename                                           Leading Hierarchy
+    -----------------------------------------------------------------------------------------------------------------
+    tests/add2.cdd                                     test                                                          
+    tests/add4.cdd                                     test                                                          
+    tests/add.cdd                                      test                                                          
+    tests/and2.cdd                                     test                                                          
+    tests/and.cdd                                      test                                                          
+    tests/arith_mem.cdd                                test                                                          
+    tests/bit2.cdd                                     test                                                          
+    tests/bit.cdd                                      test                                                          
+    tests/bs1bf1.cdd                                   test                                                          
+    tests/bs1bf2.cdd                                   test                                                          
+    tests/bs1bf3.cdd                                   test                                                          
+    tests/bs1bf4.cdd                                   test                                                          
+    tests/bs1bf.cdd                                    test                                                          
+    tests/callcc.cdd                                   test                                                          
+    tests/call.cdd                                     test                                                          
+    tests/callr.cdd                                    test                                                          
+    tests/ccf.cdd                                      test                                                          
+    tests/chg.cdd                                      test                                                          
+    tests/cp2.cdd                                      test                                                          
+    tests/cp3.cdd                                      test                                                          
+    tests/cp.cdd                                       test                                                          
+    tests/cpd2.cdd                                     test                                                          
+    tests/cpd.cdd                                      test                                                          
+    tests/cpdr.cdd                                     test                                                          
+    tests/cpi2.cdd                                     test                                                          
+    tests/cpi.cdd                                      test                                                          
+    tests/cpir.cdd                                     test                                                          
+    tests/cpl.cdd                                      test                                                          
+    tests/daa.cdd                                      test                                                          
+    tests/dec.cdd                                      test                                                          
+    tests/div2.cdd                                     test                                                          
+    tests/div3.cdd                                     test                                                          
+    tests/div4.cdd                                     test                                                          
+    tests/div5.cdd                                     test                                                          
+    tests/div6.cdd                                     test                                                          
+    tests/div7.cdd                                     test                                                          
+    tests/div8.cdd                                     test                                                          
+    tests/div9.cdd                                     test                                                          
+    tests/div.cdd                                      test                                                          
+    tests/divs2.cdd                                    test                                                          
+    tests/divs3.cdd                                    test                                                          
+    tests/divs4.cdd                                    test                                                          
+    tests/divs.cdd                                     test                                                          
+    tests/djnz.cdd                                     test                                                          
+    tests/ei.cdd                                       test                                                          
+    tests/ex2.cdd                                      test                                                          
+    tests/ex.cdd                                       test                                                          
+    tests/exts.cdd                                     test                                                          
+    tests/extz.cdd                                     test                                                          
+    tests/idx.cdd                                      test                                                          
+    tests/inc.cdd                                      test                                                          
+    tests/jp2.cdd                                      test                                                          
+    tests/jp.cdd                                       test                                                          
+    tests/jr2.cdd                                      test                                                          
+    tests/jr.cdd                                       test                                                          
+    tests/ld_16bit_imm.cdd                             test                                                          
+    tests/ld_32bit_imm.cdd                             test                                                          
+    tests/ld_8bit_imm.cdd                              test                                                          
+    tests/ld_8bit_prev.cdd                             test                                                          
+    tests/lda.cdd                                      test                                                          
+    tests/ldar.cdd                                     test                                                          
+    tests/ldcf2.cdd                                    test                                                          
+    tests/ldcf.cdd                                     test                                                          
+    tests/ldd2.cdd                                     test                                                          
+    tests/ldd.cdd                                      test                                                          
+    tests/lddr2.cdd                                    test                                                          
+    tests/lddr3.cdd                                    test                                                          
+    tests/lddr4.cdd                                    test                                                          
+    tests/lddr.cdd                                     test                                                          
+    tests/lddual.cdd                                   test                                                          
+    tests/ldi2.cdd                                     test                                                          
+    tests/ldi.cdd                                      test                                                          
+    tests/ld_idx2ram.cdd                               test                                                          
+    tests/ld_idx.cdd                                   test                                                          
+    tests/ld_imm2mem.cdd                               test                                                          
+    tests/ld_imm2mx8.cdd                               test                                                          
+    tests/ldir2.cdd                                    test                                                          
+    tests/ldloop.cdd                                   test                                                          
+    tests/ldlow.cdd                                    test                                                          
+    tests/ld_m2m.cdd                                   test                                                          
+    tests/ldmem.cdd                                    test                                                          
+    tests/ld_reg_8_b1.cdd                              test                                                          
+    tests/ld_reg_8_b2.cdd                              test                                                          
+    tests/ld_reg_8_b3.cdd                              test                                                          
+    tests/ld_reg_8_b4.cdd                              test                                                          
+    tests/ld_reg_ldar.cdd                              test                                                          
+    tests/ld_r_map.cdd                                 test                                                          
+    tests/ldw_mem_16.cdd                               test                                                          
+    tests/link1.cdd                                    test                                                          
+    tests/link3.cdd                                    test                                                          
+    tests/link.cdd                                     test                                                          
+    tests/logic_cf3.cdd                                test                                                          
+    tests/logic_cf4.cdd                                test                                                          
+    tests/logic_cf.cdd                                 test                                                          
+    tests/lut.cdd                                      test                                                          
+    tests/mdec1.cdd                                    test                                                          
+    tests/mdec3.cdd                                    test                                                          
+    tests/minc.cdd                                     test                                                          
+    tests/mirr.cdd                                     test                                                          
+    tests/mul16.cdd                                    test                                                          
+    tests/mula.cdd                                     test                                                          
+    tests/mul.cdd                                      test                                                          
+    tests/mul_idx.cdd                                  test                                                          
+    tests/mul_imm.cdd                                  test                                                          
+    tests/muls16.cdd                                   test                                                          
+    tests/muls.cdd                                     test                                                          
+    tests/neg.cdd                                      test                                                          
+    tests/or.cdd                                       test                                                          
+    tests/overflow.cdd                                 test                                                          
+    tests/paa.cdd                                      test                                                          
+    tests/pop2.cdd                                     test                                                          
+    tests/popf.cdd                                     test                                                          
+    tests/popmem.cdd                                   test                                                          
+    tests/popr2.cdd                                    test                                                          
+    tests/popr.cdd                                     test                                                          
+    tests/popsr.cdd                                    test                                                          
+    tests/prueba_push.cdd                              test                                                          
+    tests/pushf.cdd                                    test                                                          
+    tests/push_imm.cdd                                 test                                                          
+    tests/push_mem.cdd                                 test                                                          
+    tests/pushr2.cdd                                   test                                                          
+    tests/pushr.cdd                                    test                                                          
+    tests/res.cdd                                      test                                                          
+    tests/retcc.cdd                                    test                                                          
+    tests/ret.cdd                                      test                                                          
+    tests/retd1.cdd                                    test                                                          
+    tests/retd2.cdd                                    test                                                          
+    tests/retd3.cdd                                    test                                                          
+    tests/retd4.cdd                                    test                                                          
+    tests/retd.cdd                                     test                                                          
+    tests/reti.cdd                                     test                                                          
+    tests/rfp.cdd                                      test                                                          
+    tests/rlc2.cdd                                     test                                                          
+    tests/rlc3.cdd                                     test                                                          
+    tests/rlc4.cdd                                     test                                                          
+    tests/rlc.cdd                                      test                                                          
+    tests/rld.cdd                                      test                                                          
+    tests/rrd.cdd                                      test                                                          
+    tests/sbc.cdd                                      test                                                          
+    tests/scc.cdd                                      test                                                          
+    tests/scf.cdd                                      test                                                          
+    tests/set.cdd                                      test                                                          
+    tests/shift_mem.cdd                                test                                                          
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   LINE COVERAGE RESULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hit
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+  Accumulated                                        0/    0/    0      100%
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   TOGGLE COVERAGE RESULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                           Toggle 0 -> 1                       Toggle 1 -> 0
+Module/Task/Function      Filename                 Hit/ Miss/Total    Percent hit      Hit/ Miss/Total    Percent hit
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+  Accumulated                                        0/    0/    0      100%             0/    0/    0      100%
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   COMBINATIONAL LOGIC COVERAGE RESULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                                            Logic Combinations
+Module/Task/Function                Filename                          Hit/Miss/Total    Percent hit
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+  Accumulated                                                           0/   0/   0      100%
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   FINITE STATE MACHINE COVERAGE RESULTS   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                               State                             Arc
+Module/Task/Function      Filename                Hit/Miss/Total    Percent Hit    Hit/Miss/Total    Percent hit
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+  Accumulated                                       0/   0/   0      100%            0/   0/   0      100%
+
+
