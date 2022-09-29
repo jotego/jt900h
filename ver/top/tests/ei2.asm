@@ -3,26 +3,27 @@
     org 0
     ld a,0xbf    ; common header
 
-    ld xsp, stack
-    ei 1
-    push sr
-    ld a,(xsp+1)
-    cp a,0x98
-    jp ne,bad_end
-
-    ei 4
-    incf
-    push sr
-    ld a,(xsp+1)
-    cp a,0xc9
-    jp ne, bad_end
-
+    ld xsp,stack
     ei 2
+    push sr
+    ld a,(xsp+1)
+    cp a,0xa8
+    jp ne,bad_end
+
+    ei 7
     incf
     push sr
     ld a,(xsp+1)
-    cp a,0xaa
+    cp a,0xf9
     jp ne,bad_end
+
+    ei 0
+    incf
+    push sr
+    ld a,(xsp+1)
+    cp a,0x8a
+    jp ne, bad_end
+    decf
 
 end_loop:
     ld hl,0xbabe
