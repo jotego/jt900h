@@ -7,24 +7,20 @@
     ; and place it at the interrupt vector
 
     ld xwa,swi_test
-    ld (0xffff10),xwa
+    ld (0xffff00),xwa
 
-    ; Run the test
-    reti
-    swi 4
-    reti
+    swi 0
+    cp xwa,0x12340000
+    jp ne,bad_end
+    jp eq,end_loop
 
 swi_test:
-    or ra3,1
-    incf
-    push sr     ; checks that IFF is set to 5
-    pop wa
-    srl 12,wa
-    and wa,7
-    cp wa,5
-    or ra3,2
-    ld xbc,(xsp)    ; checks the return address
-    or ra3,4
+    ld wa,0x0000
+    cp wa,0x0000
+    jp ne,bad_end
+    ld xwa,0x12340000
+    cp xwa,0x12340001
+    jp eq,bad_end
 end_loop:
     ldf 0
     ld hl,0xbabe
