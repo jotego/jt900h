@@ -18,7 +18,7 @@
     cp c,qspl
     jp eq,bad_end
 
-    ld qspl,0x0038
+    ld qspl,0x00
     ld sph,0x00
     cp a,qspl
     jp eq,bad_end
