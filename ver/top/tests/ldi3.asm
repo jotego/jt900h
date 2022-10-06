@@ -3,23 +3,22 @@
     org 0
     ld a,0xbf    ; common header
 
-    ld xiy,10
-    ld xde,(0x1234)
-    ld xbc,0x5678
-    ld xde,(xsp+sp)
-    ld xde,(xwa+wa)
-    ld xde,(xwa)
-
-    ld xde,0x0
-    ld xhl,0xff
+    ld xix,0
+    ld xiy,5
+    ld xde,0
+    ld xhl,5
     ld bc,10
-    call for_loop
+    call inc_loop
 
-for_loop:    
-    ldd (xde-),(xhl-)
-    ld wa,hl
+inc_loop:    
+    ldi (xix+),(xiy+)
+    ldi(xde+),(xhl+)
+    ld xwa,xde
+    incf
+    ld xwa,xix
+    decf
     cp bc,0
-    jp ne,for_loop
+    jp ne,inc_loop
 end_loop:
     ldf 0
     ld hl,0xbabe

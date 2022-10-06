@@ -5,49 +5,44 @@
 
     ld xix,data
 
-    ; OR (mem),#16
+    ; OR reg,(mem)
     ld wa,0
-    or wa,4096
-    ex f,f'
+    or wa,(data)
     cp wa,0x1000
-    jp ne,bad_end
+    jp eq,bad_end
 
     ; OR (mem),#16
     ld wa,0
-    or wa,65535
-    ex f,f'
-    cp wa,0xffff
-    ex f,f'
+    ld (0xfff),0xff
+    incf 
+    ld a,(0xfff)
+    decf
+    or a,(0xfff)
+    cp a,0xff
     jp ne,bad_end
 
     ; OR (mem),#16
     ld wa,0
     or wa,4096
-    ex f,f'
     cp wa,0x1100
-    ex f,f'
     jp eq,bad_end
 
     ; OR (mem),#24
     ld xwa,0
-    or xwa,1048576
-    ex f,f'
+    or xwa,(0xffffff)
+    or xwa,(0x100000)
     cp xwa,0x100201
-    ex f,f'
     jp eq,bad_end
 
     ; OR (mem),#24
     ld xwa,0
     or xwa,16777215
-    ex f,f'
     cp xwa,0xffffff
-    ex f,f'
     jp ne,bad_end
 
     ; OR (mem),#24
     ld xwa,0
     or xwa,1048576
-    ex f,f'
     cp xwa,0x100000
     jp ne,bad_end
 

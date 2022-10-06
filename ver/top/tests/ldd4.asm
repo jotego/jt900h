@@ -3,21 +3,14 @@
     org 0
     ld a,0xbf    ; common header
 
-    ld xiy,10
-    ld xde,(0x1234)
-    ld xbc,0x5678
-    ld xde,(xsp+sp)
-    ld xde,(xwa+wa)
-    ld xde,(xwa)
-
-    ld xde,0x0
-    ld xhl,0xff
-    ld bc,10
+    ld xix,0
+    ld xiy,14
+    ld bc,11
     call for_loop
 
 for_loop:    
-    ldd (xde-),(xhl-)
-    ld wa,hl
+    ldd (xix-),(xiy-)
+    ld xwa,xiy ; wa = 3
     cp bc,0
     jp ne,for_loop
 end_loop:

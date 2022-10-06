@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TEST=ld_8bit_imm
+TEST=
 EXTRA=
 ACCEPT=
 RAM=0
