@@ -20,7 +20,7 @@ if [ $FAIL = 0 ]; then
         DAY=`date --date='today' +"covered_%d%m%y.txt"`
         YESTERDAY=`date --date='yesterday' +"covered_%d%m%y.txt"`
         covered merge -o merged.cdd tests/*.cdd
-        covered exclude -f waivers
+        covered exclude -f waivers 
         covered report -d d -x merged.cdd > err.txt
         covered report merged.cdd > $DAY
         if [ -e $YESTERDAY ]; then
