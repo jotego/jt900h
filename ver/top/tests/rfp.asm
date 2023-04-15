@@ -1,5 +1,6 @@
     ; control of the rfp
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld wa,0x1234    ; common header
     ; actual test:

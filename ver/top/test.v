@@ -47,7 +47,7 @@ assign mem_xiz  = mem[sim_xiz];
 
 `ifndef NODUMP
 initial begin
-    $dumpfile( {`FNAME,".vcd"} );
+    $dumpfile( {`FNAME,".lxt"} );
     $dumpvars;
     $dumpon;
 end

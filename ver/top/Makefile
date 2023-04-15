@@ -7,7 +7,7 @@ test.hex: test.bin
 
 test.bin: test.asm
 	# asm900 test.asm
-	if ! asl -cpu 96C141 test.asm > asl.log; then cat asl.log; exit 1; fi
+	if ! asl -cpu 96C141 test.asm -l > asl.log; then cat asl.log; exit 1; fi
 	if ! p2bin test.p > p2bin.log; then cat p2bin.log; exit 1; fi
 clean:
 	rm test.bin

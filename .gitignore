@@ -11,6 +11,7 @@
 *.bin
 *.cdd
 *.rpt
+*.p
 .DS_Store
 test.asm
 

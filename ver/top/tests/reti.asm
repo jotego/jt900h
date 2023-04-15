@@ -1,5 +1,6 @@
     ; POPSR
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
 

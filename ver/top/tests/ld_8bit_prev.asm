@@ -1,4 +1,5 @@
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ; check register in previous bank
     ld a',0xe0

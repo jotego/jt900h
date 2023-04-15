@@ -1,5 +1,6 @@
     ; RLC tests from 1 to 15 shifts
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
     ld w,0

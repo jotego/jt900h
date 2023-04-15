@@ -1,5 +1,6 @@
     ; RLC3, tests RLC #4,r shifts
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
 

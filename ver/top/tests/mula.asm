@@ -1,7 +1,8 @@
     ; MULA: dst=dst+(XDE)*(XHL); XHL-=2
     ; dst is 32 bits
     ; (XDE) and (XHL), signed 16 bits
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
 

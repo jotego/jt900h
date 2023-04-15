@@ -1,5 +1,6 @@
     ; load using full register names
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld xwa0,0x12345678
     ld xbc0,0x9abcdef0

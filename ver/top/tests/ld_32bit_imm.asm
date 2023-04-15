@@ -1,5 +1,6 @@
     ; 32-bit immediate loads
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld xwa,0x12345678
     ld xbc,0x9abcdef0

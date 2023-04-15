@@ -1,5 +1,6 @@
     ; ldar
-    main section code
+    maxmode on
+    relaxed on
     org 0
 ref   equ 0x800
 data2 equ 0x700

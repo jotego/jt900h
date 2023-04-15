@@ -1,5 +1,6 @@
     ; Verifies the LUT table at $400
-    main section code
+    maxmode on
+    relaxed on
     org 0
 ref   equ 0x800
     ld a,0xbf    ; common header

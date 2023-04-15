@@ -1,5 +1,6 @@
     ; Some indexed addressing storing to RAM
-    main section code
+    maxmode on
+    relaxed on
     org 0
 data equ 0x200
     ld xwa,0x87654321

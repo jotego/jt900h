@@ -1,6 +1,7 @@
     ; idx some pre/post variations to
     ; indexed addressing on word arguments
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
     jp test

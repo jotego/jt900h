@@ -1,5 +1,6 @@
     ; divs RR,# negative / negative numbers
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
 

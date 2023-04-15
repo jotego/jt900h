@@ -1,5 +1,6 @@
     ; Some indexed addressing fetching from RAM
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld  hl,0x5005
     lda xiy,data

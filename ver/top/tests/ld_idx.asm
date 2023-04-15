@@ -1,5 +1,6 @@
     ; Some indexed addressing
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,5
     ld xix,data

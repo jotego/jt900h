@@ -1,4 +1,5 @@
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ; check register addressing
     ld a,0xe0

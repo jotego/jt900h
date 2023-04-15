@@ -1,5 +1,6 @@
     ; ld<w> (#16),(mem)
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld a,0xbf    ; common header
 data2 equ 0x700

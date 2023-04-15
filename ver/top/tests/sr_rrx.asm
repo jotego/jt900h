@@ -1,5 +1,6 @@
     ; call[cc],mem
-    main section code
+    maxmode on
+    relaxed on
     org 0
     ld wa,0xbf    ; RRX, SRAX,SRLX,  
     ; RLCX
