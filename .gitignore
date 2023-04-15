@@ -9,6 +9,8 @@
 *.hex
 *.out
 *.bin
+*.cdd
+*.rpt
 .DS_Store
 test.asm
 

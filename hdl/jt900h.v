@@ -28,8 +28,14 @@ module jt900h(
 
     input      [ 2:0] intrq,        // interrupt request
     // Register dump
-    input      [ 7:0] dmp_addr,
-    output     [ 7:0] dmp_din
+    input      [ 7:0] dmp_addr,     // dump
+    output     [ 7:0] dmp_dout
+    `ifdef SIMULATION
+    ,output   [31:0] sim_xix
+    ,output   [31:0] sim_xiy
+    ,output   [31:0] sim_xiz
+    ,output   [31:0] sim_xsp
+    `endif    
 );
 
 wire [15:0] sr;
@@ -58,7 +64,7 @@ wire [31:0] pc;
 wire        pc_we, pc_rel;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
-wire [15:0] op, inc_xsp, dec_xsp;
+wire [15:0] op,inc_xsp, dec_xsp;
 wire [ 2:0] ctl_fetch, idx_fetch;
 wire [23:0] idx_addr;
 wire        rfp_we;
@@ -215,7 +221,13 @@ jt900h_regs u_regs(
     .dst_out        ( dst_out           ),
     // Register dump
     .dmp_addr       ( dmp_addr          ),
-    .dmp_din        ( dmp_din           )
+    .dmp_dout       ( dmp_dout          )
+    `ifdef SIMULATION
+    ,.sim_xix       ( sim_xix           )
+    ,.sim_xiy       ( sim_xiy           )
+    ,.sim_xiz       ( sim_xiz           )
+    ,.sim_xsp       ( sim_xsp           )
+    `endif    
 );
 
 jt900h_idxaddr u_idxaddr(

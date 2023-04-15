@@ -13,6 +13,11 @@
     cp xiy,10
     jp ne,bad_end
 
+    ld xiz,0
+    paa xiz
+    cp xiz,0
+    jp ne,bad_end
+
 end_loop:
     ld hl,0xbabe
     ld (0xffff),0xff

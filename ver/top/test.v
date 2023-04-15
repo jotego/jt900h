@@ -14,9 +14,17 @@ wire        ram_rdy;
 reg  [15:0] mem[0:2**AW-1];
 
 reg  [7:0] dmp_addr;
-wire [7:0] dmp_din;
+wire [7:0] dmp_dout;
 reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
+
+// CPU registers
+wire [31:0] sim_xix;
+wire [15:0] mem_xix;
+wire [31:0] sim_xiy;
+wire [15:0] mem_xiy;
+wire [31:0] sim_xiz;
+wire [15:0] mem_xiz;
 
 integer    cnt,file;
 
@@ -33,10 +41,13 @@ assign ram_a    = ram_addr[AW-1:0]; // short version for plotting
 assign ram_dout = mem[ram_addr[AW-1:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
+assign mem_xix  = mem[sim_xix];
+assign mem_xiy  = mem[sim_xiy];
+assign mem_xiz  = mem[sim_xiz];
 
 `ifndef NODUMP
 initial begin
-    $dumpfile( {`FNAME,".lxt"} );
+    $dumpfile( {`FNAME,".vcd"} );
     $dumpvars;
     $dumpon;
 end
@@ -100,7 +111,7 @@ always @(posedge clk) begin
 
     if (/*ram_addr>=`END_RAM ||*/ dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
-        dmp_buf[ dmp_addr-1 ] <= dmp_din;
+        dmp_buf[ dmp_addr-1 ] <= dmp_dout;
         cen <= 0;
         if( dmp_addr==84 ) begin
             dump_2file<=1;
@@ -121,7 +132,10 @@ jt900h uut(
     .intrq      ( 3'd0      ),
 
     .dmp_addr   ( dmp_addr  ),
-    .dmp_din    ( dmp_din   )
+    .dmp_dout   ( dmp_dout  ),
+    .sim_xix    ( sim_xix   ),
+    .sim_xiy    ( sim_xiy   ),
+    .sim_xiz    ( sim_xiz   )
 );
 
 endmodule

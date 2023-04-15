@@ -1,10 +1,13 @@
 #!/bin/bash
 
-TEST=ld_8bit_imm
+TEST=
 EXTRA=
 ACCEPT=
 RAM=0
 BATCH=0
+VERBOSE=0
+COVERAGE=0
+NODUMP=
 
 # Try linting the code first
 cd ../../hdl
@@ -27,23 +30,32 @@ sim.sh <test name> [options]
             It will also add it to git
 -cen        Set cen to 50% (default 100%)
 -ram        Shows a short RAM dump before and after the simulation
+-cov        Runs coverage. Requires 'covered' installed
+-v          Verbose
 EOF
 }
 
 while [ $# -gt 0 ]; do
     case $1 in
-        -nodump) EXTRA="$EXTRA -DNODUMP";;
-        -batch) EXTRA="$EXTRA -DNODUMP"; BATCH=1;;
+        -nodump) NODUMP=-DNODUMP;;
+        -batch) NODUMP=-DNODUMP; BATCH=1;;
         -accept|-a) ACCEPT=1;;
         -ram) RAM=1;;
         -cen) EXTRA="$EXTRA -DUSECEN";;
-        -help) show_help; exit 0;;
-        *) echo "Unsupported argument $1"; exit 1;;
+        -cov) COVERAGE=1;;
+        -v|--verbose) VERBOSE=1;;
+        -help|-h) show_help; exit 0;;
+        *) >&2 echo "Unsupported argument $1"; exit 1;;
     esac
     shift
 done
 
+if [ $COVERAGE = 1 ]; then
+    NODUMP=
+fi
+
 TEST=$(basename $TEST .asm)
+EXTRA="$EXTRA $NODUMP"
 
 if [ ! -e tests/${TEST}.asm ]; then
     echo Cannot find file tests/$TEST
@@ -83,7 +95,7 @@ iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat ${FNAME}.hex|wc -l) \
     -DFNAME=\"$FNAME\" \
     -I../../hdl || exit $?
-./$SIMEXE -lxt
+./$SIMEXE 
 rm -f $SIMEXE
 
 if [ $RAM = 1 ]; then
@@ -110,13 +122,19 @@ fi
 
 if sdiff --suppress-common-lines --width=90 ${FNAME}.out $CMPFILE >/dev/null; then
     echo $FNAME PASS
+    if [ $COVERAGE = 1 ]; then
+        coverage.sh $FNAME
+    fi
+    if [ $VERBOSE = 1 ]; then
+        cat $FNAME.out
+    fi
     exit 0
 else
     if [ $BATCH = 0 ]; then
         echo ======== EXPECTED =========
         cat $CMPFILE
         echo ======== BUT GOT ==========
-        cat test.out
+        cat $FNAME.out
         echo see $CMPFILE
     fi
     echo $FNAME FAIL

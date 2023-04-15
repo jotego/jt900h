@@ -10,10 +10,10 @@
     jp ne,bad_end
     or ra1,1
 
-    ld w,0x82
+    ld w,-0x7e
     ld a,0x67
     muls wa,w
-    cp wa,0xff82*0x67
+    cp wa,-0x7e*0x67
     jp ne,bad_end
     or ra1,2
 
@@ -27,7 +27,7 @@
     ld de,0x7788
     ld l,0x33
     muls de,l
-    cp de,0xff88*0x33
+    cp de,-0x78*0x33
     jp ne,bad_end
     or ra1,8
 

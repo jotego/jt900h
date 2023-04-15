@@ -46,7 +46,7 @@ module jt900h_alu(
 
 `include "jt900h.inc"
 
-reg  [15:0] stcf;
+// reg  [15:0] stcf; // Comentado el 22/09/2022 porque no se usa
 reg  [31:0] op2, rslt;
 reg         sign, zero, halfc, overflow, negative, carry;
 reg  [ 5:0] fdash, nx_fdash; // shadow flags, F' in the documentation
@@ -74,7 +74,8 @@ wire signed [15:0] imm_lo, imm_hi;
 
 assign div_rslt = w[1] ? { div_rem, div_quot } : { 16'd0, div_rem[7:0], div_quot[7:0] };
 
-function [32:0] extend( input [31:0] x );
+function [32:0] extend;
+    input [31:0] x;
     extend = w[0] ? { {25{x[ 7]}}, x[ 7:0] } :
              w[1] ? { {17{x[15]}}, x[15:0] } : { x[31], x };
 endfunction
@@ -163,11 +164,6 @@ always @* begin
     nx_div_sign  = nx_div_sign;
 
     case( sel )
-        default: begin
-            nx_div_start = 0;
-            nx_div_len   = 0;
-            nx_div_sign  = 0;
-        end
         ALU_MOVE: rslt = op2;
         ALU_ADDPC: rslt = { {16{imm[15]}}, imm[15:0] } + pc;
         ALU_DIV, ALU_DIVS: begin
@@ -637,8 +633,14 @@ always @* begin
             nx_v = rslt_even;
             nx_n = 0;
         end
+        default: begin
+            nx_div_start = 0;
+            nx_div_len   = 0;
+            nx_div_sign  = 0;
+        end
     endcase
 end
+
 
 reg flag_wel;
 wire busy_end;

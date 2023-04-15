@@ -8,7 +8,7 @@
     push sr
     ld a,(xsp+1)
     cp a,0x98
-    jp ne, bad_end
+    jp ne,bad_end
 
     ei 4
     incf
@@ -16,6 +16,13 @@
     ld a,(xsp+1)
     cp a,0xc9
     jp ne, bad_end
+
+    ei 2
+    incf
+    push sr
+    ld a,(xsp+1)
+    cp a,0xaa
+    jp ne,bad_end
 
 end_loop:
     ld hl,0xbabe

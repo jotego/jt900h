@@ -70,7 +70,6 @@ reg  [15:0] cache0, cache1, // always keep 4 bytes of data
             op0, op1,
             src_cpy; // Copy of the last src_out register
 reg  [ 3:0] cache_ok, we_mask;
-wire [23:1] next_addr;
 
 wire [23:0] rd_addr, wr_addr;
 reg  [31:0] eff_data;

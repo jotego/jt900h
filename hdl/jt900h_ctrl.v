@@ -188,11 +188,14 @@ assign wra_imm = ld2imm & ram_wen;
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
 `endif
 
-function [2:0] expand_zz(input [1:0] zz);
+function [2:0] expand_zz;
+    input [1:0] zz;
     expand_zz = zz==0 ? 3'b001 : zz==1 ? 3'b010 : 3'b100;
 endfunction
 
-function [7:0] expand_reg(input [2:0] short_reg, input [1:0] zz );
+function [7:0] expand_reg;
+    input [2:0] short_reg;
+    input [1:0] zz;
     expand_reg = zz==0 ?       {4'he, short_reg[2:1], 1'b0, ~short_reg[0]} :
                 short_reg[2] ? {4'hf, short_reg[1:0],2'd0 } :
                                {4'he, short_reg[1:0],2'd0 };

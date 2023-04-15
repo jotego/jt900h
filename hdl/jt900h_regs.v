@@ -80,7 +80,13 @@ module jt900h_regs(
     //input      [31:0] din
     // Register dump
     input      [7:0] dmp_addr,
-    output reg [7:0] dmp_din
+    output reg [7:0] dmp_dout
+    `ifdef SIMULATION
+    ,output   [31:0] sim_xix
+    ,output   [31:0] sim_xiy
+    ,output   [31:0] sim_xiz
+    ,output   [31:0] sim_xsp
+    `endif
 );
 
 localparam [3:0] CURBANK  = 4'he,
@@ -107,12 +113,16 @@ assign xde = cur_xde;
 assign xhl = cur_xhl;
 
 `ifdef SIMULATION
-    wire [31:0] xiy, xiz;
+    wire [31:0] xiy,xiz;
     wire [31:0] cur_xbc;
 
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
+    assign sim_xix = xix;
+    assign sim_xiy = xiy;
+    assign sim_xiz = xiz;
+    assign sim_xsp = xsp;
 `endif
 
 assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;
@@ -249,7 +259,9 @@ always @(posedge clk, posedge rst) begin
     end
 end
 
-function [7:0] simplify( input [1:0] rfp, input [7:0] rsel );
+function [7:0] simplify;
+    input [1:0] rfp;
+    input [7:0] rsel;
     simplify = {
                rsel[7:4]==CURBANK  ? { 2'd0, rfp } :
                rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
@@ -269,14 +281,14 @@ end
 // Status dump
 always @(posedge clk) begin
     if( dmp_addr < 8'h40 )
-        dmp_din <= accs[dmp_addr[5:0]];
+        dmp_dout <= accs[dmp_addr[5:0]];
     else if( dmp_addr < 8'h50 )
-        dmp_din <= ptrs[dmp_addr[3:0]];
+        dmp_dout <= ptrs[dmp_addr[3:0]];
     else begin
         case( dmp_addr )
-            8'h51: dmp_din <= sr[ 7:0];
-            8'h50: dmp_din <= sr[15:8];
-            default: dmp_din <= 0;
+            8'h51: dmp_dout <= sr[ 7:0];
+            8'h50: dmp_dout <= sr[15:8];
+            default: dmp_dout <= 0;
         endcase
     end
 end
