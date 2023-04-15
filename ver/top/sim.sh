@@ -72,8 +72,11 @@ else
     cd tests
     if [ ${TEST}.asm -nt ${TEST}.hex ]; then
         # Newer file, re-assemble
-        asm900 ${TEST}.asm || exit $?
-        dd bs=16 oflag=append if=/dev/zero of=${TEST}.bin conv=notrunc count=1 status=none
+        # asm900 ${TEST}.asm || exit $?
+        # dd bs=16 oflag=append if=/dev/zero of=${TEST}.bin conv=notrunc count=1 status=none
+        if ! asl -cpu 96C141 ${TEST}.asm > ${TEST}-asl.log; then cat ${TEST}-asl.log; exit 1; fi
+        if ! p2bin ${TEST}.p > ${TEST}-p2bin.log; then cat ${TEST}-p2bin.log; exit 1; fi
+        rm -f ${TEST}-{asl,p2bin}.log
         hexdump -v -e "1 / 2 "\"%04X\\n\" ${TEST}.bin > ${TEST}.hex
         rm -f ${TEST}.rel ${TEST}.abs ${TEST}.lst
     fi
@@ -95,7 +98,7 @@ iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat ${FNAME}.hex|wc -l) \
     -DFNAME=\"$FNAME\" \
     -I../../hdl || exit $?
-./$SIMEXE 
+./$SIMEXE
 rm -f $SIMEXE
 
 if [ $RAM = 1 ]; then

@@ -353,7 +353,7 @@ always @* begin
             if( irq && intlvl > riff ) begin
                 // Interrupt accepted
                 nx_iff    = intlvl==7 ? intlvl : intlvl+3'd1;
-                nx_irqack = 1;
+                // nx_irqack = 1;
                 // 1st push SR
                 nx_dec_xsp = 6;
                 nx_wr_len  = 2;

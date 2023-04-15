@@ -35,7 +35,7 @@ module jt900h(
     ,output   [31:0] sim_xiy
     ,output   [31:0] sim_xiz
     ,output   [31:0] sim_xsp
-    `endif    
+    `endif
 );
 
 wire [15:0] sr;
@@ -96,8 +96,10 @@ jt900h_ctrl u_ctrl(
     .cen            ( cen               ),
 
     // interrupt processing
-    .intrq          ( intrq             ),
+    .intlvl         ( intrq             ),
     .rda_irq        ( rda_irq           ),
+    .irq            ( 1'd0              ),
+    .irq_ack        (                   ),
 
     .rfp            ( rfp               ),
     .inc_rfp        ( inc_rfp           ),
@@ -227,7 +229,7 @@ jt900h_regs u_regs(
     ,.sim_xiy       ( sim_xiy           )
     ,.sim_xiz       ( sim_xiz           )
     ,.sim_xsp       ( sim_xsp           )
-    `endif    
+    `endif
 );
 
 jt900h_idxaddr u_idxaddr(
@@ -346,4 +348,4 @@ jt900h_pc u_pc(
     .pc             ( pc                )
 );
 
-endmodule 
+endmodule
