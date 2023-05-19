@@ -22,3 +22,7 @@ Only source files are included in this repository. Binary files can be obtained 
 The RAM controller always reads 4 bytes now, it should be optimised to read 2 bytes when only 2 bytes are needed
 
 The PUSH operation takes an extra cycle to cater for the case when the XSP is at an odd address. It should be optimised to either check the RAM controller status and finish early, or check XSP LSB and add the extra cycle only if needed
+
+## PC at Reset
+
+The NeoGeo Pocket seems to start operation from FF1800, which does not agree with the TMP95C061 user guide or similar documents. The parameter `PC_RSTVAL` can be used in order to accomodate arbitrary reset values for the PC.

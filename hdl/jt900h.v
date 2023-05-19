@@ -38,6 +38,8 @@ module jt900h(
     `endif
 );
 
+parameter PC_RSTVAL=0; // Use FF1800 for NeoGeo Pocket
+
 wire [15:0] sr;
 
 // Register bank
@@ -331,7 +333,7 @@ jt900h_ramctl u_ramctl(
     .ram_rdy        ( buf_rdy           )
 );
 
-jt900h_pc u_pc(
+jt900h_pc #(.PC_RSTVAL(PC_RSTVAL)) u_pc(
     .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen               ),

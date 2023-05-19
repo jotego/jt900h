@@ -33,13 +33,15 @@ module jt900h_pc(
     output reg [31:0] pc
 );
 
+parameter PC_RSTVAL=0;
+
 `ifdef SIMULATION
     wire [11:0] pc_short = pc[11:0];
 `endif
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        pc <= 0;
+        pc <= PC_RSTVAL;
     end else if(cen) begin
         if( rel ) begin // 8-bit relative jump
             pc <= pc + imm;
