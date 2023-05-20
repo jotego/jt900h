@@ -564,10 +564,13 @@ always @* begin
                     end
                     8'b011?_????: begin // JR
                         if( op[4] ) begin
-                            nx_alu_imm  = { {16{op[23]}}, op[23:8] } + 3;
+                            nx_alu_imm  = { {16{op[23]}}, op[23:8] };
+                            fetched = 3;
                         end else begin
-                            nx_alu_imm  = { {24{op[15]}}, op[15:8] } + 2;
+                            nx_alu_imm  = { {24{op[15]}}, op[15:8] };
+                            fetched = 2;
                         end
+                        nx_nodummy_fetch = 1;
                         nx_pc_rel   = jp_ok;
                         nx_phase    = DUMMY;
                     end
