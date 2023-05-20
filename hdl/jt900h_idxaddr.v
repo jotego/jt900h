@@ -127,7 +127,7 @@ always @* begin
         if( !phase ) begin
             fetched    = 2;
             nx_reg_step= op[9:8];
-            casez( {eff_op[6],eff_op[3:0]} )
+            casez( {eff_op[6],eff_op[3:0]} ) // See 900H_CPU_BOOK_CP3.pdf Page 43
                 5'b0_????: begin // this section may operate with the previous op
                     nx_idx_rdreg_sel = fullreg(eff_op[2:0]);
                     nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
@@ -210,9 +210,9 @@ always @* begin
                 5'h13: begin
                     nx_ridx_mode = ridx_mode;
                     if( !ridx_mode[1] ) begin
-                        nx_idx_offset = { {8{op[15]}}, op[15:0] };
+                        nx_idx_offset = { {8{op[31]}}, op[31:16] };
                         nx_pre_ok     = 1;
-                        fetched       = 2;
+                        fetched       = 4;
                     end else begin
                         nx_idx_rdreg_sel = op[23:16];
                         nx_idx_rdreg_aux = op[31:24];
