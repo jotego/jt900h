@@ -26,6 +26,9 @@ module jt900h(
     output     [15:0] dout,
     output     [ 1:0] we,
 
+    // interrupt processing
+    input             irq,
+    output            irq_ack,
     input      [ 2:0] intrq,        // interrupt request
     // Register dump
     input      [ 7:0] dmp_addr,     // dump
@@ -93,9 +96,9 @@ jt900h_ctrl u_ctrl(
 
     // interrupt processing
     .intlvl         ( intrq             ),
+    .irq            ( irq               ),
+    .irq_ack        ( irq_ack           ),
     .rda_irq        ( rda_irq           ),
-    .irq            ( 1'd0              ),
-    .irq_ack        (                   ),
 
     .rfp            ( rfp               ),
     .inc_rfp        ( inc_rfp           ),

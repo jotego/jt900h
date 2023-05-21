@@ -24,7 +24,8 @@ module jt900h_ctrl(
     input             irq,
     output            irq_ack,
     input      [ 2:0] intlvl,     // interrupt level
-                                  // 0-6 maskable
+                                  // 0   ignored
+                                  // 1-6 maskable
                                   // 7   NMI
     // PC
     output reg [ 2:0] fetched,    // number of bytes consumed
@@ -183,6 +184,7 @@ reg  [2:0] riff, nx_iff;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
 assign wra_imm = ld2imm & ram_wen;
+assign irq_ack = intproc;
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -350,7 +352,7 @@ always @* begin
             nx_keep_dec_xsp = 0;
             nx_keep_lddwr = 0;
             nx_idx_last  = 0;
-            if( irq && intlvl > riff ) begin
+            if( irq && intlvl >= riff && intlvl!=0 ) begin
                 // Interrupt accepted
                 nx_iff    = intlvl==7 ? intlvl : intlvl+3'd1;
                 // nx_irqack = 1;
@@ -1670,6 +1672,7 @@ always @(posedge clk, posedge rst) begin
         sel_xhl        <= nx_sel_xhl;
         dec_xhl        <= nx_dec_xhl;
         ld2imm         <= nx_ld2imm;
+
         if( latch_op ) last_op <= op[7:0];
     end
 end

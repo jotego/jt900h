@@ -15,6 +15,8 @@ reg  [15:0] mem[0:2**AW-1];
 
 reg  [ 8:0] intcnt=0; // count-down for an interrupt
 reg  [ 2:0] intrq=0, nx_intrq=0;
+reg         irq=0;
+wire        irq_ack;
 
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_dout;
@@ -112,8 +114,12 @@ always @(posedge clk) begin
     // update the interrupt register after a certain count
     if( !intcnt[8] ) begin
         intcnt <= intcnt - 1'd1;
-        if( intcnt[7:0]==0 ) intrq <= nx_intrq;
+        if( intcnt[7:0]==0 ) begin
+            intrq <= nx_intrq;
+            irq   <= 1;
+        end
     end
+    if( irq_ack ) irq <= 0;
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
         $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
@@ -158,6 +164,8 @@ jt900h uut(
     .we         ( ram_we    ),
 
     .intrq      ( intrq     ),
+    .irq        ( irq       ),
+    .irq_ack    ( irq_ack   ),
 
     .dmp_addr   ( dmp_addr  ),
     .dmp_dout   ( dmp_dout  )
