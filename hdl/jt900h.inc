@@ -1,3 +1,8 @@
+localparam [1:0] DOUT_ALU = 0,
+                 DOUT_PC  = 1,
+                 DOUT_SR  = 2,
+                 DOUT_EX  = 3;
+
 localparam [6:0] ALU_NOP  = 7'd0,
                  ALU_MOVE = 7'd1,
                  ALU_ADD  = 7'd2,

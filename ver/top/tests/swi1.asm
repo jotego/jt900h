@@ -1,12 +1,12 @@
-    ; Arithmetic operations that read & write to memory
+    ; SWI 0 should not produce an interrupt
     maxmode on
     relaxed on
     org 0
     ld a,0xbf    ; common header
 
-    ; compose a "jp end_loop" instruction
-    ; and place it at the interrupt vector
+    ld xsp,0x800
 
+    ; prepare the interrupt vector
     ld xwa,swi_test
     ld (0xffff00),xwa
 

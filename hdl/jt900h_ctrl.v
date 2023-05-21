@@ -319,7 +319,7 @@ always @* begin
             nx_alu_wait = 0;
             nx_regs_we  = 0;
             nx_wr_len   = 0;
-            nx_ram_dsel = 0;
+            nx_ram_dsel = DOUT_ALU;
             nx_keep_we  = 0;
             nx_exec_imm = 0;
             nx_pc_we    = 0;
@@ -354,16 +354,14 @@ always @* begin
             nx_idx_last  = 0;
             if( irq && intlvl >= riff && intlvl!=0 ) begin
                 // Interrupt accepted
-                nx_iff    = intlvl==7 ? intlvl : intlvl+3'd1;
                 // nx_irqack = 1;
+                // nx_intnest = intnest + 16'd1;
                 // 1st push SR
-                nx_dec_xsp = 6;
-                nx_wr_len  = 2;
-                nx_phase   = PUSH_SR;
+                nx_dec_xsp = 4;
+                nx_phase   = PUSH_PC;
                 // Set up the rest of the process
                 nx_intproc = 1;
-                nx_intnest = intnest + 16'd1;
-                nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
+                nx_alu_imm[7:0] = { 3'd0, intlvl, 2'd0 }; // shares logic with SWI
                 fetched   = 0;
             end else begin
                 casez( op[7:0] )
@@ -395,14 +393,12 @@ always @* begin
                     end
                     8'b1111_1???: begin // SWI
                         // 1st push SR
-                        nx_dec_xsp = 6;
+                        nx_dec_xsp = 4;
                         fetched    = 1;
                         nx_wr_len  = 2;
-                        nx_phase   = PUSH_SR;
+                        nx_phase   = PUSH_PC;
                         // Set up the rest of the process
                         nx_intproc = 1;
-                        nx_intnest = intnest + 16'd1; // The manual doesn't say about this
-                        // but RTI will decrement it, so it makes sense to increment it here
                         nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
                     end
                     8'b1100_0111,
@@ -480,7 +476,7 @@ always @* begin
                     8'b0000_0010: begin // PUSH SR
                         nx_wr_len  = op[1] ? 3'd2 : 3'd1;
                         nx_dec_xsp = {13'd0,op[1] ? 3'd2 : 3'd1};
-                        nx_ram_dsel= 2;
+                        nx_ram_dsel= DOUT_SR;
                         nx_phase   = PUSH_SR;
                     end
                     8'b0001_1001,  // POP F
@@ -590,10 +586,11 @@ always @* begin
         end
         PUSH_SR: begin // PUSH_F is done here too
             nx_sel_xsp  = 1;
-            nx_ram_dsel = 2; // Select SR as ram_din
+            nx_ram_dsel = DOUT_SR; // Select SR as ram_din
             nx_ram_wen  = 1;
             if( intproc ) begin
-                nx_phase = PUSH_PC;
+                nx_phase = IRQ;
+                nx_wr_len= 2;
             end else begin
                 nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
                 nx_phase    = DUMMY;
@@ -602,12 +599,14 @@ always @* begin
         PUSH_PC: begin
             // store the PC
             nx_sel_xsp  = 1;
-            nx_ram_dsel = 1;
+            nx_ram_dsel = DOUT_PC;
             nx_ram_wen  = 1;
             nx_wr_len   = 4;
             // jump
             if( intproc ) begin
-                nx_phase = IRQ;
+                nx_dec_xsp = 2;
+                req_wait = 1;
+                nx_phase = PUSH_SR;
             end else begin
                 nx_phase = DUMMY;
                 if( last_op[3:0]==4'he )
@@ -621,9 +620,12 @@ always @* begin
             nx_ram_ren = 1;
             nx_rda_irq = 1;
             nx_sel_xsp = 0;
-            nx_iff     = alu_imm[4:2]==3'd7 ? 3'd7 : alu_imm[4:2]+3'd1; // good for SWI
+            // iff is changed for both SWI and hardware interrupts, but
+            // maybe it should only be changed for HW ones
+            nx_iff     = alu_imm[4:2]==3'd7 ? 3'd7 : alu_imm[4:2]+3'd1;
             nx_wr_len  = 4; // misnomer: it really is a read len, not a wr len...
             nx_phase   = IRQ_JP;
+            nx_intnest = intnest + 16'd1;
             nx_intproc = 0; // interrupt processing stops here
         end
         IRQ_JP: begin
@@ -775,7 +777,7 @@ always @* begin
                 // prevent the RAM controller from caching data
             end else begin
                 nx_phase    = FETCH;
-                nx_ram_dsel = 1; // copy the RAM output
+                nx_ram_dsel = DOUT_PC; // copy the RAM output
                 if( popf || popsr ) begin
                     nx_alu_op = ALU_POPF;
                     nx_flag_we = 1;
@@ -927,7 +929,7 @@ always @* begin
                     nx_alu_op    = ALU_MOVE;
                     fetched      = 0;
                     nx_dly_fetch = 1;
-                    nx_ram_dsel  = 3;
+                    nx_ram_dsel  = DOUT_EX;
                     nx_phase     = ST_RAM;
                 end
                 10'b1100_0???_11: begin // CHG #3,(mem)

@@ -65,6 +65,8 @@ module jt900h_ramctl(
     output            ram_rdy
 );
 
+`include "jt900h.inc"
+
 reg  [23:0] cache_addr, op_addr;
 reg  [15:0] cache0, cache1, // always keep 4 bytes of data
             op0, op1,
@@ -95,10 +97,10 @@ assign dout = {cache1, cache0};
 
 always @* begin
     case( data_sel )
-        0: eff_data = alu_dout;
-        1: eff_data = {8'd0,pc};
-        2: eff_data = {16'd0, sr};
-        3: eff_data = {16'd0, src_cpy }; // EX instruction
+        DOUT_ALU: eff_data = alu_dout;
+        DOUT_PC:  eff_data = {8'd0,  pc};
+        DOUT_SR:  eff_data = {16'd0, sr};
+        DOUT_EX:  eff_data = {16'd0, src_cpy }; // EX instruction
     endcase
     if( sel_imm ) eff_data[15:0] = imm[15:0];
 end
@@ -114,6 +116,7 @@ end
 always @(posedge clk,posedge rst) begin
     if( rst ) begin
         ram_addr   <= 0;
+        op_addr    <= 0;
         cache_ok   <= 0;
         we_mask    <= 0;
         cache_addr <= 0;
