@@ -119,7 +119,10 @@ always @(posedge clk) begin
             irq   <= 1;
         end
     end
-    if( irq_ack ) irq <= 0;
+    if( irq_ack ) begin
+        irq   <= 0;
+        intrq <= 0;
+    end
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
         $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
