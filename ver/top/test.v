@@ -19,11 +19,11 @@ reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
 // CPU registers
-wire [31:0] sim_xix;
+wire [31:0] sim_xix = uut.u_regs.xix;
+wire [31:0] sim_xiy = uut.u_regs.xiy;
+wire [31:0] sim_xiz = uut.u_regs.xiz;
 wire [15:0] mem_xix;
-wire [31:0] sim_xiy;
 wire [15:0] mem_xiy;
-wire [31:0] sim_xiz;
 wire [15:0] mem_xiz;
 
 integer    cnt,file;
@@ -132,10 +132,7 @@ jt900h uut(
     .intrq      ( 3'd0      ),
 
     .dmp_addr   ( dmp_addr  ),
-    .dmp_dout   ( dmp_dout  ),
-    .sim_xix    ( sim_xix   ),
-    .sim_xiy    ( sim_xiy   ),
-    .sim_xiz    ( sim_xiz   )
+    .dmp_dout   ( dmp_dout  )
 );
 
 endmodule

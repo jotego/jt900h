@@ -81,12 +81,6 @@ module jt900h_regs(
     // Register dump
     input      [7:0] dmp_addr,
     output reg [7:0] dmp_dout
-    `ifdef SIMULATION
-    ,output   [31:0] sim_xix
-    ,output   [31:0] sim_xiy
-    ,output   [31:0] sim_xiz
-    ,output   [31:0] sim_xsp
-    `endif
 );
 
 localparam [3:0] CURBANK  = 4'he,
@@ -119,10 +113,6 @@ assign xhl = cur_xhl;
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
-    assign sim_xix = xix;
-    assign sim_xiy = xiy;
-    assign sim_xiz = xiz;
-    assign sim_xsp = xsp;
 `endif
 
 assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;
