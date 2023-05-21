@@ -21,6 +21,7 @@ wire [7:0] dmp_dout;
 reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
+reg        simctrl_cs, intctrl_cs;
 // CPU registers
 wire [31:0] sim_xix = uut.u_regs.xix;
 wire [31:0] sim_xiy = uut.u_regs.xiy;
@@ -99,6 +100,11 @@ initial begin
     dump_rdout=1;
 end
 
+always @* begin
+    simctrl_cs = &ram_addr[15:1];
+    intctrl_cs = ram_addr[15:1]=='h7ff8;
+end
+
 always @(posedge clk) begin
     `ifdef USECEN
     cen<=~cen;
@@ -112,14 +118,20 @@ always @(posedge clk) begin
         mem[ ram_a>>1 ] <= ram_win;
         $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
         // trigger interrupts in the test bench
-        if( ram_addr=='hfff0 && ram_we[0] ) begin
+        if( intctrl_cs && ram_we[0] ) begin
             // write 0 to $fff0 to clear the interrupt
             // write $aa0n to cause interrupt level n after aa cycles
             intcnt   <= {1'd0, ram_din[15:8]};
             nx_intrq <= ram_din[2:0];
         end
 
-        if( ram_addr=='hffff && ram_we[1] ) begin
+        if( simctrl_cs && ram_we[0] ) begin
+            if( ram_din[0] )
+                $display("Test self-evaluation: PASS");
+            else
+                $display("Test self-evaluation: FAIL");
+        end
+        if( simctrl_cs && ram_we[1] ) begin
             $display("The CPU sent the stop signal");
             dump_rdout <= 1;
         end

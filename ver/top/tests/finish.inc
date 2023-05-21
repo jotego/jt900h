@@ -1,8 +1,8 @@
 end_loop:
     ld hl,0xbabe
-    ld (0xffff),0xff
+    ldw (0xfffe),0xff01
     jp end_loop
 bad_end:
     ld hl,0xdead
-    ld (0xffff),0xff
+    ldw (0xfffe),0xff00
     jp bad_end
