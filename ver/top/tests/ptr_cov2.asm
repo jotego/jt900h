@@ -27,14 +27,7 @@
     cp a,qspl
     jp ne,bad_end
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0x0000, 0x0000, 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

@@ -3,8 +3,8 @@
     org 0
     ld a,0xbf    ; common header
 
-    ; ORCF-ANDCF #3,(mem) 
-    
+    ; ORCF-ANDCF #3,(mem)
+
     ld xix,(data)
     ld xiy,(data+2)
     ld xiz,(data+4)
@@ -33,14 +33,7 @@
     jp c,bad_end
     or d,1
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

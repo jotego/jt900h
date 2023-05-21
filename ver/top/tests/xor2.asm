@@ -39,14 +39,7 @@
     jp ne,bad_end
     xor ra3,8
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0x2304,0xffff,0x1234,0xcccc
     end

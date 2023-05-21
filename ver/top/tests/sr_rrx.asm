@@ -2,7 +2,7 @@
     maxmode on
     relaxed on
     org 0
-    ld wa,0xbf    ; RRX, SRAX,SRLX,  
+    ld wa,0xbf    ; RRX, SRAX,SRLX,
     ; RLCX
     ; RRCX
     ; SRAX
@@ -23,16 +23,9 @@
 
     sra a,de
     sra 4,de
-    sra (xix) 
+    sra (xix)
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
 stack:

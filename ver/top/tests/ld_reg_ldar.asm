@@ -6,7 +6,7 @@
     ld xix,0x00000000
     ld xiy,0x00000000
     ld xiz,0x00000000
-    
+
     ld xix,0xffffffff
     ld xiy,xix
     cp xiy,xiz
@@ -29,14 +29,7 @@
     jp nz,bad_end
 
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

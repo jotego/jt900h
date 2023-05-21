@@ -15,7 +15,7 @@
     ; OR (mem),#16
     ld wa,0
     ld (0xfff),0xff
-    incf 
+    incf
     ld a,(0xfff)
     decf
     or a,(0xfff)
@@ -47,14 +47,7 @@
     cp xwa,0x100000
     jp ne,bad_end
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0x2304,0xffff,0x1234,0xcccc
     end

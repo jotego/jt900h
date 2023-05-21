@@ -6,7 +6,7 @@
 
     ld wa,0x0000
     ld bc,0x0000
-    mul wa,c    ; 
+    mul wa,c    ;
     cp wa,0x0000
     jp ne,bad_end
 
@@ -45,14 +45,7 @@
     cp xix,1
     jp eq,bad_end
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     dw 0,0,0,0,0,0,0,0,0,0

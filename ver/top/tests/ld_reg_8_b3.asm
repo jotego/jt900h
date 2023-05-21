@@ -25,7 +25,7 @@
     ld sp,0x1114
     cp sp,0x1114
     jp nz,bad_end
-    ld de,sp 
+    ld de,sp
 
     ld qix,0x1115
     cp qix,0x1115
@@ -45,18 +45,11 @@
     ld qsp,0x1118
     cp qsp,0x1118
     jp nz,bad_end
-    ld de,qsp 
+    ld de,qsp
 
     decf
-    
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

@@ -37,15 +37,8 @@ mdec4_loop:
     ld e,(0xffff0)
     cp e,1
     jp ne,mdec4_loop
-    ret   
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    ret
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

@@ -11,7 +11,7 @@
     ld xde,0x00000000
     ld xhl,xde
 
-    cp xwa,xde 
+    cp xwa,xde
     jp ne,bad_end
     cp xbc,xhl
     jp nz,bad_end
@@ -25,7 +25,7 @@
     ld xde,0xffffffff
     ld xhl,xde
 
-    cp xwa,xde 
+    cp xwa,xde
     jp ne,bad_end
     cp xbc,xhl
     jp nz,bad_end
@@ -33,10 +33,10 @@
     decf
     or e,2 ; Control Asignation (e = 8'd3)
     incf
-    
+
     sub xwa,xwa
     xor xbc,xbc
-    ld xde,xwa  
+    ld xde,xwa
     ld xde,(data)
     ld xhl,0x00000000
 
@@ -47,14 +47,7 @@
 
     decf
     decf
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0x0000, 0x0000, 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end

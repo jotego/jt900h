@@ -13,6 +13,9 @@ wire [ 1:0] ram_we;
 wire        ram_rdy;
 reg  [15:0] mem[0:2**AW-1];
 
+reg  [ 8:0] intcnt=0; // count-down for an interrupt
+reg  [ 2:0] intrq=0, nx_intrq=0;
+
 reg  [7:0] dmp_addr;
 wire [7:0] dmp_dout;
 reg  [7:0] dmp_buf[0:255];
@@ -100,9 +103,22 @@ always @(posedge clk) begin
     `ifdef USECEN
     cen<=~cen;
     `endif
+    // update the interrupt register after a certain count
+    if( !intcnt[8] ) begin
+        intcnt <= intcnt - 1'd1;
+        if( intcnt[7:0]==0 ) intrq <= nx_intrq;
+    end
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
         $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
+        // trigger interrupts in the test bench
+        if( ram_addr=='hfff0 && ram_we[0] ) begin
+            // write 0 to $fff0 to clear the interrupt
+            // write $aa0n to cause interrupt level n after aa cycles
+            intcnt   <= {1'd0, ram_din[15:8]};
+            nx_intrq <= ram_din[2:0];
+        end
+
         if( ram_addr=='hffff && ram_we[1] ) begin
             $display("The CPU sent the stop signal");
             dump_rdout <= 1;
@@ -129,7 +145,7 @@ jt900h uut(
     .dout       ( ram_din   ),
     .we         ( ram_we    ),
 
-    .intrq      ( 3'd0      ),
+    .intrq      ( intrq     ),
 
     .dmp_addr   ( dmp_addr  ),
     .dmp_dout   ( dmp_dout  )

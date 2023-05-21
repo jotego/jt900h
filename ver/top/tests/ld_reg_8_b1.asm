@@ -24,10 +24,10 @@
     ld d,spl ; d = 6
 
     ld ixh,8
-    cp ixh,9  
+    cp ixh,9
     jp z,bad_end
     ld c,ixh
-    
+
     ld iyh,0xa
     cp iyh,6
     jp z,bad_end
@@ -38,14 +38,7 @@
     jp nz,bad_end
     ld h,izh
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
-bad_end:
-    ld hl,0xdead
-    ld (0xffff),0xff
-    jp bad_end
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end
