@@ -29,7 +29,12 @@ module jt900h(
     // interrupt processing
     input             irq,
     output            irq_ack,
-    input      [ 2:0] intrq,        // interrupt request
+    input      [ 2:0] intrq,      // interrupt request
+
+    // set to zero to use the regular interrupt vectors at FFFF00
+    // or set to one and pass the interrupt vector lower 8 bits
+    input             inta_en,    // the external device sets the vector address
+    input      [ 7:0] int_addr,
     // Register dump
     input      [ 7:0] dmp_addr,     // dump
     output     [ 7:0] dmp_dout
@@ -291,6 +296,10 @@ jt900h_ramctl u_ramctl(
     .sel_op8        ( sel_op8           ),
     .data_sel       ( ram_dsel          ),
 
+
+    // Support for the external device setting the interrupt address
+    .int_addr       ( int_addr          ),
+    .inta_en        ( inta_en           ),
     // MULA support
     .xde            ( xde[23:0]         ),
     .xhl            ( xhl[23:0]         ),

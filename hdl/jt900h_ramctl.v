@@ -40,6 +40,9 @@ module jt900h_ramctl(
     input             wra_imm, // write-address from immediate value
     input             rda_irq, // read-address from vector table
 
+    // Support for the external device setting the interrupt address
+    input      [ 7:0] int_addr,
+    input             inta_en,
     // MULA support
     input      [23:0] xde,
     input      [23:0] xhl,
@@ -84,7 +87,7 @@ assign rd_addr =  !ldram_en ? pc :
                     sel_xde  ? xde :
                     sel_xhl  ? xhl :
                     rda_imm  ? { 8'd0, imm[31:16]   } :
-                    rda_irq  ? { 16'hffff, imm[7:0] } :
+                    rda_irq  ? { 16'hffff, inta_en ? int_addr : imm[7:0] } :
                     idx_addr;
 // wr_addr used for writes
 assign wr_addr = sel_op8  ? {16'd0, op16[7:0] } :
