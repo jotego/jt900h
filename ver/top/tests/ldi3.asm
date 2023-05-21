@@ -11,9 +11,9 @@
     ld bc,10
     call inc_loop
 
-inc_loop:    
+inc_loop:
     ldi (xix+),(xiy+)
-    ldi(xde+),(xhl+)
+    ldi (xde+),(xhl+)
     ld xwa,xde
     incf
     ld xwa,xix

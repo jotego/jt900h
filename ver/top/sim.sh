@@ -70,15 +70,18 @@ if [ $BATCH = 0 ]; then
     cp tests/${TEST}.asm test.asm
     rm -f test.out
 
-    make --silent || exit $?
+    if ! make --silent; then
+        echo ${TEST} FAIL at make
+        exit 1
+    fi
     FNAME=test
 else
     # Always re-assemble the files
     cd tests
     # asm900 ${TEST}.asm || exit $?
     # dd bs=16 oflag=append if=/dev/zero of=${TEST}.bin conv=notrunc count=1 status=none
-    if ! asl -cpu 96C141 ${TEST}.asm -l > ${TEST}-asl.log; then cat ${TEST}-asl.log; exit 1; fi
-    if ! p2bin ${TEST}.p > ${TEST}-p2bin.log; then cat ${TEST}-p2bin.log; exit 1; fi
+    if ! asl -cpu 96C141 ${TEST}.asm -l > ${TEST}-asl.log; then cat ${TEST}-asl.log; echo ${TEST} FAIL at asl; exit 1; fi
+    if ! p2bin ${TEST}.p > ${TEST}-p2bin.log; then cat ${TEST}-p2bin.log; echo ${TEST} FAIL at p2bin; exit 1; fi
     # rm -f ${TEST}-{asl,p2bin}.log
     hexdump -v -e "1 / 2 "\"%04X\\n\" ${TEST}.bin > ${TEST}.hex
     cd ..

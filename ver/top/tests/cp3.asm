@@ -14,7 +14,7 @@
     ; CP (mem),#16
     ld a,0
     scf
-    cp (xix+2),0xbeef
+    cpw (xix+2),0xbeef
     jp ne,bad_end
     or ra3,2
 

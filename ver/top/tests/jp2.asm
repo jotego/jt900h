@@ -45,7 +45,7 @@ test_carry:
 test_true:
     OR HL,0x4
     ld xix,test_ugt
-    jp xix
+    jp (xix)
     jp bad_end
 test_ugt:
     OR HL,0x8
