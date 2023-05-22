@@ -112,6 +112,15 @@ always @(posedge uut.u_ctrl.buserror ) begin
     #100 $finish;
 end
 
+always @(posedge uut.u_ctrl.halted ) begin
+    $display("CPU Halted");
+end
+
+always @(negedge uut.u_ctrl.halted ) begin
+    if( !rst ) $display("Halt released");
+end
+
+
 always @(posedge clk) begin
     `ifdef USECEN
     cen<=~cen;
@@ -174,6 +183,8 @@ jt900h uut(
     .intrq      ( intrq     ),
     .irq        ( irq       ),
     .irq_ack    ( irq_ack   ),
+    .inta_en    ( 1'b0      ),
+    .int_addr   ( 8'd0      ),
 
     .dmp_addr   ( dmp_addr  ),
     .dmp_dout   ( dmp_dout  )

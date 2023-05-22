@@ -147,7 +147,7 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_ex_we, nx_keep_ex, keep_ex,
            keep_smux, nx_keep_smux,
            nx_imm2idx, imm2idx, nx_rda_irq,
-           nx_buserror;
+           nx_buserror, nx_halted, halted;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -306,6 +306,7 @@ always @* begin
 
     nx_reti          = reti;
     nx_buserror      = buserror;
+    nx_halted        = halted;
 
     // interrupts
     nx_intproc       = intproc;
@@ -366,10 +367,16 @@ always @* begin
                 nx_intproc = 1;
                 nx_alu_imm[7:0] = { 3'd0, intlvl, 2'd0 }; // shares logic with SWI
                 fetched   = 0;
-            end else begin
+                // get out of a possible halted state
+                nx_halted = 0;
+            end else if(!halted) begin
                 casez( op[7:0] )
                     8'b0000_0000: begin // NOP
                         fetched = 1;
+                    end
+                    8'b0000_0101: begin // HALT
+                        fetched   = 1;
+                        nx_halted = 1;
                     end
                     8'b10??_????,
                     8'b11??_00??,
@@ -1604,6 +1611,7 @@ always @(posedge clk, posedge rst) begin
         dec_xhl        <= 0;
         ld2imm         <= 0;
         buserror       <= 0;
+        halted         <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1682,6 +1690,7 @@ always @(posedge clk, posedge rst) begin
         ld2imm         <= nx_ld2imm;
 
         buserror       <= nx_buserror;
+        halted         <= nx_halted;
 
         if( latch_op ) last_op <= op[7:0];
     end
