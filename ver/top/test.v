@@ -107,6 +107,11 @@ always @* begin
     intctrl_cs = ram_addr[15:1]=='h7ff8;
 end
 
+always @(posedge uut.u_ctrl.buserror ) begin
+    $display("Bus error detected. Simulation will be interrupted.");
+    #100 $finish;
+end
+
 always @(posedge clk) begin
     `ifdef USECEN
     cen<=~cen;

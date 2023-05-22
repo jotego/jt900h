@@ -99,6 +99,7 @@ jt900h_ctrl u_ctrl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
+    .buserror       (                   ),
     // interrupt processing
     .intlvl         ( intrq             ),
     .irq            ( irq               ),

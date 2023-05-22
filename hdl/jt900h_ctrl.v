@@ -34,6 +34,7 @@ module jt900h_ctrl(
 
     output reg        ram_ren,    // read enable
     output reg        ram_wen,    // write enable
+    output reg        buserror,
     output reg        idx_en,
     output reg        idx_last,
     input             idx_ok,
@@ -145,7 +146,8 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_ld_high,
            nx_ex_we, nx_keep_ex, keep_ex,
            keep_smux, nx_keep_smux,
-           nx_imm2idx, imm2idx, nx_rda_irq;
+           nx_imm2idx, imm2idx, nx_rda_irq,
+           nx_buserror;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
 reg  [6:0] nx_alu_op;
@@ -303,6 +305,7 @@ always @* begin
     nx_keep_lddwr    = keep_lddwr;
 
     nx_reti          = reti;
+    nx_buserror      = buserror;
 
     // interrupts
     nx_intproc       = intproc;
@@ -580,7 +583,9 @@ always @* begin
                         nx_keep_inc_xsp = op[0] ? op[23:8] : 16'd0; // RETD or RET
                         nx_phase        = POP_PC;
                     end
-                    default:;
+                    default: begin
+                        nx_buserror = 1; // this should trigger a SWI
+                    end
                 endcase
             end
         end
@@ -1598,6 +1603,7 @@ always @(posedge clk, posedge rst) begin
         sel_xhl        <= 0;
         dec_xhl        <= 0;
         ld2imm         <= 0;
+        buserror       <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1674,6 +1680,8 @@ always @(posedge clk, posedge rst) begin
         sel_xhl        <= nx_sel_xhl;
         dec_xhl        <= nx_dec_xhl;
         ld2imm         <= nx_ld2imm;
+
+        buserror       <= nx_buserror;
 
         if( latch_op ) last_op <= op[7:0];
     end
