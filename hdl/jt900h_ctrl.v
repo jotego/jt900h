@@ -629,7 +629,7 @@ always @* begin
         end
         IRQ: begin
             nx_ram_wen = 0;
-            nx_ram_ren = 1;
+            nx_ram_ren = 0;
             nx_rda_irq = 1;
             nx_sel_xsp = 0;
             // iff is changed for both SWI and hardware interrupts, but

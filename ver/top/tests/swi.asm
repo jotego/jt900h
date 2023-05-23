@@ -2,6 +2,7 @@
     ; but does not use RETI to return
 
     maxmode on
+    supmode on
     relaxed on
     org 0
     ld a,0xbf    ; common header
@@ -17,6 +18,10 @@
 after_swi:
     jp bad_end
 
+    ; not aligning the interrupt start creates problems reading
+    ; the OP data of the first instruction. Not sure whether this is
+    ; worth fixing. This may as well be a requirement in the original too
+    align 2
 swi_test:
     or ra3,1
     incf

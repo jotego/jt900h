@@ -82,12 +82,12 @@ reg         wrbusy, idx_wr_l, ldram_l;
 reg  [ 1:0] wron;
 
 // rd_addr use for reads
-assign rd_addr =  !ldram_en ? pc :
-                    sel_xsp  ? xsp :
-                    sel_xde  ? xde :
-                    sel_xhl  ? xhl :
-                    rda_imm  ? { 8'd0, imm[31:16]   } :
-                    rda_irq  ? { 16'hffff, inta_en ? int_addr : imm[7:0] } :
+assign rd_addr =    rda_irq   ? { 16'hffff, inta_en ? int_addr : imm[7:0] } :
+                    !ldram_en ? pc  :
+                    sel_xsp   ? xsp :
+                    sel_xde   ? xde :
+                    sel_xhl   ? xhl :
+                    rda_imm   ? { 8'd0, imm[31:16]   } :
                     idx_addr;
 // wr_addr used for writes
 assign wr_addr = sel_op8  ? {16'd0, op16[7:0] } :
