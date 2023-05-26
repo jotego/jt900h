@@ -301,6 +301,7 @@ jt900h_ramctl u_ramctl(
     // Support for the external device setting the interrupt address
     .int_addr       ( int_addr          ),
     .inta_en        ( inta_en           ),
+    .irq_ack        ( irq_ack           ),
     // MULA support
     .xde            ( xde[23:0]         ),
     .xhl            ( xhl[23:0]         ),

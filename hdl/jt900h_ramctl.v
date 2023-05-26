@@ -43,6 +43,7 @@ module jt900h_ramctl(
     // Support for the external device setting the interrupt address
     input      [ 7:0] int_addr,
     input             inta_en,
+    input             irq_ack,
     // MULA support
     input      [23:0] xde,
     input      [23:0] xhl,
@@ -75,14 +76,15 @@ reg  [15:0] cache0, cache1, // always keep 4 bytes of data
             op0, op1,
             src_cpy; // Copy of the last src_out register
 reg  [ 3:0] cache_ok, we_mask;
+reg  [ 7:0] int_addr_l;
 
 wire [23:0] rd_addr, wr_addr;
 reg  [31:0] eff_data;
-reg         wrbusy, idx_wr_l, ldram_l;
+reg         wrbusy, idx_wr_l, ldram_l, irq_ack_l;
 reg  [ 1:0] wron;
 
 // rd_addr use for reads
-assign rd_addr =    rda_irq   ? { 16'hffff, inta_en ? int_addr : imm[7:0] } :
+assign rd_addr =    rda_irq   ? { 16'hffff, inta_en ? int_addr_l : imm[7:0] } :
                     !ldram_en ? pc  :
                     sel_xsp   ? xsp :
                     sel_xde   ? xde :
@@ -113,6 +115,16 @@ always @(posedge clk,posedge rst) begin
         src_cpy <= 0;
     end else if( regs_we!=0 ) begin
         src_cpy <= src_out[15:0];
+    end
+end
+
+always @(posedge clk,posedge rst) begin
+    if( rst ) begin
+        int_addr_l <= 0;
+        irq_ack_l  <= 0;
+    end else begin
+        irq_ack_l <= irq_ack;
+        if( irq_ack && !irq_ack_l ) int_addr_l <= int_addr;
     end
 end
 
