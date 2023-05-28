@@ -2,7 +2,8 @@
     maxmode on
     relaxed on
     org 0
-    neg wa
+    nop
+    nop
     jr t,odd_addr
     push xbc
     push xix
@@ -10,10 +11,6 @@
 odd_addr:
     push xwa    ; this push may not be executed because of the jump to and odd address
     nop         ; many nops to recovers the code flow if the PC fails
-    nop
-    nop
-    nop
-    nop
     nop
     nop
     nop

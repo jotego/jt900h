@@ -289,6 +289,7 @@ jt900h_ramctl u_ramctl(
     .cen            ( cen               ),
 
     .pc             ( pc[23:0]          ),
+    .pc_bad         ( pc_rel | pc_we    ),
     .xsp            ( xsp[23:0]         ),
     .sr             ( sr                ),
     .op16           ( buf_dout[23:8]    ),

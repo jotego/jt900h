@@ -27,6 +27,7 @@ module jt900h_ramctl(
     input      [23:0] xsp,
     input      [15:0] sr,
     input      [23:0] pc,
+    input             pc_bad,
     input      [15:0] op16,
     input             sel_xsp,
     input             sel_op8,
@@ -85,7 +86,7 @@ reg  [ 1:0] wron;
 
 // rd_addr use for reads
 assign rd_addr =    rda_irq   ? { 16'hffff, inta_en ? int_addr_l : imm[7:0] } :
-                    !ldram_en ? pc  :
+                    !ldram_en ? ( pc_bad ? cache_addr : pc ) :
                     sel_xsp   ? xsp :
                     sel_xde   ? xde :
                     sel_xhl   ? xhl :
