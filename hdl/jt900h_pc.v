@@ -37,6 +37,7 @@ parameter PC_RSTVAL=0;
 
 `ifdef SIMULATION
     wire [11:0] pc_short = pc[11:0];
+    wire [23:0] pc24     = pc[23:0];
 `endif
 
 always @(posedge clk, posedge rst) begin
