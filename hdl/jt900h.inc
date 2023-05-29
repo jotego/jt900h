@@ -90,5 +90,8 @@ localparam [6:0] ALU_NOP  = 7'd0,
                  ALU_MINC2 = 7'd84,
                  ALU_MINC4 = 7'd85,
                  ALU_MULA  = 7'd86,
+                 ALU_SUB2  = 7'd87,
+                 ALU_SBC2  = 7'd88,
+                 ALU_CP2   = 7'd89,
                  ALU_LAST  = 7'd127
                  ;

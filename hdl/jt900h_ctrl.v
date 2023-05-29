@@ -1055,11 +1055,11 @@ always @* begin
                         3'b110: nx_alu_op = ALU_OR;
                         3'b101: nx_alu_op = ALU_XOR;
                         3'b100: nx_alu_op = ALU_AND;
-                        3'b011: nx_alu_op = ALU_SBC;
-                        3'b010: nx_alu_op = ALU_SUB;
+                        3'b011: nx_alu_op = ALU_SBC2; // substraction requires
+                        3'b010: nx_alu_op = ALU_SUB2; // different operand order
                         3'b001: nx_alu_op = ALU_ADC;
                         3'b000: nx_alu_op = ALU_ADD;
-                        3'b111:  nx_alu_op = ALU_CP;
+                        3'b111:  nx_alu_op = ALU_CP2;
                         default: nx_alu_op = ALU_NOP;
                     endcase
                     nx_regs_we   = expand_zz( op_zz );

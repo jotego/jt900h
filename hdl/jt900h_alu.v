@@ -293,6 +293,19 @@ always @* begin
                 nx_c = rslt_c;
             end
         end
+        ALU_SUB2, ALU_SBC2, ALU_CP2:
+        begin
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op2[3:0]  }-{1'b0,op0_mux[3:0]}  -{ 4'd0, sel==ALU_SBC && carry };
+            { cc[0], rslt[ 7: 4] } = {1'b0,op2[ 7: 4]}-{1'b0,op0_mux[ 7: 4]}-{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {1'b0,op2[15: 8]}-{1'b0,op0_mux[15: 8]}-{ 8'b0,cc[0]};
+            { cc[2], rslt[31:16] } = {1'b0,op2[31:16]}-{1'b0,op0_mux[31:16]}-{16'b0,cc[1]};
+            ext_rslt = ext_op2 - ext_op0;
+            nx_s = rslt_sign;
+            nx_z = is_zero;
+            nx_n = 1;
+            nx_v = sel==ALU_CPD ? ~bc_unity : rslt_v;
+            nx_c = rslt_c;
+        end
         ALU_LDD: begin
             rslt = imm;
             nx_h = 0;
