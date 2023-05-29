@@ -115,6 +115,7 @@ localparam [4:0] FETCH    = 5'd0,
                  MULA     = 5'd17,
                  IRQ      = 5'd18,
                  IRQ_JP   = 5'd19,
+                 PUSH_PC2 = 5'd20,
                  ILLEGAL  = 5'd31;
 // Flag bits
 
@@ -313,7 +314,7 @@ always @* begin
     nx_intnest       = intnest;
 
     if(op_ok && !ram_wait) case( op_phase )
-        FETCH: begin
+        FETCH: if(!pc_we) begin
             `ifdef SIMULATION
             //$display("Fetched %04X_%04X", {op[7:0],op[15:8]},{op[23:16],op[31:24]});
             `endif
@@ -620,12 +621,16 @@ always @* begin
                 req_wait = 1;
                 nx_phase = PUSH_SR;
             end else begin
-                nx_phase = DUMMY;
-                if( last_op[3:0]==4'he )
-                    nx_pc_rel = 1;  // CALLR
-                else
-                    nx_pc_we   = 1; // or CALL
+                nx_phase = PUSH_PC2;
             end
+        end
+        PUSH_PC2: begin
+            nx_phase = DUMMY;
+            nx_nodummy_fetch = 1;
+            if( last_op[3:0]==4'he )
+                nx_pc_rel = 1;  // CALLR
+            else
+                nx_pc_we  = 1; // or CALL
         end
         IRQ: begin
             nx_ram_wen = 0;
