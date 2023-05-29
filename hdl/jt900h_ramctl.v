@@ -81,7 +81,7 @@ reg  [ 7:0] int_addr_l;
 
 wire [23:0] rd_addr, wr_addr;
 reg  [31:0] eff_data;
-reg         wrbusy, idx_wr_l, ldram_l, irq_ack_l;
+reg         wrbusy, ldram_l, irq_ack_l;
 reg  [ 1:0] wron;
 
 // rd_addr use for reads
@@ -142,7 +142,6 @@ always @(posedge clk,posedge rst) begin
         ram_din    <= 0;
         ldram_l    <= ldram_en;
     end else if(cen) begin
-        idx_wr_l <= idx_wr;
         wrbusy   <= 0;
         ram_we   <= 0;
         ldram_l  <= ldram_en;

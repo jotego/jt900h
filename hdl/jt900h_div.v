@@ -55,7 +55,7 @@ always @* begin
     end
 end
 
-always @(posedge clk or posedge rst) begin 
+always @(posedge clk or posedge rst) begin
     if(rst) begin
         fullq  <= 0;
         rem    <= 0;
@@ -75,7 +75,7 @@ always @(posedge clk or posedge rst) begin
             rem    <= 0;
             { sub, divend } <= { 31'd0, len ? op0_unsig : { op0_unsig[15:0], 16'd0 }, 1'b0 };
             divor  <= len ? op1_unsig : { 8'd0, op1_unsig[7:0] };
-            st     <= len ? 0 : 16;
+            st     <= len ? 5'd0 : 5'd16;
             v      <= op1 == 0;
             rsi    <= sign & (sign0 ^ sign1);
         end else if( busy ) begin

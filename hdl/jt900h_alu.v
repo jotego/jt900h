@@ -705,7 +705,7 @@ always @(posedge clk, posedge rst)  begin
         end
         flag_only <= flag_we;
         alu_we    <=  div_start ? w << 1 :
-                     (busyl && cnt<=1 ) ? 0 : w;
+                     (busyl && cnt<=1 ) ? 3'd0 : w;
         busy_cen  <= busy ? ~busy_cen : 1'b1;
     end
 end
