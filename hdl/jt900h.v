@@ -25,6 +25,7 @@ module jt900h(
     input      [15:0] din,
     output     [15:0] dout,
     output     [ 1:0] we,
+    input             busy,
 
     // interrupt processing
     input             irq,
@@ -331,6 +332,7 @@ jt900h_ramctl u_ramctl(
     .ram_dout       ( din               ),
     .ram_din        ( dout              ),
     .ram_we         ( we                ),
+    .ram_busy       ( busy              ),
 
     .dout           ( buf_dout          ),
     .ram_rdy        ( buf_rdy           )

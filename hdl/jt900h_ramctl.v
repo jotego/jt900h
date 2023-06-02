@@ -65,6 +65,7 @@ module jt900h_ramctl(
     input      [15:0] ram_dout,
     output reg [15:0] ram_din,
     output reg [ 1:0] ram_we,   // write enable mask, high/low bytes
+    input             ram_busy,
 
     output     [31:0] dout,
     output            ram_rdy
@@ -173,7 +174,7 @@ always @(posedge clk,posedge rst) begin
                     end
                 end
             end
-        end else if(!wrbusy) begin // Read access
+        end else if(!wrbusy && !ram_busy) begin // Read access
             if( we_mask!=0 ) begin // assume 0 bus waits for now
                 ram_addr <= ram_addr+24'd2;
                 if( we_mask[0] ) begin

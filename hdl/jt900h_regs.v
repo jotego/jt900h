@@ -113,6 +113,31 @@ assign xhl = cur_xhl;
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
+
+    wire [31:0] xwa0, xbc0, xde0, xhl0,
+                xwa1, xbc1, xde1, xhl1,
+                xwa2, xbc2, xde2, xhl2,
+                xwa3, xbc3, xde3, xhl3;
+
+    assign xwa0 = {accs[{2'd0,4'd3}],accs[{2'd0,4'd2}],accs[{2'd0,4'd1}],accs[{2'd0,4'd0}]};
+    assign xwa1 = {accs[{2'd1,4'd3}],accs[{2'd1,4'd2}],accs[{2'd1,4'd1}],accs[{2'd1,4'd0}]};
+    assign xwa2 = {accs[{2'd2,4'd3}],accs[{2'd2,4'd2}],accs[{2'd2,4'd1}],accs[{2'd2,4'd0}]};
+    assign xwa3 = {accs[{2'd3,4'd3}],accs[{2'd3,4'd2}],accs[{2'd3,4'd1}],accs[{2'd3,4'd0}]};
+
+    assign xbc0 = {accs[{2'd0,4'd7}],accs[{2'd0,4'd6}],accs[{2'd0,4'd5}],accs[{2'd0,4'd4}]};
+    assign xbc1 = {accs[{2'd1,4'd7}],accs[{2'd1,4'd6}],accs[{2'd1,4'd5}],accs[{2'd1,4'd4}]};
+    assign xbc2 = {accs[{2'd2,4'd7}],accs[{2'd2,4'd6}],accs[{2'd2,4'd5}],accs[{2'd2,4'd4}]};
+    assign xbc3 = {accs[{2'd3,4'd7}],accs[{2'd3,4'd6}],accs[{2'd3,4'd5}],accs[{2'd3,4'd4}]};
+
+    assign xde0 = {accs[{2'd0,4'd11}],accs[{2'd0,4'd10}],accs[{2'd0,4'd9}],accs[{2'd0,4'd8}]};
+    assign xde1 = {accs[{2'd1,4'd11}],accs[{2'd1,4'd10}],accs[{2'd1,4'd9}],accs[{2'd1,4'd8}]};
+    assign xde2 = {accs[{2'd2,4'd11}],accs[{2'd2,4'd10}],accs[{2'd2,4'd9}],accs[{2'd2,4'd8}]};
+    assign xde3 = {accs[{2'd3,4'd11}],accs[{2'd3,4'd10}],accs[{2'd3,4'd9}],accs[{2'd3,4'd8}]};
+
+    assign xhl0 = {accs[{2'd0,4'd15}],accs[{2'd0,4'd14}],accs[{2'd0,4'd13}],accs[{2'd0,4'd12}]};
+    assign xhl1 = {accs[{2'd1,4'd15}],accs[{2'd1,4'd14}],accs[{2'd1,4'd13}],accs[{2'd1,4'd12}]};
+    assign xhl2 = {accs[{2'd2,4'd15}],accs[{2'd2,4'd14}],accs[{2'd2,4'd13}],accs[{2'd2,4'd12}]};
+    assign xhl3 = {accs[{2'd3,4'd15}],accs[{2'd3,4'd14}],accs[{2'd3,4'd13}],accs[{2'd3,4'd12}]};
 `endif
 
 assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;

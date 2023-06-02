@@ -179,6 +179,7 @@ jt900h uut(
     .din        ( ram_dout  ),
     .dout       ( ram_din   ),
     .we         ( ram_we    ),
+    .busy       ( 1'b0      ),
 
     .intrq      ( intrq     ),
     .irq        ( irq       ),
