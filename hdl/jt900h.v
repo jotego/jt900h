@@ -37,6 +37,7 @@ module jt900h(
     input             inta_en,    // the external device sets the vector address
     input      [ 7:0] int_addr,
     // Register dump
+    output            buserror,
     input      [ 7:0] dmp_addr,     // dump
     output     [ 7:0] dmp_dout
 );
@@ -100,7 +101,7 @@ jt900h_ctrl u_ctrl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    .buserror       (                   ),
+    .buserror       ( buserror          ),
     // interrupt processing
     .intlvl         ( intrq             ),
     .irq            ( irq               ),
