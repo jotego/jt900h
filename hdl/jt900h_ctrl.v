@@ -181,6 +181,7 @@ reg [15:0] nx_intnest, intnest;
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
 reg        bad_zz, jp_ok;
+wire [3:0] inc_opnd;
 
 // Interrupt masks
 reg  [2:0] riff, nx_iff;
@@ -188,6 +189,7 @@ reg  [2:0] riff, nx_iff;
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
 assign wra_imm = ld2imm & ram_wen;
 assign irq_ack = intproc;
+assign inc_opnd = op[2:0]==0 ? 4'd8 : {1'd0,op[2:0]};
 
 `ifdef SIMULATION
 wire [31:0] op_rev = {op[7:0],op[15:8],op[23:16],op[31:24]};
@@ -1293,13 +1295,13 @@ always @* begin
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
                     if( was_load ) begin
-                        nx_alu_imm[23:16] = { 5'd0, op[2:0] };
+                        nx_alu_imm[23:16] = { 4'd0, inc_opnd };
                         nx_alu_op   = op[3] ? ALU_DECX : ALU_INCX;
                         nx_dly_fetch = 1;
                         nx_flag_we   = 1;
                         nx_phase     = ST_RAM;
                     end else begin
-                        nx_alu_imm = { 29'd0, op[2:0] };
+                        nx_alu_imm = { 28'd0, inc_opnd };
                         nx_alu_op  = op[3] ? ALU_DEC : ALU_INC;
                         fetched    = 1;
                     end
