@@ -1111,6 +1111,7 @@ always @* begin
                 10'b1001_1???_0?: begin // LD r,R
                     nx_src    = expand_reg(op[2:0],op_zz);
                     nx_alu_op = ALU_MOVE;
+                    nx_regs_we = expand_zz( op_zz );
                     fetched   = 1;
                 end
                 10'b1101_1???_0?, // CP r,#3
@@ -1481,7 +1482,7 @@ always @* begin
                         nx_flag_we = 1;
                     end
                 end
-                default:;
+                default: nx_buserror = 1;
             endcase
         end
         LD_XHL: begin
