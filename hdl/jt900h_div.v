@@ -32,7 +32,7 @@ module jt900h_div(
 );
 
 reg  [31:0] divend, sub, fullq, op0_unsig;
-reg  [15:0] divor, op1_unsig;
+reg  [15:0] divor, op1_unsig, nx_rem;
 wire [31:0] rslt, nx_quot;
 reg  [ 4:0] st;
 wire        larger;
@@ -53,6 +53,9 @@ always @* begin
         if( sign0 ) op0_unsig = ~op0 + 32'd1;
         if( sign1 ) op1_unsig = ~op1 + 16'd1;
     end
+    // final remainder
+    nx_rem = larger ? rslt[15:0] : sub[15:0];
+    if( rsi ) nx_rem = -nx_rem;
 end
 
 always @(posedge clk or posedge rst) begin
@@ -84,7 +87,7 @@ always @(posedge clk or posedge rst) begin
             st <= st+1'd1;
             if( &st ) begin
                 busy <= 0;
-                rem   <= larger ? rslt[15:0] : sub[15:0];
+                rem   <= nx_rem;
                 if( rsi ) fullq <= ~nx_quot+1'd1;
                 if( len ? nx_quot[31:16]!=0 : nx_quot[15:8]!=0 ) v <= 1;
             end

@@ -10,7 +10,7 @@
     jp ov,bad_end
     cp wa,-0x1000
     jp ne,bad_end
-    cp qwa,0x567
+    cp qwa,-0x567
     jp ne,bad_end
     or ra3,0x1
 
@@ -20,7 +20,7 @@
     jp ov,bad_end
     cp c,-0x10
     jp ne,bad_end
-    cp b,0x3
+    cp b,-0x3
     jp ne,bad_end
     or ra3,0x2
 
