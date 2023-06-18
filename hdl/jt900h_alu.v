@@ -600,6 +600,14 @@ always @* begin
             nx_h = 0;
             nx_v = rslt_even;
             nx_n = 0;
+            if( busy && cnt==1 ) begin // leave flags unaltered
+                nx_s = sign;
+                nx_z = zero;
+                nx_h = halfc;
+                nx_v = overflow;
+                nx_n = negative;
+                nx_c = carry;
+            end
             if( !busy ) begin
                 nx_busy = op2[3:0]!=1;
                 nx_cnt = { op2[3:0]==0, op2[3:0]};
