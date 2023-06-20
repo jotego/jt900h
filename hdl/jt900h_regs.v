@@ -72,6 +72,7 @@ module jt900h_regs(
     // destination register
     input       [7:0] dst,
     output reg [31:0] dst_out,
+    output reg [31:0] idx_out,
 
     // write result
     input       [2:0] ram_we,
@@ -89,7 +90,7 @@ localparam [3:0] CURBANK  = 4'he,
 // All registers
 reg [7:0] accs[0:63];
 reg [7:0] ptrs[0:15];
-reg [7:0] r0sel, r1sel, aux_sel;
+reg [7:0] r0sel, r1sel, aux_sel, idx_sel;
 
 wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
@@ -165,15 +166,23 @@ always @* begin
         {   accs[ {aux_sel[5:2],2'b11} ], accs[ {aux_sel[5:2],2'b10} ],
             accs[ {aux_sel[5:1],1'b1}  ], accs[ aux_sel[5:0] ] };
 
-    r1sel   = idx_en ? simplify(rfp,idx_rdreg_aux) : simplify(rfp,dst);
+    r1sel   = simplify(rfp,dst);
+    idx_sel = simplify(rfp,idx_rdreg_aux);
     dst_out = r1sel[7] ?
         {   ptrs[ {r1sel[3:2],2'b11} ], ptrs[ {r1sel[3:2],2'b10} ],
             ptrs[ {r1sel[3:1],1'b1}  ], ptrs[ r1sel[3:0] ] } :
         {   accs[ {r1sel[5:2],2'b11} ], accs[ {r1sel[5:2],2'b10} ],
             accs[ {r1sel[5:1],1'b1}  ], accs[ r1sel[5:0] ] };
 
-    if( reg_dec )
-        dst_out = dst_out - full_step;
+    idx_out = idx_sel[7] ?
+        {   ptrs[ {idx_sel[3:2],2'b11} ], ptrs[ {idx_sel[3:2],2'b10} ],
+            ptrs[ {idx_sel[3:1],1'b1}  ], ptrs[ idx_sel[3:0] ] } :
+        {   accs[ {idx_sel[5:2],2'b11} ], accs[ {idx_sel[5:2],2'b10} ],
+            accs[ {idx_sel[5:1],1'b1}  ], accs[ idx_sel[5:0] ] };
+
+
+    // if( reg_dec )
+    //     idx_out = idx_out - full_step;
 end
 
 integer gen_cnt;

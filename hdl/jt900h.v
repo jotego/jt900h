@@ -49,7 +49,7 @@ wire [15:0] sr;
 // Register bank
 wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
-wire [31:0] src_out, dst_out, aux_out, acc,
+wire [31:0] src_out, dst_out, aux_out, acc, idx_out,
             xde, xhl;
 wire        bc_unity, dec_bc, dec_xhl,
             ld_high,  ex_we;
@@ -219,6 +219,7 @@ jt900h_regs u_regs(
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
     .src_out        ( src_out           ),
     .aux_out        ( aux_out           ),
+    .idx_out        ( idx_out           ),
 
     // source register
     .src            ( regs_src          ),
@@ -253,7 +254,7 @@ jt900h_idxaddr u_idxaddr(
     .ldd_write      ( ldd_write         ),
     // offset register
     .idx_rdreg_aux  ( idx_rdreg_aux     ),
-    .idx_rdaux      ( dst_out[15:0]     ),
+    .idx_rdaux      ( idx_out[15:0]     ),
 
     .idx_ok         ( idx_ok            ),
     .ldar           ( ldar              ),
