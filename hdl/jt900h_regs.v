@@ -150,12 +150,7 @@ assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
 // gigantic multiplexer:
 always @* begin
     r0sel   = idx_en ? simplify(rfp,idx_rdreg_sel) : simplify(rfp,src);
-    src_out =
-        r0sel[7:4]==4 ? 32'd0 : r0sel[7] ?
-        {   ptrs[ {r0sel[3:2],2'b11} ], ptrs[ {r0sel[3:2],2'b10} ],
-            ptrs[ {r0sel[3:1],1'b1}  ], ptrs[ r0sel[3:0] ] } :
-        {   accs[ {r0sel[5:2],2'b11} ], accs[ {r0sel[5:2],2'b10} ],
-            accs[ {r0sel[5:1],1'b1}  ], accs[ r0sel[5:0] ] };
+    src_out = r0sel[7:4]==4 ? 32'd0 : regmux( r0sel );
     // aux_out is used for instructions with two index registers, like LDD
     // the aux register is the same as src_out but with bit 2 at zero
     aux_sel = simplify(rfp,idx_rdreg_sel) & ~8'h4;
@@ -168,21 +163,8 @@ always @* begin
 
     r1sel   = simplify(rfp,dst);
     idx_sel = simplify(rfp,idx_rdreg_aux);
-    dst_out = r1sel[7] ?
-        {   ptrs[ {r1sel[3:2],2'b11} ], ptrs[ {r1sel[3:2],2'b10} ],
-            ptrs[ {r1sel[3:1],1'b1}  ], ptrs[ r1sel[3:0] ] } :
-        {   accs[ {r1sel[5:2],2'b11} ], accs[ {r1sel[5:2],2'b10} ],
-            accs[ {r1sel[5:1],1'b1}  ], accs[ r1sel[5:0] ] };
-
-    idx_out = idx_sel[7] ?
-        {   ptrs[ {idx_sel[3:2],2'b11} ], ptrs[ {idx_sel[3:2],2'b10} ],
-            ptrs[ {idx_sel[3:1],1'b1}  ], ptrs[ idx_sel[3:0] ] } :
-        {   accs[ {idx_sel[5:2],2'b11} ], accs[ {idx_sel[5:2],2'b10} ],
-            accs[ {idx_sel[5:1],1'b1}  ], accs[ idx_sel[5:0] ] };
-
-
-    // if( reg_dec )
-    //     idx_out = idx_out - full_step;
+    dst_out = regmux( r1sel   );
+    idx_out = regmux( idx_sel );
 end
 
 integer gen_cnt;
@@ -290,6 +272,15 @@ function [7:0] simplify;
                rsel[7:4]==CURBANK  ? { 2'd0, rfp } :
                rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
                rsel[3:0] };
+endfunction
+
+function [31:0] regmux;
+    input [7:0] sel;
+    regmux = sel[7] ?
+        {   ptrs[ {sel[3:2],2'b11} ], ptrs[ {sel[3:2],2'b10} ],
+            ptrs[ {sel[3:1],1'b1}  ], ptrs[ sel[3:0] ] } :
+        {   accs[ {sel[5:2],2'b11} ], accs[ {sel[5:2],2'b10} ],
+            accs[ {sel[5:1],1'b1}  ], accs[ sel[5:0] ] };
 endfunction
 
 always @(posedge clk, posedge rst) begin

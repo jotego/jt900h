@@ -121,108 +121,108 @@ always @* begin
     nx_was_CPD       = was_CPD;
     nx_was_CPI       = was_CPI;
     if( idx_en && !pre_ok ) begin
-        nx_pre_ok  = 0;
         nx_was_LDD = 0;
         nx_was_LDI = 0;
-        if( !phase ) begin
-            nx_fetched    = 2;
-            nx_reg_step= op[9:8];
-            casez( {eff_op[6],eff_op[3:0]} ) // See 900H_CPU_BOOK_CP3.pdf Page 43
-                5'b0_????: begin // this section may operate with the previous op
-                    nx_idx_rdreg_sel = fullreg(eff_op[2:0]);
-                    nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
-                    nx_pre_ok        = 1;
-                    nx_reg_dec       = is_CPD || is_LDD;
-                    nx_reg_inc       = is_CPI || is_LDI;
-                    nx_was_LDD       = use_last ? was_LDD : is_LDD;
-                    nx_was_LDI       = use_last ? was_LDI : is_LDI;
-                    nx_was_CPD       = use_last ? was_CPD : is_CPD;
-                    nx_was_CPI       = use_last ? was_CPI : is_CPI;
-                    nx_reg_step      = {1'b0,eff_op[4]};
-                    nx_opl           = use_last ? opl : op[7:0]; // remember it, in case we are in a LDD instruction
-                    nx_fetched          = use_last ? 0 : eff_op[3] ? 3'd2: 3'd1;
-                end
-                5'h10,5'h11,5'h12: begin // memory address as immediate data
-                    nx_idx_rdreg_sel = NULL;
-                    case( op[1:0] )
-                        0: begin
-                            nx_idx_offset = { 16'd0, op[15:8] };
-                            nx_fetched       = 2;
-                        end
-                        1: begin
-                            nx_idx_offset = {  8'd0, op[23:8] };
-                            nx_fetched       = 3;
-                        end
-                        default: begin
-                            nx_idx_offset = op[31:8];
-                            nx_fetched       = 4;
-                        end
-                    endcase
-                    nx_pre_ok = 1;
-                end
-                5'h13: begin
-                    if( op[15:0]==16'h13f3 ) begin // LDAR
-                        nx_idx_rdreg_sel = NULL;
-                        nx_idx_offset    = { 8'd0, op[31:16] };
-                        nx_fetched          = 4;
-                        nx_ldar          = 1;
+        case( phase )
+            0: begin
+                nx_fetched    = 2;
+                nx_reg_step= op[9:8];
+                casez( {eff_op[6],eff_op[3:0]} ) // See 900H_CPU_BOOK_CP3.pdf Page 43
+                    5'b0_????: begin // this section may operate with the previous op
+                        nx_idx_rdreg_sel = fullreg(eff_op[2:0]);
+                        nx_idx_offset    = eff_op[3] ? { {16{eff_op[15]}}, eff_op[15:8] } : 24'd0;
                         nx_pre_ok        = 1;
-                    end else begin // (r32) (r32+d16) (r32+r8) (r32+r16)
-                        nx_idx_rdreg_sel = {op[15:10],2'd0};
-                        nx_idx_offset = 0;
-                        case( op[9:8] )
-                            0: nx_pre_ok = 1;
-                            1: begin
-                                nx_pre_ok = 0;
-                                nx_phase  = 1;
-                                nx_fetched   = 0; // data fetch will be done in phase 1
+                        nx_reg_dec       = is_CPD || is_LDD;
+                        nx_reg_inc       = is_CPI || is_LDI;
+                        nx_was_LDD       = use_last ? was_LDD : is_LDD;
+                        nx_was_LDI       = use_last ? was_LDI : is_LDI;
+                        nx_was_CPD       = use_last ? was_CPD : is_CPD;
+                        nx_was_CPI       = use_last ? was_CPI : is_CPI;
+                        nx_reg_step      = {1'b0,eff_op[4]};
+                        nx_opl           = use_last ? opl : op[7:0]; // remember it, in case we are in a LDD instruction
+                        nx_fetched          = use_last ? 0 : eff_op[3] ? 3'd2: 3'd1;
+                    end
+                    5'h10,5'h11,5'h12: begin // memory address as immediate data
+                        nx_idx_rdreg_sel = NULL;
+                        case( op[1:0] )
+                            0: begin
+                                nx_idx_offset = { 16'd0, op[15:8] };
+                                nx_fetched       = 2;
                             end
-                            3: begin
-                                nx_pre_ok = 0;
-                                nx_phase  = 1;
-                                nx_fetched   = 0; // data fetch will be done in phase 1
-                                nx_ridx_mode = { 1'b1, op[10] };
+                            1: begin
+                                nx_idx_offset = {  8'd0, op[23:8] };
+                                nx_fetched       = 3;
+                            end
+                            default: begin
+                                nx_idx_offset = op[31:8];
+                                nx_fetched       = 4;
                             end
                         endcase
+                        nx_pre_ok = 1;
                     end
-                end
-                5'h14,5'h15: begin // (-r32) (r32+)
-                    nx_idx_rdreg_sel = {op[15:10],2'd0};
-                    nx_idx_offset    = 0;
-                    nx_reg_dec       = !op[0];
-                    nx_pre_inc       =  op[0];
-                    nx_pre_ok        = 1;
-                end
-                default:;
-            endcase
-        end else begin
-            case(mode)
-                5'h11: begin
-                    nx_idx_offset[23:8] = { {8{op[7]}}, op[7:0] };
-                    nx_pre_ok           = 1;
-                    nx_fetched             = 1;
-                end
-                5'h12: begin
-                    nx_idx_offset[23:8] = op[15:0];
-                    nx_pre_ok           = 1;
-                    nx_fetched             = 2;
-                end
-                5'h13: begin
-                    nx_ridx_mode = ridx_mode;
-                    if( !ridx_mode[1] ) begin
-                        nx_idx_offset = { {8{op[31]}}, op[31:16] };
-                        nx_pre_ok     = 1;
-                        nx_fetched       = 4;
-                    end else begin
-                        nx_idx_rdreg_sel = op[23:16];
-                        nx_idx_rdreg_aux = op[31:24];
+                    5'h13: begin
+                        if( op[15:0]==16'h13f3 ) begin // LDAR
+                            nx_idx_rdreg_sel = NULL;
+                            nx_idx_offset    = { 8'd0, op[31:16] };
+                            nx_fetched       = 4;
+                            nx_ldar          = 1;
+                            nx_pre_ok        = 1;
+                        end else begin // (r32) (r32+d16) (r32+r8) (r32+r16)
+                            nx_idx_rdreg_sel = {op[15:10],2'd0};
+                            nx_idx_offset = 0;
+                            case( op[9:8] )
+                                0: nx_pre_ok = 1;
+                                1: begin
+                                    nx_phase  = 1;
+                                    nx_fetched   = 0; // data fetch will be done in phase 1
+                                end
+                                3: begin
+                                    nx_phase  = 1;
+                                    nx_fetched   = 0; // data fetch will be done in phase 1
+                                    nx_ridx_mode = { 1'b1, op[10] };
+                                end
+                            endcase
+                        end
+                    end
+                    5'h14,5'h15: begin // (-r32) (r32+)
+                        nx_idx_rdreg_sel = {op[15:10],2'd0};
+                        nx_idx_offset    = 0;
+                        nx_reg_dec       = !op[0];
+                        nx_pre_inc       =  op[0];
                         nx_pre_ok        = 1;
-                        nx_fetched          = 4;
                     end
+                    default:;
+                endcase
                 end
-                default:;
+            1: begin
+                case(mode)
+                    5'h11: begin
+                        nx_idx_offset[23:8] = { {8{op[7]}}, op[7:0] };
+                        nx_pre_ok           = 1;
+                        nx_fetched          = 1;
+                    end
+                    5'h12: begin
+                        nx_idx_offset[23:8] = op[15:0];
+                        nx_pre_ok           = 1;
+                        nx_fetched          = 2;
+                    end
+                    5'h13: begin
+                        nx_ridx_mode = ridx_mode;
+                        if( !ridx_mode[1] ) begin
+                            nx_idx_offset = { {8{op[31]}}, op[31:16] };
+                            nx_pre_ok     = 1;
+                            nx_fetched       = 4;
+                        end else begin
+                            nx_idx_rdreg_sel = op[23:16];
+                            nx_idx_rdreg_aux = op[31:24];
+                            nx_pre_ok        = 1;
+                            nx_fetched       = 4;
+                        end
+                    end
+                    default:;
+                endcase
+                end
             endcase
-        end
     end
 end
 
