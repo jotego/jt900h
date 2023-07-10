@@ -161,7 +161,7 @@ always @* begin
     nx_div_len = div_len;
     cc       = 0;
     nx_div_start = div_start;
-    nx_div_sign  = nx_div_sign;
+    nx_div_sign  = div_sign;
 
     case( sel )
         ALU_MOVE: rslt = op2;

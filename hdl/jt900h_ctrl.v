@@ -255,7 +255,7 @@ always @* begin
     nx_nodummy_fetch = nodummy_fetch;
     nx_goexec        = goxec;
     nx_exec_imm      = exec_imm;
-    nx_pc_we         = op_phase==FETCH ? 0 : pc_we;
+    nx_pc_we         = op_phase==FETCH ? 1'd0 : pc_we;
     nx_pc_rel        = 0;
     nx_keep_pc_we    = keep_pc_we;
     nx_rfp_we        = 0;
@@ -656,7 +656,7 @@ always @* begin
         end
         POP_PC: begin
             // retrieve the PC
-            nx_inc_xsp       = keep_inc_xsp + 4;
+            nx_inc_xsp       = keep_inc_xsp + 16'd4;
             nx_pc_we         = 1; // return
             nx_alu_imm[23:0] = op[23:0];
             // set RAM controller back to normal operation
@@ -900,7 +900,7 @@ always @* begin
                     nx_regs_we = expand_zz( op_zz );
                     nx_keep_we = nx_regs_we;
                     nx_phase   = WAIT_ALU;
-                    fetched    = op_zz[0] ? 3 : 2; // this also gives time to the ALU to set the busy bit
+                    fetched    = op_zz[0] ? 3'd3 : 3'd2; // this also gives time to the ALU to set the busy bit
                 end
                 10'b0001_1001_00: begin // MULA
                     nx_sel_xde  = 1;
@@ -1097,10 +1097,10 @@ always @* begin
                     nx_phase     = op[2:0]!=3'b111 ? ST_RAM : DUMMY;
                     if( op[2:0] != 3'b111 ) begin // all but CP
                         nx_phase     = ST_RAM;
-                        nx_dly_fetch = op_zz[0] ? 3 : 2;
+                        nx_dly_fetch = op_zz[0] ? 3'd3 : 3'd2;
                     end else begin // CP
                         nx_phase = DUMMY;
-                        fetched  = op_zz[0] ? 2 : 1;
+                        fetched  = op_zz[0] ? 3'd2 : 3'd1;
                     end
                 end
                 10'b1000_1???_0?: begin // LD R,r
@@ -1174,6 +1174,7 @@ always @* begin
                         2: nx_alu_op = ALU_CHG;
                         3: begin nx_alu_op = ALU_BIT; nx_flag_we  = 1; end
                         4: nx_alu_op = ALU_TSET;
+                        default:;
                     endcase
                     nx_regs_we  = expand_zz( op_zz );
                     nx_alu_smux = 1;
@@ -1227,6 +1228,7 @@ always @* begin
                         2: nx_alu_op = ALU_XORCF;
                         3: nx_alu_op = ALU_LDCF;
                         4: nx_alu_op = ALU_STCF;
+                        default:;
                     endcase
                     nx_flag_we = !op[2]; // only STCF alters registers
                     nx_regs_we = expand_zz( op_zz );
@@ -1244,6 +1246,7 @@ always @* begin
                         2: nx_alu_op = ALU_XORCFA;
                         3: nx_alu_op = ALU_LDCFA;
                         4: nx_alu_op = ALU_STCFA;
+                        default:;
                     endcase
                     if( op[2] ) begin
                         nx_dly_fetch = 1;
@@ -1262,6 +1265,7 @@ always @* begin
                         0: nx_alu_op = ALU_ANDCFX;
                         1: nx_alu_op = ALU_XORCFX;
                         2: nx_alu_op = ALU_STCFX;
+                        default:;
                     endcase
                     nx_alu_imm[10:8] = op[2:0];
                     nx_regs_we       = 1; // expand_zz( op_zz );
@@ -1535,6 +1539,7 @@ always @* begin
                     nx_alu_imm[23:8] = op[15:0];
                     fetched = 2;
                 end
+                default:;
             endcase
         end
         default: nx_phase=ILLEGAL;

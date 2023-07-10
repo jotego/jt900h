@@ -181,6 +181,7 @@ always @* begin
                                     nx_fetched   = 0; // data fetch will be done in phase 1
                                     nx_ridx_mode = { 1'b1, op[10] };
                                 end
+                                default:;
                             endcase
                         end
                     end
