@@ -167,16 +167,30 @@ always @* begin
     idx_out = regmux( idx_sel );
 end
 
-integer gen_cnt;
-
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        for( gen_cnt=0; gen_cnt<64; gen_cnt=gen_cnt+1 ) begin
-            accs[gen_cnt] <= 0;
-        end
-        for( gen_cnt=0; gen_cnt<16; gen_cnt=gen_cnt+1 ) begin
-            ptrs[gen_cnt] <= 0;
-        end
+        accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
+        accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
+        accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
+        accs[12] <= 0; accs[13] <= 0; accs[14] <= 0; accs[15] <= 0;
+        accs[16] <= 0; accs[17] <= 0; accs[18] <= 0; accs[19] <= 0;
+        accs[20] <= 0; accs[21] <= 0; accs[22] <= 0; accs[23] <= 0;
+        accs[24] <= 0; accs[25] <= 0; accs[26] <= 0; accs[27] <= 0;
+        accs[28] <= 0; accs[29] <= 0; accs[30] <= 0; accs[31] <= 0;
+        accs[32] <= 0; accs[33] <= 0; accs[34] <= 0; accs[35] <= 0;
+        accs[36] <= 0; accs[37] <= 0; accs[38] <= 0; accs[39] <= 0;
+        accs[40] <= 0; accs[41] <= 0; accs[42] <= 0; accs[43] <= 0;
+        accs[44] <= 0; accs[45] <= 0; accs[46] <= 0; accs[47] <= 0;
+        accs[48] <= 0; accs[49] <= 0; accs[50] <= 0; accs[51] <= 0;
+        accs[52] <= 0; accs[53] <= 0; accs[54] <= 0; accs[55] <= 0;
+        accs[56] <= 0; accs[57] <= 0; accs[58] <= 0; accs[59] <= 0;
+        accs[60] <= 0; accs[61] <= 0; accs[62] <= 0; accs[63] <= 0;
+
+        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
+        ptrs[ 4] <= 0; ptrs[ 5] <= 0; ptrs[ 6] <= 0; ptrs[ 7] <= 0;
+        ptrs[ 8] <= 0; ptrs[ 9] <= 0; ptrs[10] <= 0; ptrs[11] <= 0;
+        ptrs[12] <= 0; ptrs[13] <= 0; ptrs[14] <= 0; ptrs[15] <= 0;
+
         bc_unity <= 0;
         { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= 32'h100; // XSP initial value
     end else if(cen) begin
