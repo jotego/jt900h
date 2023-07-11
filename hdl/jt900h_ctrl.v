@@ -176,7 +176,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
-reg [15:0] nx_intnest, intnest;
+reg [ 7:0] nx_intnest, intnest;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -504,7 +504,7 @@ always @* begin
                         nx_popsr        = op[1];
                         nx_reti         = op[2];
                         if( nx_reti ) begin
-                            nx_intnest = intnest - 16'd1;
+                            nx_intnest = intnest - 1'd1;
                         end
                         fetched         = 0;
                     end
@@ -644,7 +644,10 @@ always @* begin
             nx_iff     = alu_imm[4:2]==3'd7 ? 3'd7 : alu_imm[4:2]+3'd1;
             nx_wr_len  = 4; // misnomer: it really is a read len, not a wr len...
             nx_phase   = IRQ_JP;
-            nx_intnest = intnest + 16'd1;
+            nx_intnest = intnest + 1'd1;
+`ifdef SIMULATION
+            if( &intnest ) begin $display("JT900H: reached maximum level of nested interrupts"); $finish; end
+`endif
             nx_intproc = 0; // interrupt processing stops here
         end
         IRQ_JP: begin
