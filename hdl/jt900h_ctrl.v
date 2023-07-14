@@ -85,6 +85,10 @@ module jt900h_ctrl(
     input             nx_v,
     input             nx_z,
 
+    // DMA
+    output reg [ 5:0] dma_rsel,
+    output reg [ 2:0] dma_we,
+
     input      [31:0] op,
     input             op_ok,
 
@@ -185,6 +189,9 @@ wire [3:0] inc_opnd;
 
 // Interrupt masks
 reg  [2:0] riff, nx_iff;
+// DMA
+reg  [2:0] nx_dma_we;
+reg  [5:0] nx_dma_rsel;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
 assign wra_imm = ld2imm & ram_wen;
@@ -282,6 +289,10 @@ always @* begin
     nx_imm2idx       = imm2idx;
     nx_ld2imm        = ld2imm;
     nx_popw          = popw;
+
+    // DMA
+    nx_dma_we        = 0;
+    nx_dma_rsel      = dma_rsel;
 
     nx_iff           = riff;
     bad_zz           = op_zz == 2'b11;
@@ -881,6 +892,17 @@ always @* begin
         EXEC: begin // second half of op-code decoding
             nx_phase = FETCH;
             casez( { op[7:0], was_load, bad_zz } )
+                10'b0010_1110_00: begin // LDC cr,c
+                    nx_dma_we   = expand_zz( op_zz );
+                    nx_dma_rsel = op[13:8];
+                    fetched     = 1;
+                end
+                10'b0010_1111_00: begin // LDC c,cr
+                    nx_regs_we  = expand_zz( op_zz );
+                    nx_dma_rsel = op[13:8];
+                    nx_dst      = nx_src;
+                    fetched     = 1;
+                end
                 10'b0101_????_?0: begin // DIV RR,r   -- DIV RR,(mem)
                     nx_alu_op  = op[2] ? ALU_DIVS : ALU_DIV;
                     nx_dst     = expand_reg(op[2:0],op_zz);
@@ -1613,6 +1635,10 @@ always @(posedge clk, posedge rst) begin
         ldd_write      <= 0;
         keep_lddwr     <= 0;
         rep            <= 0;
+        // DMA
+        dma_rsel       <= 0;
+        dma_we         <= 0;
+
         intproc        <= 0;
         intnest        <= 0;
         reti           <= 0;
@@ -1684,6 +1710,10 @@ always @(posedge clk, posedge rst) begin
         ldd_write      <= nx_ldd_write;
         keep_lddwr     <= nx_keep_lddwr;
         rep            <= nx_rep;
+
+        // DMA
+        dma_rsel       <= nx_dma_rsel;
+        dma_we         <= nx_dma_we;
 
         ld_high        <= nx_ld_high;
         link           <= nx_link;

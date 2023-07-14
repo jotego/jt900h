@@ -5,4 +5,5 @@
 ../../hdl/jt900h_regs.v
 ../../hdl/jt900h_alu.v
 ../../hdl/jt900h_div.v
+../../hdl/jt900h_udma.v
 ../../hdl/jt900h.v

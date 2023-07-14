@@ -96,6 +96,12 @@ wire        buf_rdy, rda_imm, wra_imm, rda_irq;
 wire        sel_xsp, sel_op8, sel_op16,
             sel_xde, sel_xhl;
 
+// DMA
+wire [31:0] dma_reg;
+wire [ 2:0] dma_regwe;
+wire [ 5:0] dma_regsel;
+wire        int_inc, int_dec;
+
 jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
     .clk            ( clk               ),
@@ -143,6 +149,9 @@ jt900h_ctrl u_ctrl(
     .inc_xde        ( inc_xde           ),
     .inc_xix        ( inc_xix           ),
     .ldd_write      ( ldd_write         ),
+    // DMA
+    .dma_we         ( dma_regwe         ),
+    .dma_rsel       ( dma_regsel        ),
 
     .ld_high        ( ld_high           ),
 
@@ -338,6 +347,19 @@ jt900h_ramctl u_ramctl(
 
     .dout           ( buf_dout          ),
     .ram_rdy        ( buf_rdy           )
+);
+
+jt900h_udma u_dma(
+    .rst            ( rst               ),
+    .clk            ( clk               ),
+    .cen            ( cen               ),
+    // Register access
+    .regin          ( src_out           ),
+    .regsel         ( dma_regsel        ),
+    .regwe          ( dma_regwe         ),
+    .int_inc        ( int_inc           ),
+    .int_dec        ( int_dec           ),
+    .regout         ( dma_reg           )
 );
 
 jt900h_pc #(.PC_RSTVAL(PC_RSTVAL)) u_pc(
