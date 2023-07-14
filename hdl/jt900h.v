@@ -100,7 +100,7 @@ wire        sel_xsp, sel_op8, sel_op16,
 wire [31:0] dma_reg;
 wire [ 2:0] dma_regwe;
 wire [ 5:0] dma_regsel;
-wire        int_inc, int_dec;
+wire        int_inc, int_dec, dma_src;
 
 jt900h_ctrl u_ctrl(
     .rst            ( rst               ),
@@ -152,6 +152,7 @@ jt900h_ctrl u_ctrl(
     // DMA
     .dma_we         ( dma_regwe         ),
     .dma_rsel       ( dma_regsel        ),
+    .dma_src        ( dma_src           ),
     .int_inc        ( int_inc           ),
     .int_dec        ( int_dec           ),
 
@@ -222,6 +223,9 @@ jt900h_regs u_regs(
     .reg_step       ( reg_step          ),
     .reg_inc        ( reg_inc           ),
     .reg_dec        ( reg_dec           ),
+    // DMA
+    .dma_reg        ( dma_reg           ),
+    .dma_sel        ( dma_src           ),
     // Accumulator
     .acc            ( acc               ),
     .ld_high        ( ld_high           ),

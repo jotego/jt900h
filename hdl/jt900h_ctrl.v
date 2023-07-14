@@ -88,8 +88,7 @@ module jt900h_ctrl(
     // DMA
     output reg [ 5:0] dma_rsel,
     output reg [ 2:0] dma_we,
-    output reg        int_inc,
-    output reg        int_dec,
+    output reg        int_inc, int_dec, dma_src,
 
     input      [31:0] op,
     input             op_ok,
@@ -194,6 +193,7 @@ reg  [2:0] riff, nx_iff;
 // DMA
 reg  [2:0] nx_dma_we;
 reg  [5:0] nx_dma_rsel;
+reg        nx_dma_src;
 
 assign sr = { 1'b1, riff, 1'b1, 1'b0, rfp, flags };
 assign wra_imm = ld2imm & ram_wen;
@@ -294,6 +294,7 @@ always @* begin
 
     // DMA
     nx_dma_we        = 0;
+    nx_dma_src       = 0;
     nx_dma_rsel      = dma_rsel;
 
     nx_iff           = riff;
@@ -894,13 +895,14 @@ always @* begin
                 10'b0010_1110_00: begin // LDC cr,c
                     nx_dma_we   = expand_zz( op_zz );
                     nx_dma_rsel = op[13:8];
-                    fetched     = 1;
+                    fetched     = 2;
                 end
                 10'b0010_1111_00: begin // LDC c,cr
                     nx_regs_we  = expand_zz( op_zz );
                     nx_dma_rsel = op[13:8];
+                    nx_dma_src  = 1;
                     nx_dst      = nx_src;
-                    fetched     = 1;
+                    fetched     = 2;
                 end
                 10'b0101_????_?0: begin // DIV RR,r   -- DIV RR,(mem)
                     nx_alu_op  = op[2] ? ALU_DIVS : ALU_DIV;
@@ -1637,6 +1639,7 @@ always @(posedge clk, posedge rst) begin
         // DMA
         dma_rsel       <= 0;
         dma_we         <= 0;
+        dma_src        <= 0;
 
         int_inc        <= 0;
         int_dec        <= 0;
@@ -1714,6 +1717,7 @@ always @(posedge clk, posedge rst) begin
         // DMA
         dma_rsel       <= nx_dma_rsel;
         dma_we         <= nx_dma_we;
+        dma_src        <= nx_dma_src;
         int_inc        <= nx_intinc;
         int_dec        <= nx_intdec;
 

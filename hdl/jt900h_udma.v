@@ -34,6 +34,17 @@ reg  [15:0] dmac[0:3];
 reg  [ 7:0] dmam[0:3];
 reg  [15:0] intnest;
 
+`ifdef SIMULATION
+wire [31:0] SREG0 = sreg[0], SREG1 = sreg[1],
+            SREG2 = sreg[2], SREG3 = sreg[3],
+            DREG0 = dreg[0], DREG1 = dreg[1],
+            DREG2 = dreg[2], DREG3 = dreg[3];
+wire [15:0] DMAC0 = dmac[0], DMAC1 = dmac[1],
+            DMAC2 = dmac[2], DMAC3 = dmac[3];
+wire [ 7:0] DMAM0 = dmam[0], DMAM1 = dmam[1],
+            DMAM2 = dmam[2], DMAM3 = dmam[3];
+`endif
+
 // output register mux
 always @(posedge clk) if(cen) begin
     case( regsel[5:4] )

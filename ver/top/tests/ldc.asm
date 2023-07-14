@@ -7,16 +7,16 @@
 
     ; ASL only lets us test full DMA register access
     ; the CPU seemed to be able to access individual bytes, though
-    ldc DMAS0,XWA
-    ldc XDE,DMAS0
+    ldc DMAS2,XWA
+    ldc XDE,DMAS2
     cp xde,xwa
     jp ne,bad_end
     ld xde,0
 
     rl 1,xwa
 
-    ldc DMAD0,XWA
-    ldc XDE,DMAD0
+    ldc DMAD2,XWA
+    ldc XDE,DMAD2
     cp xde,xwa
     jp ne,bad_end
 

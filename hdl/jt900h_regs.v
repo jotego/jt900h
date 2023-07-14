@@ -40,6 +40,9 @@ module jt900h_regs(
     output     [31:0] xhl,
     input             dec_xhl,
 
+    // DMA
+    input      [31:0] dma_reg,
+    input             dma_sel,
     // Direct access to accumulator (RRD, RLD)
     input             ld_high,
     output     [31:0] acc,
@@ -141,7 +144,9 @@ assign xhl = cur_xhl;
     assign xhl3 = {accs[{2'd3,4'd15}],accs[{2'd3,4'd14}],accs[{2'd3,4'd13}],accs[{2'd3,4'd12}]};
 `endif
 
-assign data_mux = ex_we ? src_out : data_sel ? ram_dout : alu_dout;
+assign data_mux = ex_we    ? src_out  :
+                  data_sel ? ram_dout :
+                  dma_sel  ? dma_reg  : alu_dout;
 assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
 assign ptr_out  = { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
                     ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] };
