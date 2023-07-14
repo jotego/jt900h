@@ -88,6 +88,8 @@ module jt900h_ctrl(
     // DMA
     output reg [ 5:0] dma_rsel,
     output reg [ 2:0] dma_we,
+    output reg        int_inc,
+    output reg        int_dec,
 
     input      [31:0] op,
     input             op_ok,
@@ -180,7 +182,7 @@ reg        nx_inc_rfp, nx_dec_rfp,
 reg  [2:0] nx_dly_fetch, dly_fetch; // fetch update to be run later
 reg [15:0] nx_dec_xsp, nx_keep_dec_xsp, keep_dec_xsp;
 reg [15:0] nx_inc_xsp, nx_keep_inc_xsp, keep_inc_xsp;
-reg [ 7:0] nx_intnest, intnest;
+reg        nx_intinc, nx_intdec;
 
 reg  [1:0] op_zz, nx_op_zz;
 reg        ram_wait, nx_ram_wait, latch_op, req_wait;
@@ -324,7 +326,8 @@ always @* begin
 
     // interrupts
     nx_intproc       = intproc;
-    nx_intnest       = intnest;
+    nx_intinc        = 0;
+    nx_intdec        = 0;
 
     if(op_ok && !ram_wait) case( op_phase )
         FETCH: if(!pc_we) begin
@@ -373,7 +376,6 @@ always @* begin
             if( irq && intlvl >= riff && intlvl!=0 ) begin
                 // Interrupt accepted
                 // nx_irqack = 1;
-                // nx_intnest = intnest + 16'd1;
                 // 1st push SR
                 nx_dec_xsp = 4;
                 nx_phase   = PUSH_PC;
@@ -515,7 +517,7 @@ always @* begin
                         nx_popsr        = op[1];
                         nx_reti         = op[2];
                         if( nx_reti ) begin
-                            nx_intnest = intnest - 1'd1;
+                            nx_intdec = 1;
                         end
                         fetched         = 0;
                     end
@@ -655,10 +657,7 @@ always @* begin
             nx_iff     = alu_imm[4:2]==3'd7 ? 3'd7 : alu_imm[4:2]+3'd1;
             nx_wr_len  = 4; // misnomer: it really is a read len, not a wr len...
             nx_phase   = IRQ_JP;
-            nx_intnest = intnest + 1'd1;
-`ifdef SIMULATION
-            if( &intnest ) begin $display("JT900H: reached maximum level of nested interrupts"); $finish; end
-`endif
+            nx_intinc  = 1;
             nx_intproc = 0; // interrupt processing stops here
         end
         IRQ_JP: begin
@@ -1639,8 +1638,9 @@ always @(posedge clk, posedge rst) begin
         dma_rsel       <= 0;
         dma_we         <= 0;
 
+        int_inc        <= 0;
+        int_dec        <= 0;
         intproc        <= 0;
-        intnest        <= 0;
         reti           <= 0;
         ex_we          <= 0;
         keep_ex        <= 0;
@@ -1714,6 +1714,8 @@ always @(posedge clk, posedge rst) begin
         // DMA
         dma_rsel       <= nx_dma_rsel;
         dma_we         <= nx_dma_we;
+        int_inc        <= nx_intinc;
+        int_dec        <= nx_intdec;
 
         ld_high        <= nx_ld_high;
         link           <= nx_link;
@@ -1721,7 +1723,6 @@ always @(posedge clk, posedge rst) begin
         popsr          <= nx_popsr;
 
         intproc        <= nx_intproc;
-        intnest        <= nx_intnest;
         reti           <= nx_reti;
         ex_we          <= nx_ex_we;
         keep_ex        <= nx_keep_ex;

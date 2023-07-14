@@ -152,6 +152,8 @@ jt900h_ctrl u_ctrl(
     // DMA
     .dma_we         ( dma_regwe         ),
     .dma_rsel       ( dma_regsel        ),
+    .int_inc        ( int_inc           ),
+    .int_dec        ( int_dec           ),
 
     .ld_high        ( ld_high           ),
 

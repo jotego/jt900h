@@ -52,6 +52,8 @@ always @(posedge clk, posedge rst) begin
         dmam[0] <= 0; dmam[1] <= 0; dmam[2] <= 0; dmam[3] <= 0;
         intnest <= 0;
     end else if( cen ) begin
+        if( int_inc ) intnest <= intnest + 1'd1;
+        if( int_dec ) intnest <= intnest - 1'd1;
         case( regsel[5:4] )
             0: begin
                 if( regwe[2] ) sreg[regsel[3:2]] <= regin;
