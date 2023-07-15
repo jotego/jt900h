@@ -386,7 +386,7 @@ always @* begin
                 fetched   = 0;
                 // get out of a possible halted state
                 nx_halted = 0;
-            end else if(!halted) begin
+            end else if(!halted && !flag_we ) begin
                 casez( op[7:0] )
                     8'b0000_0000: begin // NOP
                         fetched = 1;
