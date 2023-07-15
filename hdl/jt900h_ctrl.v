@@ -617,12 +617,11 @@ always @* begin
             nx_sel_xsp  = 1;
             nx_ram_dsel = DOUT_SR; // Select SR as ram_din
             nx_ram_wen  = 1;
+            nx_phase    = DUMMY;
             if( intproc ) begin
-                nx_phase = IRQ;
                 nx_wr_len= 2;
             end else begin
                 nx_wr_len   = dec_xsp[2:0]; // 1 or 2 bytes
-                nx_phase    = DUMMY;
             end
         end
         PUSH_PC: begin
@@ -787,7 +786,7 @@ always @* begin
             nx_regs_we = keep_we;
             if( keep_we!=0 ) nx_flag_we = flag_we;
             nx_dec_xsp = keep_dec_xsp;
-            nx_phase   = reti ? POP_PC : FETCH;
+            nx_phase   = intproc ? IRQ : reti ? POP_PC : FETCH;
         end
         LD_RAM: begin
             nx_ram_ren = 0;
