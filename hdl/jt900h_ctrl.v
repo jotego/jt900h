@@ -755,7 +755,7 @@ always @* begin
                     nx_phase    = DUMMY;
                 end
                 //8'b1100_0???, // CHG #3,(mem)
-                9'b1100_1???_?: begin // BIT #3,(mem)
+                9'b1100_1???_1: begin // BIT #3,(mem)
                     nx_phase   = LD_RAM;
                     nx_ram_ren = 1;
                     nx_goexec  = 1;
@@ -1093,7 +1093,6 @@ always @* begin
                         3'b111:  nx_alu_op = ALU_CP2;
                         default: nx_alu_op = ALU_NOP;
                     endcase
-                    nx_dst       = expand_reg( op[2:0], op_zz );
                     nx_regs_we   = expand_zz( op_zz );
                     nx_flag_we   = 1;
                     nx_alu_smux  = 1;
