@@ -1082,7 +1082,6 @@ always @* begin
                     endcase
                 end
                 10'b1???_1???_10: begin // arithmetic to memory
-                    nx_src       = regs_dst;
                     case( op[6:4] )
                         3'b110: nx_alu_op = ALU_OR;
                         3'b101: nx_alu_op = ALU_XOR;
@@ -1094,6 +1093,7 @@ always @* begin
                         3'b111:  nx_alu_op = ALU_CP2;
                         default: nx_alu_op = ALU_NOP;
                     endcase
+                    nx_dst       = expand_reg( op[2:0], op_zz );
                     nx_regs_we   = expand_zz( op_zz );
                     nx_flag_we   = 1;
                     nx_alu_smux  = 1;

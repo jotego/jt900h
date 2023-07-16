@@ -65,6 +65,9 @@ always @(posedge clk, posedge rst) begin
     end else if( cen ) begin
         if( int_inc ) intnest <= intnest + 1'd1;
         if( int_dec ) intnest <= intnest - 1'd1;
+`ifdef SIMULATION
+        if( regwe!=0 ) $display("uDMA written to");
+`endif
         case( regsel[5:4] )
             0: begin
                 if( regwe[2] ) sreg[regsel[3:2]] <= regin;

@@ -9,6 +9,9 @@
     jp c,bad_end
     or b,15
 
+    scf
+    ex f,f'
+
     ccf
     andcf 1,b       ; Carry flag to 1
     ex f,f'
