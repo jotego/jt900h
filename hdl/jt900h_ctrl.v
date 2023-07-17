@@ -45,6 +45,7 @@ module jt900h_ctrl(
     output reg        ldd_write,
     output reg        rda_imm,
     output reg        rda_irq,
+    output reg        rda_swi,
     output            wra_imm,
 
     output reg        dec_bc,
@@ -152,7 +153,7 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_ld_high,
            nx_ex_we, nx_keep_ex, keep_ex,
            keep_smux, nx_keep_smux,
-           nx_imm2idx, imm2idx, nx_rda_irq,
+           nx_imm2idx, imm2idx, nx_rda_irq, nx_rda_swi,
            nx_buserror, nx_halted, halted;
 reg  [1:0] nx_ram_dsel;
 reg [31:0] nx_alu_imm, nx_data_latch;
@@ -284,6 +285,7 @@ always @* begin
     nx_keep_selop16  = keep_selop16;
     nx_rda_imm       = rda_imm;
     nx_rda_irq       = rda_irq;
+    nx_rda_swi       = rda_swi;
     nx_sel_xde       = sel_xde;
     nx_sel_xhl       = sel_xhl;
     nx_dec_xhl       = 0;
@@ -424,6 +426,7 @@ always @* begin
                         fetched    = 1;
                         nx_wr_len  = 2;
                         nx_phase   = PUSH_PC;
+                        nx_rda_swi = 1;
                         // Set up the rest of the process
                         nx_intproc = 1;
                         nx_alu_imm[7:0] = { 3'd0, op[2:0], 2'd0 };
@@ -665,6 +668,7 @@ always @* begin
             nx_pc_we         = 1;
             nx_ram_ren       = 0;
             nx_rda_irq       = 0;
+            nx_rda_swi       = 0;
             nx_phase         = DUMMY;
         end
         POP_PC: begin
@@ -1648,6 +1652,7 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= 0;
         rda_imm        <= 0;
         rda_irq        <= 0;
+        rda_swi        <= 0;
         popw           <= 0;
         sel_xde        <= 0;
         sel_xhl        <= 0;
@@ -1731,6 +1736,7 @@ always @(posedge clk, posedge rst) begin
         imm2idx        <= nx_imm2idx;
         rda_imm        <= nx_rda_imm;
         rda_irq        <= nx_rda_irq;
+        rda_swi        <= nx_rda_swi;
         popw           <= nx_popw;
 
         sel_xde        <= nx_sel_xde;

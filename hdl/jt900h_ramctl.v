@@ -40,6 +40,7 @@ module jt900h_ramctl(
     input             rda_imm, // read-address from immediate value
     input             wra_imm, // write-address from immediate value
     input             rda_irq, // read-address from vector table
+    input             rda_swi, // signals SWI, so external vectors will not be used
 
     // Support for the external device setting the interrupt address
     input      [ 7:0] int_addr,
@@ -86,7 +87,7 @@ reg         wrbusy, ldram_l, irq_ack_l;
 reg  [ 1:0] wron;
 
 // rd_addr use for reads
-assign rd_addr =    rda_irq   ? { 16'hffff, inta_en ? int_addr_l : imm[7:0] } :
+assign rd_addr =    rda_irq   ? { 16'hffff, (inta_en & ~rda_swi) ? int_addr_l : imm[7:0] } :
                     !ldram_en ? ( pc_bad ? cache_addr : pc ) :
                     sel_xsp   ? xsp :
                     sel_xde   ? xde :

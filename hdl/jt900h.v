@@ -92,7 +92,7 @@ wire        flag_we, djnz, flag_only, nx_v, nx_z;
 wire        ldram_en;
 wire        cur_op;
 wire [31:0] buf_dout, xsp;
-wire        buf_rdy, rda_imm, wra_imm, rda_irq;
+wire        buf_rdy, rda_imm, wra_imm, rda_irq, rda_swi;
 wire        sel_xsp, sel_op8, sel_op16,
             sel_xde, sel_xhl;
 
@@ -113,6 +113,7 @@ jt900h_ctrl u_ctrl(
     .irq            ( irq               ),
     .irq_ack        ( irq_ack           ),
     .rda_irq        ( rda_irq           ),
+    .rda_swi        ( rda_swi           ),
 
     .rfp            ( rfp               ),
     .inc_rfp        ( inc_rfp           ),
@@ -320,6 +321,7 @@ jt900h_ramctl u_ramctl(
     // Support for the external device setting the interrupt address
     .int_addr       ( int_addr          ),
     .inta_en        ( inta_en           ),
+    .rda_swi        ( rda_swi           ),
     .irq_ack        ( irq_ack           ),
     // MULA support
     .xde            ( xde[23:0]         ),
