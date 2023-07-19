@@ -295,7 +295,7 @@ always @* begin
         end
         ALU_SUB2, ALU_SBC2, ALU_CP2:
         begin
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op2[3:0]  }-{1'b0,op0_mux[3:0]}  -{ 4'd0, sel==ALU_SBC && carry };
+            { nx_h,  rslt[ 3: 0] } = {1'b0,op2[3:0]  }-{1'b0,op0_mux[3:0]}  -{ 4'd0, sel==ALU_SBC2 && carry };
             { cc[0], rslt[ 7: 4] } = {1'b0,op2[ 7: 4]}-{1'b0,op0_mux[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op2[15: 8]}-{1'b0,op0_mux[15: 8]}-{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op2[31:16]}-{1'b0,op0_mux[31:16]}-{16'b0,cc[1]};
