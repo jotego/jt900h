@@ -1461,6 +1461,7 @@ always @* begin
                 10'b1101_0???_??, // XOR R,r
                 10'b1100_0???_?0, // AND R,r
                 10'b1010_0???_?0, // SUB R,r
+                10'b1011_0???_?0, // SBC R,r
                 10'b100?_0???_?0: // ADD R,r / ADC R,r
                 begin
                     nx_src      = regs_dst; // swap R, r
@@ -1471,6 +1472,7 @@ always @* begin
                         op[7:3] == 5'b1101_0 ? ALU_XOR :
                         op[7:3] == 5'b1100_0 ? ALU_AND :
                         op[7:3] == 5'b1010_0 ? ALU_SUB :
+                        op[7:3] == 5'b1011_0 ? ALU_SBC :
                         op[7:3] == 5'b1001_0 ? ALU_ADC :
                         op[7:3] == 5'b1000_0 ? ALU_ADD :
                         ALU_NOP;
