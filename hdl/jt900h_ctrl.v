@@ -908,7 +908,7 @@ always @* begin
                     fetched     = 2;
                 end
                 10'b0101_????_?0: begin // DIV RR,r   -- DIV RR,(mem)
-                    nx_alu_op  = op[2] ? ALU_DIVS : ALU_DIV;
+                    nx_alu_op  = op[3] ? ALU_DIVS : ALU_DIV;
                     nx_dst     = expand_reg(op[2:0],op_zz);
                     if( was_load ) begin
                         nx_src      = nx_dst;
