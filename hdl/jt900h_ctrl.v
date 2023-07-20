@@ -34,7 +34,6 @@ module jt900h_ctrl(
 
     output reg        ram_ren,    // read enable
     output reg        ram_wen,    // write enable
-    output reg        buserror,
     output reg        idx_en,
     output reg        idx_last,
     input             idx_ok,
@@ -98,7 +97,11 @@ module jt900h_ctrl(
     output reg [ 2:0] regs_we,
     output reg [ 7:0] regs_dst,
     output reg [ 7:0] regs_src,
-    output reg        ex_we
+    output reg        ex_we,
+    // Debugging
+    output reg        buserror,
+    input      [ 7:0] st_addr,
+    output reg [ 7:0] st_dout
 );
 
 localparam [4:0] FETCH    = 5'd0,
@@ -218,6 +221,17 @@ function [7:0] expand_reg;
                                {4'he, short_reg[1:0],2'd0 };
 endfunction
 
+always @(posedge clk) begin
+    case( st_addr )
+        1: st_dout <= op[7:0];
+        2: st_dout <= op[15:8];
+        3: st_dout <= op[23:16];
+        4: st_dout <= op[31:24];
+        5: st_dout <= {3'd0,op_phase};
+        default: st_dout <= {7'd0,buserror};
+    endcase
+end
+
 always @* begin
     case( op[3:0] ) // conditions
         0: jp_ok = 0;    // false
@@ -332,7 +346,7 @@ always @* begin
     nx_intinc        = 0;
     nx_intdec        = 0;
 
-    if(op_ok && !ram_wait) case( op_phase )
+    if( op_ok && !ram_wait && !buserror ) case( op_phase )
         FETCH: if(!pc_we) begin
             `ifdef SIMULATION
             //$display("Fetched %04X_%04X", {op[7:0],op[15:8]},{op[23:16],op[31:24]});

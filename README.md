@@ -26,3 +26,7 @@ The PUSH operation takes an extra cycle to cater for the case when the XSP is at
 ## PC at Reset
 
 The NeoGeo Pocket seems to start operation from FF1800, which does not agree with the TMP95C061 user guide or similar documents. The parameter `PC_RSTVAL` can be used in order to accomodate arbitrary reset values for the PC.
+
+## Resource utilization
+
+Compiled on MiSTer: ~7000 LE and no BRAM

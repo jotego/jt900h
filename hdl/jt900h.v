@@ -39,7 +39,10 @@ module jt900h(
     // Register dump
     output            buserror,
     input      [ 7:0] dmp_addr,     // dump
-    output     [ 7:0] dmp_dout
+    output     [ 7:0] dmp_dout,
+    // Debug
+    input      [ 7:0] st_addr,
+    output     [ 7:0] st_dout
 );
 
 parameter PC_RSTVAL=0; // Use FF1800 for NeoGeo Pocket
@@ -107,7 +110,6 @@ jt900h_ctrl u_ctrl(
     .clk            ( clk               ),
     .cen            ( cen               ),
 
-    .buserror       ( buserror          ),
     // interrupt processing
     .intlvl         ( intrq             ),
     .irq            ( irq               ),
@@ -181,7 +183,11 @@ jt900h_ctrl u_ctrl(
     .regs_we        ( regs_we           ),
     .regs_dst       ( regs_dst          ),
     .regs_src       ( regs_src          ),
-    .ex_we          ( ex_we             )
+    .ex_we          ( ex_we             ),
+    // Debug
+    .buserror       ( buserror          ),
+    .st_addr        ( st_addr           ),
+    .st_dout        ( st_dout           )
 );
 
 jt900h_regs u_regs(
