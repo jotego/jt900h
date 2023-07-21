@@ -25,11 +25,11 @@ struct Mem {
 	~Mem() { if(p) delete []p; }
 	uint8_t Rd8( uint32_t a ) { return p[a]; }
 	uint32_t Rd32(uint32_t a) {
-		if( a&3==0 ) {
+		if( (a&3)==0 ) {
 			return *(((uint32_t*)p)+(a>>2));
 		}
 		Reg32 aux;
-		if( a&3==2 ) {
+		if( (a&3)==2 ) {
 			uint16_t *p16 = (uint16_t*)p;
 			p16 += a>>1;
 			aux.w[0] = *p16++;

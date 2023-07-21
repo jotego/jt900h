@@ -1,5 +1,8 @@
 #include "emu.hpp"
 #include <fstream>
+#include "UUT.h"
+#include "UUT_jt900h.h"
+#include "UUT_jt900h_regs.h"
 
 using namespace std;
 
@@ -69,28 +72,69 @@ void show( T900H& c, Mem &m, uint32_t old_pc, int fetched ) {
     putchar('\n');
 }
 
-int main() {
+void clock(UUT& uut, int times) {
+    while( times-->0 ) {
+        uut.clk=0;
+        uut.cen=0;
+        uut.eval();
+        uut.clk=1;
+        uut.eval();
+        uut.clk=0;
+        uut.cen=1;
+        uut.eval();
+        uut.clk=1;
+        uut.eval();
+    }
+}
+
+void reset(UUT& uut) {
+    uut.rst = 1;
+    clock(uut,4);
+    uut.rst = 0;
+}
+
+bool cmp( UUT& uut, T900H& emu ) {
+    bool equal = true;
+    if( uut.jt900h->u_regs->__PVT__xix != emu.xix.q ) { equal=false; printf("> xix=%08X-%08X ",uut.jt900h->u_regs->__PVT__xix,emu.xix.q); }
+    if( !equal ) putchar('\n');
+    return equal;
+}
+
+int main(int argc, char *argv[]) {
     T900H cpu;
     Mem m;
+    VerilatedContext context;
+    context.commandArgs(argc, argv);
 
-    srand(0);
-    int rom_bank=0xff;
-    //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
-    // for the stack, leave it alone for now
-    fill( m, rom_bank );
-    // Set PC start at reset
-    m.p[0xffff00]= 0; //rom_bank<<16;
-    m.p[0xffff01]= 0;
-    m.p[0xffff02]= 0xff;
-    m.p[0xffff03]= 0;
-    dump(m);
-    uint32_t end = (rom_bank<<16) | 0x0080;
-    cpu.Reset(m);
-    while( cpu.pc.q<end ) {
-        auto pc_old = cpu.pc.q;
-        auto fetched = cpu.Exec( m );
-        show(cpu, m, pc_old, fetched);
+    try{
+        UUT uut{&context};
+        reset(uut);
+        srand(0);
+        int rom_bank=0xff;
+        //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
+        // for the stack, leave it alone for now
+        fill( m, rom_bank );
+        // Set PC start at reset
+        m.p[0xffff00]= 0; //rom_bank<<16;
+        m.p[0xffff01]= 0;
+        m.p[0xffff02]= 0xff;
+        m.p[0xffff03]= 0;
+        dump(m);
+        uint32_t end = (rom_bank<<16) | 0x0080;
+        cpu.Reset(m);
+        while( cpu.pc.q<end ) {
+            auto pc_old = cpu.pc.q;
+            auto fetched = cpu.Exec( m );
+            show(cpu, m, pc_old, fetched);
+            if( !cmp(uut, cpu) ) {
+                printf("JT900H and the CPU model diverged\n");
+                break;
+           }
+        }
+    } catch( const char *error ) {
+        fputs(error,stderr);
+        fputc('\n',stderr);
+        return 1;
     }
-
     return 0;
 }

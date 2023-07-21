@@ -111,7 +111,7 @@ assign xde = cur_xde;
 assign xhl = cur_xhl;
 
 `ifdef SIMULATION
-    wire [31:0] xiy,xiz;
+    wire [31:0] xiy /* verilator public */,xiz /* verilator public */;
     wire [31:0] cur_xbc;
 
     assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
