@@ -72,35 +72,45 @@ void show( T900H& c, Mem &m, uint32_t old_pc, int fetched ) {
     putchar('\n');
 }
 
-void clock(UUT& uut, int times) {
+void clock(UUT& uut, Mem &m, int times) {
+    times <<= 2;
     while( times-->0 ) {
-        uut.clk=0;
-        uut.cen=0;
-        uut.eval();
-        uut.clk=1;
-        uut.eval();
-        uut.clk=0;
-        uut.cen=1;
-        uut.eval();
-        uut.clk=1;
+        uut.clk=1-uut.clk;
+        if( uut.clk==0 ) {
+            uut.cen=1-uut.cen;
+            uut.din = m.Rd16(uut.addr);
+        }
         uut.eval();
     }
 }
 
-void reset(UUT& uut) {
+void reset(UUT& uut, Mem &m) {
     uut.rst = 1;
-    clock(uut,4);
+    clock(uut,m,4);
     uut.rst = 0;
 }
 
 bool cmp( UUT& uut, T900H& emu ) {
-    bool equal = true;
-    if( uut.jt900h->u_regs->__PVT__xix != emu.xix.q ) { equal=false; printf("> xix=%08X-%08X ",uut.jt900h->u_regs->__PVT__xix,emu.xix.q); }
-    if( !equal ) putchar('\n');
-    return equal;
+    if( uut.jt900h->u_regs->xix != emu.xix.q ) return false;
+    if( uut.jt900h->u_regs->xiy != emu.xiy.q ) return false;
+    if( uut.jt900h->u_regs->xiz != emu.xiz.q ) return false;
+    return true;
+}
+
+
+void show_comp( UUT& uut, T900H& emu ) {
+    #define PCMP(a,b) printf("%08X (%08X)%c ", a.q, b, a.q!=b ? '*' : ' ' );
+    auto regs = uut.jt900h->u_regs;
+    PCMP( emu.xix, regs->xix )
+    PCMP( emu.xiy, regs->xiy )
+    PCMP( emu.xiz, regs->xiz )
+    PCMP( emu.xsp, regs->xsp )
+    #undef PCMP
+    putchar('\n');
 }
 
 int main(int argc, char *argv[]) {
+    const int MAXCYCLES=10;
     T900H cpu;
     Mem m;
     VerilatedContext context;
@@ -108,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     try{
         UUT uut{&context};
-        reset(uut);
+        reset(uut,m);
         srand(0);
         int rom_bank=0xff;
         //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
@@ -125,9 +135,15 @@ int main(int argc, char *argv[]) {
         while( cpu.pc.q<end ) {
             auto pc_old = cpu.pc.q;
             auto fetched = cpu.Exec( m );
+            auto matched = false;
             show(cpu, m, pc_old, fetched);
-            if( !cmp(uut, cpu) ) {
+            for( int k=0; k<MAXCYCLES;k++ ) {
+                clock( uut, m, 1 );
+                if( cmp(uut,cpu) ) { matched=true; break; }
+            }
+            if( !matched ) {
                 printf("JT900H and the CPU model diverged\n");
+                show_comp( uut, cpu );
                 break;
            }
         }

@@ -31,7 +31,7 @@ module jt900h_regs(
     input             dec_bc,
     input             ex_we,        // Exchange two registers
     // stack
-    output     [31:0] xsp,
+    output     [31:0] xsp /* verilator public */,
     input      [15:0] inc_xsp,
     input      [15:0] dec_xsp,
 
@@ -98,7 +98,7 @@ reg [7:0] r0sel, r1sel, aux_sel, idx_sel;
 wire [31:0] full_step, data_mux, ptr_out;
 wire [ 2:0] we;
 wire [15:0] cur_bc;
-wire [31:0] cur_xwa, cur_xde, cur_xhl, xix;
+wire [31:0] cur_xwa, cur_xde, cur_xhl, xix /* verilator public */;
 
 assign acc = {accs[{rfp,4'd3}],accs[{rfp,4'd2}],accs[{rfp,4'd1}],accs[{rfp,4'd0}]};
 assign cur_xwa = acc;
@@ -118,10 +118,10 @@ assign xhl = cur_xhl;
     assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
     assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
 
-    wire [31:0] xwa0, xbc0, xde0, xhl0,
-                xwa1, xbc1, xde1, xhl1,
-                xwa2, xbc2, xde2, xhl2,
-                xwa3, xbc3, xde3, xhl3;
+    wire [31:0] xwa0 /* verilator public */, xbc0 /* verilator public */, xde0 /* verilator public */, xhl0 /* verilator public */,
+                xwa1 /* verilator public */, xbc1 /* verilator public */, xde1 /* verilator public */, xhl1 /* verilator public */,
+                xwa2 /* verilator public */, xbc2 /* verilator public */, xde2 /* verilator public */, xhl2 /* verilator public */,
+                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */;
 
     assign xwa0 = {accs[{2'd0,4'd3}],accs[{2'd0,4'd2}],accs[{2'd0,4'd1}],accs[{2'd0,4'd0}]};
     assign xwa1 = {accs[{2'd1,4'd3}],accs[{2'd1,4'd2}],accs[{2'd1,4'd1}],accs[{2'd1,4'd0}]};

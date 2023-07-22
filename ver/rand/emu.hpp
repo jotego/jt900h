@@ -24,6 +24,12 @@ struct Mem {
 	}
 	~Mem() { if(p) delete []p; }
 	uint8_t Rd8( uint32_t a ) { return p[a]; }
+	uint16_t Rd16(uint32_t a) {
+		Reg32 aux;
+		aux.b[0] = p[a];
+		aux.b[1] = p[a+1];
+		return aux.w[0];
+	}
 	uint32_t Rd32(uint32_t a) {
 		if( (a&3)==0 ) {
 			return *(((uint32_t*)p)+(a>>2));
