@@ -120,12 +120,15 @@ bool cmp( UUT& uut, T900H& emu ) {
     if( uut.jt900h->u_regs->xiy != emu.xiy.q ) return false;
     if( uut.jt900h->u_regs->xiz != emu.xiz.q ) return false;
     if( uut.jt900h->u_regs->xsp != emu.xsp.q ) return false;
+
+    if( uut.jt900h->flags != emu.flags ) return false;
     return true;
 }
 
 
 void show_comp( UUT& uut, T900H& emu ) {
     #define PCMP(s,a,b) printf( s ":%08X (%08X)%c  ", a.q, b, a.q!=b ? '*' : ' ' );
+    #define PCFL(s,a,b) printf( s ":%02X (%02X)%c  ", a, b, a!=b ? '*' : ' ' );
     auto regs = uut.jt900h->u_regs;
     PCMP( "XWA0", emu.rr[0].xwa, regs->xwa0 ) PCMP( "XWA1", emu.rr[1].xwa, regs->xwa1 ) PCMP( "XWA2", emu.rr[2].xwa, regs->xwa2 ) PCMP( "XWA3", emu.rr[3].xwa, regs->xwa3 ) putchar('\n');
     PCMP( "XBC0", emu.rr[0].xbc, regs->xbc0 ) PCMP( "XBC1", emu.rr[1].xbc, regs->xbc1 ) PCMP( "XBC2", emu.rr[2].xbc, regs->xbc2 ) PCMP( "XBC3", emu.rr[3].xbc, regs->xbc3 ) putchar('\n');
@@ -134,7 +137,7 @@ void show_comp( UUT& uut, T900H& emu ) {
     putchar('\n');
     PCMP( "XIX ", emu.xix, regs->xix ) putchar('\n');
     PCMP( "XIY ", emu.xiy, regs->xiy ) putchar('\n');
-    PCMP( "XIZ ", emu.xiz, regs->xiz ) putchar('\n');
+    PCMP( "XIZ ", emu.xiz, regs->xiz ) PCFL( "F  ", emu.flags, uut.jt900h->flags ) putchar('\n');
     PCMP( "XSP ", emu.xsp, regs->xsp ) PCMP( "PC ", emu.pc, uut.jt900h->pc ) putchar('\n');
     printf("-----------------------------------------------\n");
     #undef PCMP
@@ -186,8 +189,16 @@ int main(int argc, char *argv[]) {
             matched = false;
             for( int k=0, pcok=0; k<MAXCYCLES; k++ ) {
                 clock( uut, m, &tracer, 1 );
-                if( cmp(uut,cpu) && pcok ) { matched=true; break; }
-                if( uut.jt900h->pc == cpu.pc.q ) pcok=1;
+                if( uut.jt900h->pc >= cpu.pc.q ) pcok=1;
+                if( pcok ) {
+                    if( cmp(uut,cpu) ) {
+                        matched=true;
+                        break;
+                    } /*else if(uut.jt900h->pc == cpu.pc.q){
+                        show_comp(uut,cpu);
+                    }*/
+
+                }
             }
             if( !matched ) {
                 printf("JT900H and the CPU model diverged after %d instructions (%lu ps)\n", icount, simtime);

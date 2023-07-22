@@ -86,7 +86,7 @@ wire [31:0] data_latch;
 // ALU control
 wire [31:0] alu_imm, alu_dout;
 wire [ 6:0] alu_op;
-wire [ 7:0] flags;
+wire [ 7:0] flags /* verilator public */;
 wire [ 2:0] alu_we;
 wire        alu_smux, alu_imux;
 wire        alu_wait, alu_busy;

@@ -50,6 +50,41 @@ struct Mem {
 	}
 };
 
+const uint8_t FLAG_Z = 0x40, FLAG_NZ=(uint8_t)~FLAG_Z,
+              FLAG_S = 0x80, FLAG_NS=(uint8_t)~FLAG_S,
+              FLAG_H = 0x10, FLAG_NH=(uint8_t)~FLAG_H,
+              FLAG_V = 0x04, FLAG_NV=(uint8_t)~FLAG_V,
+              FLAG_N = 0x02, FLAG_NN=(uint8_t)~FLAG_N,
+              FLAG_C = 0x01, FLAG_NC=(uint8_t)~FLAG_C;
+
+template<typename T> void set_sz( T a, uint8_t& flags ) {
+	const T MSB = 1 << (8*sizeof(a)-1);
+	if( a==0  ) flags |= FLAG_Z; else flags &= FLAG_NZ;
+	if( a&MSB ) flags |= FLAG_S; else flags &= FLAG_NS;
+}
+
+template <typename T> T add( T a, T b, uint8_t &flags ) {
+	T rs = a+b;
+	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
+	int64_t u = (((int64_t)a)&MASK)+(((int64_t)b)&MASK);
+	flags &= FLAG_NN; // N=0
+	set_sz( rs, flags );
+	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0) )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	if( (a&0xf)+(b&0xf) > 0xf )
+		flags |= FLAG_H;
+	else
+		flags &= FLAG_NH;
+	if( u>MASK )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+	// printf("Add %X+%X = %X (%X)\n",(int)a&MASK,(int)b&MASK,(unsigned)rs,(int)u);
+	return rs;
+}
+
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
 	struct Bank{
@@ -60,6 +95,7 @@ struct T900H {
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
+	uint8_t flags,fdash;
 	void Reset(Mem& m) {
 		pc.q = m.Rd32(0xffff00);
 		for( int k=0;k<4; k++ ) {
@@ -69,6 +105,7 @@ struct T900H {
 		xsp.q = 0x100;
 		rfp = 0;
 		rf=&rr[0];
+		flags = fdash = 0;
 		memset(&stats,0,sizeof(stats));
 	}
 	int Exec(Mem &m) {
@@ -85,9 +122,9 @@ struct T900H {
 			if( MASKCP2(op[1],0xF8,0x80) ) {  // ADD R,r
 				stats.add++;
 				switch(len) {
-					case 0: *shortReg8(R)  += *shortReg8(r); break;
-					case 1: *shortReg16(R) += *shortReg16(r); break;
-					case 2: shortReg(R)->q += shortReg(r)->q; break;
+					case 0: *shortReg8(R)  = add( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = add( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = add( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r

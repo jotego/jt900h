@@ -53,7 +53,7 @@ reg  [ 5:0] fdash, nx_fdash; // shadow flags, F' in the documentation
 reg         nx_s, nx_h, nx_n, nx_c, nx_djnz;
 reg         nx_busy, busyl, busy_cen;
 reg  [ 2:0] cc;
-wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, rslt_even;
+wire        is_zero, rslt_sign, op0_s, op1_s, rslt_c, rslt_v, add_v, rslt_even;
 wire        imm_s;
 reg  [32:0] ext_op0, ext_op2, ext_rslt;
 reg  [ 4:0] nx_cnt, cnt;
@@ -88,6 +88,9 @@ assign rslt_c  = w[0] ? cc[0] : w[1] ? cc[1] : cc[2];
 assign rslt_v  = w[0] ? ext_rslt[32]^rslt[ 7] :
                  w[1] ? ext_rslt[32]^rslt[15] :
                         ext_rslt[32]^rslt[31];
+assign add_v = w[0] ? op0_mux[ 7]==op2[ 7] && op2[ 7]!=rslt[ 7] :
+               w[1] ? op0_mux[15]==op2[15] && op2[15]!=rslt[15] :
+                      op0_mux[31]==op2[31] && op2[31]!=rslt[31];
 assign rslt_even = w[0] ? ~^rslt[7:0] : ~^rslt[15:0];
 assign op0_s    = w[0] ? op0[7] : w[1] ? op0[15] : op0[31];
 assign op1_s    = w[0] ? op1[7] : w[1] ? op1[15] : op1[31];
@@ -197,7 +200,7 @@ always @* begin
                 nx_s = rslt_sign;
                 nx_z = is_zero;
                 nx_n = 0;
-                nx_v = rslt_v;
+                nx_v = add_v;
             end
             if (sel!=ALU_INC ) begin
                 nx_c = rslt_c;
