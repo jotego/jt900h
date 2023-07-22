@@ -51,18 +51,21 @@ struct Mem {
 };
 
 struct T900H {
-	Reg32 xwa,xbc,xde,xhl,
-	      xix,xiy,xiz,xsp, pc;
+	Reg32 xix,xiy,xiz,xsp, pc;
+	struct Bank{
+		Reg32 xwa,xbc,xde,xhl;
+	} rr[4];
+	Bank *rf;
+	int rfp; // Register File Pointer
 	void Reset(Mem& m) {
 		pc.q = m.Rd32(0xffff00);
-		xwa.q = 0;
-		xbc.q = 0;
-		xde.q = 0;
-		xhl.q = 0;
-		xix.q = 0;
-		xiy.q = 0;
-		xiz.q = 0;
+		for( int k=0;k<4; k++ ) {
+			rr[k].xwa.q = rr[k].xbc.q = rr[k].xde.q = rr[k].xhl.q = 0;
+		}
+		xix.q = xiy.q = xiz.q = 0;
 		xsp.q = 0x100;
+		rfp = 0;
+		rf=&rr[0];
 	}
 	int Exec(Mem &m) {
 		uint8_t op[12];
@@ -75,12 +78,11 @@ struct T900H {
 			op[1] = m.Rd8(pc.q++);
 			fetched++;
 			if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
-				// LD R, r
 				R = op[1]&7;
 				switch(len) {
-					case 0: *shortReg8(R)  = *shortReg8(r);
-					case 1: *shortReg16(R) = *shortReg16(r);
-					case 2: *shortReg(R)   = *shortReg(r);
+					case 0: *shortReg8(R)  = *shortReg8(r); break;
+					case 1: *shortReg16(R) = *shortReg16(r); break;
+					case 2: *shortReg(R)   = *shortReg(r); break;
 				}
 			}
 			if( op[1]==0x03 ) { // LD r,#
@@ -94,39 +96,39 @@ struct T900H {
 	}
 private:
 	Reg32* shortReg( int r ) {
-		switch(r) {
-		case 0: return &xwa;
-		case 1: return &xbc;
-		case 2: return &xde;
-		case 3: return &xhl;
-		case 4: return &xix;
-		case 5: return &xiy;
-		case 6: return &xiz;
+		switch(r&7) {
+		case 0:  return &rf->xwa;
+		case 1:  return &rf->xbc;
+		case 2:  return &rf->xde;
+		case 3:  return &rf->xhl;
+		case 4:  return &xix;
+		case 5:  return &xiy;
+		case 6:  return &xiz;
 		default: return &xsp;
 		}
 	}
 	uint16_t* shortReg16( int r ) {
 		switch(r) {
-		case 0: return &xwa.w[0];
-		case 1: return &xbc.w[0];
-		case 2: return &xde.w[0];
-		case 3: return &xhl.w[0];
-		case 4: return &xix.w[0];
-		case 5: return &xiy.w[0];
-		case 6: return &xiz.w[0];
+		case 0:  return &rf->xwa.w[0];
+		case 1:  return &rf->xbc.w[0];
+		case 2:  return &rf->xde.w[0];
+		case 3:  return &rf->xhl.w[0];
+		case 4:  return &xix.w[0];
+		case 5:  return &xiy.w[0];
+		case 6:  return &xiz.w[0];
 		default: return &xsp.w[0];
 		}
 	}
 	uint8_t* shortReg8( int r ) {
 		switch(r) {
-		case 0: return &xwa.b[1];
-		case 1: return &xwa.b[0];
-		case 2: return &xbc.b[1];
-		case 3: return &xbc.b[0];
-		case 4: return &xde.b[1];
-		case 5: return &xde.b[0];
-		case 6: return &xhl.b[1];
-		default: return &xhl.b[0];
+		case 0:  return &rf->xwa.b[1];
+		case 1:  return &rf->xwa.b[0];
+		case 2:  return &rf->xbc.b[1];
+		case 3:  return &rf->xbc.b[0];
+		case 4:  return &rf->xde.b[1];
+		case 5:  return &rf->xde.b[0];
+		case 6:  return &rf->xhl.b[1];
+		default: return &rf->xhl.b[0];
 		}
 	}
 	uint32_t assign( int r, int len, uint32_t v ) {

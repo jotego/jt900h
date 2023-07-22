@@ -21,7 +21,7 @@ module jt900h(
     input             clk,
     input             cen,
 
-    output     [23:0] addr,
+    output     [23:1] addr,
     input      [15:0] din,
     output     [15:0] dout,
     output     [ 1:0] we,
@@ -308,6 +308,8 @@ jt900h_alu u_alu(
     .dout           ( alu_dout          )
 );
 
+wire nc;
+
 jt900h_ramctl u_ramctl(
     .rst            ( rst               ),
     .clk            ( clk               ),
@@ -353,7 +355,7 @@ jt900h_ramctl u_ramctl(
     .regs_we        ( regs_we[1:0]      ),
 
     // bus interface
-    .ram_addr       ( addr              ),
+    .ram_addr       ( { addr, nc }      ),
     .ram_dout       ( din               ),
     .ram_din        ( dout              ),
     .ram_we         ( we                ),
