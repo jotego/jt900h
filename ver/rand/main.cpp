@@ -34,6 +34,11 @@ void fill( Mem& m, int bank ) {
                 op_len++;
                 break;
             }
+            // single byte instructions
+            if( op[op_len]==0x12 || // CCF
+                op[op_len]==0x0c || // INCF
+                op[op_len]==0x0d    // DECF
+            ) { op_len++; break; }
         }
         // second byte
         int len=0;
@@ -129,6 +134,7 @@ bool cmp( UUT& uut, T900H& emu ) {
 void show_comp( UUT& uut, T900H& emu ) {
     #define PCMP(s,a,b) printf( s ":%08X (%08X)%c  ", a.q, b, a.q!=b ? '*' : ' ' );
     #define PCFL(s,a,b) printf( s ":%02X (%02X)%c  ", a, b, a!=b ? '*' : ' ' );
+    #define PRFP(s,a,b) printf( s ":  %X ( %2X)%c  ", a, b, a!=b ? '*' : ' ' );
     auto regs = uut.jt900h->u_regs;
     PCMP( "XWA0", emu.rr[0].xwa, regs->xwa0 ) PCMP( "XWA1", emu.rr[1].xwa, regs->xwa1 ) PCMP( "XWA2", emu.rr[2].xwa, regs->xwa2 ) PCMP( "XWA3", emu.rr[3].xwa, regs->xwa3 ) putchar('\n');
     PCMP( "XBC0", emu.rr[0].xbc, regs->xbc0 ) PCMP( "XBC1", emu.rr[1].xbc, regs->xbc1 ) PCMP( "XBC2", emu.rr[2].xbc, regs->xbc2 ) PCMP( "XBC3", emu.rr[3].xbc, regs->xbc3 ) putchar('\n');
@@ -136,7 +142,7 @@ void show_comp( UUT& uut, T900H& emu ) {
     PCMP( "XHL0", emu.rr[0].xhl, regs->xhl0 ) PCMP( "XHL1", emu.rr[1].xhl, regs->xhl1 ) PCMP( "XHL2", emu.rr[2].xhl, regs->xhl2 ) PCMP( "XHL3", emu.rr[3].xhl, regs->xhl3 ) putchar('\n');
     putchar('\n');
     PCMP( "XIX ", emu.xix, regs->xix ) putchar('\n');
-    PCMP( "XIY ", emu.xiy, regs->xiy ) putchar('\n');
+    PCMP( "XIY ", emu.xiy, regs->xiy ) PRFP( "RFP", emu.rfp, uut.jt900h->rfp ) putchar('\n');
     PCMP( "XIZ ", emu.xiz, regs->xiz ) PCFL( "F  ", emu.flags, uut.jt900h->flags ) putchar('\n');
     PCMP( "XSP ", emu.xsp, regs->xsp ) PCMP( "PC ", emu.pc, uut.jt900h->pc ) putchar('\n');
     printf("-----------------------------------------------\n");
@@ -216,6 +222,9 @@ int main(int argc, char *argv[]) {
             printf("Finished after %d instructions (%lu ps)\nInstructions run per type:\n", icount, simtime);
             printf("\t%d ADD\n", cpu.stats.add);
             printf("\t%d LD\n", cpu.stats.ld);
+            printf("\t%d CCF\n", cpu.stats.ccf);
+            printf("\t%d DECF\n", cpu.stats.decf);
+            printf("\t%d INCF\n", cpu.stats.incf);
         }
         tracer.flush();
     } catch( const char *error ) {

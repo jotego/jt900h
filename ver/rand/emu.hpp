@@ -20,7 +20,9 @@ struct Mem {
 	uint8_t *p;
 	Mem() {
 		p = new uint8_t[0x10'00000]; // 16 MB
-		std::memset( p, 0, 0x10'00000 );
+		for( int k=0; k<0x10'00000; k++ ) {
+			p[k] = std::rand();
+		}
 	}
 	~Mem() { if(p) delete []p; }
 	uint8_t Rd8( uint32_t a ) { return p[a]; }
@@ -91,7 +93,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add;
+		int ld, add, ccf, decf, incf;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -113,6 +115,9 @@ struct T900H {
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
 		int r,R, len;
+		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
+		if( op[0]==0x0C ) { stats.incf++; rfp++; rfp&=3; rf=&rr[rfp]; } // INCF
+		if( op[0]==0x0D ) { stats.decf++; rfp--; rfp&=3; rf=&rr[rfp]; } // DECF
 		if( MASKCP(op[0],0xc8) && !MASKCP(op[0],0x30) ) {
 			r = op[0]&7;
 			len = (op[0]>>4)&3;

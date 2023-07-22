@@ -51,7 +51,7 @@ parameter PC_RSTVAL=0; // Use FF1800 for NeoGeo Pocket
 wire [15:0] sr;
 
 // Register bank
-wire [ 1:0] rfp;          // register file pointer, rfp[2] always zero
+wire [ 1:0] rfp /* verilator public */; // register file pointer, rfp[2] always zero
 wire        inc_rfp, dec_rfp;
 wire [31:0] src_out, dst_out, aux_out, acc, idx_out,
             xde, xhl;
