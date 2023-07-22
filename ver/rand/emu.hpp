@@ -77,6 +77,14 @@ struct T900H {
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
 			fetched++;
+			if( MASKCP2(op[1],0xF8,0x80) ) {  // ADD R,r
+				R = op[1]&7;
+				switch(len) {
+					case 0: *shortReg8(R)  += *shortReg8(r); break;
+					case 1: *shortReg16(R) += *shortReg16(r); break;
+					case 2: shortReg(R)->q += shortReg(r)->q; break;
+				}
+			}
 			if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
 				R = op[1]&7;
 				switch(len) {

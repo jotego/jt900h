@@ -42,6 +42,7 @@ void fill( Mem& m, int bank ) {
                 len=(op[0]>>4)&3;
                 while(true) {
                     op[op_len] = (char)rand();
+                    if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -124,7 +125,7 @@ void show_comp( UUT& uut, T900H& emu ) {
 }
 
 int main(int argc, char *argv[]) {
-    const int MAXCYCLES=12, MINCYCLES=4;
+    const int MAXCYCLES=14, MINCYCLES=4;
     T900H cpu;
     Mem m;
     VerilatedContext context;
@@ -138,7 +139,7 @@ int main(int argc, char *argv[]) {
         uut.trace( &tracer, 99 );
         tracer.open("test.vcd");
         reset(uut,m, &tracer);
-        srand(0);
+        srand(342);
         int rom_bank=0xff;
         //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
         // for the stack, leave it alone for now
