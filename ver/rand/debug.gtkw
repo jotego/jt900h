@@ -1,0 +1,48 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sat Jul 22 05:54:40 2023
+[*]
+[dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/rand/test.vcd"
+[dumpfile_mtime] "Sat Jul 22 05:48:16 2023"
+[dumpfile_size] 52546
+[savefile] "/home/jtejada/jtcores/modules/jt900h/ver/rand/debug.gtkw"
+[timestart] 72
+[size] 1264 1013
+[pos] 1236 -51
+*-5.423808 115 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.jt900h.
+[sst_width] 219
+[signals_width] 193
+[sst_expanded] 1
+[sst_vpaned_height] 307
+@28
+TOP.rst
+@22
+TOP.addr[23:0]
+TOP.din[15:0]
+@200
+-
+@22
+TOP.jt900h.u_ctrl.op_rev[31:0]
+@2022
+^1 /home/jtejada/jtcores/modules/jt900h/ver/top/ctrl.st
+TOP.jt900h.u_ctrl.op_phase[4:0]
+@28
+TOP.jt900h.u_ctrl.op_ok
+@200
+-
+@28
+TOP.jt900h.u_ctrl.regs_we[2:0]
+@22
+TOP.jt900h.u_ctrl.regs_src[7:0]
+TOP.jt900h.u_ctrl.regs_dst[7:0]
+@200
+-
+@22
+TOP.jt900h.u_regs.xix[31:0]
+TOP.jt900h.u_regs.xiy[31:0]
+TOP.jt900h.u_regs.xiz[31:0]
+TOP.jt900h.u_regs.xsp[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

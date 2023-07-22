@@ -77,7 +77,11 @@ struct T900H {
 			if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
 				// LD R, r
 				R = op[1]&7;
-				*shortReg(R) = *shortReg(r);
+				switch(len) {
+					case 0: *shortReg8(R)  = *shortReg8(r);
+					case 1: *shortReg16(R) = *shortReg16(r);
+					case 2: *shortReg(R)   = *shortReg(r);
+				}
 			}
 			if( op[1]==0x03 ) { // LD r,#
 				auto aux = m.Rd32(pc.q);

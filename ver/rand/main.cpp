@@ -73,10 +73,11 @@ void show( T900H& c, Mem &m, uint32_t old_pc, int fetched ) {
     putchar('\n');
 }
 
-void clock(UUT& uut, Mem &m, int times) {
-    vluint64_t simtime;
+void clock(UUT& uut, Mem &m, VerilatedVcdC* tracer, int times) {
+    static vluint64_t simtime=0;
     times <<= 2;
     while( times-->0 ) {
+        if(tracer) tracer->dump(simtime);
         uut.clk=1-uut.clk;
         if( uut.clk==0 ) {
             uut.cen=1-uut.cen;
@@ -87,9 +88,9 @@ void clock(UUT& uut, Mem &m, int times) {
     }
 }
 
-void reset(UUT& uut, Mem &m) {
+void reset(UUT& uut, Mem &m, VerilatedVcdC* tracer) {
     uut.rst = 1;
-    clock(uut,m,4);
+    clock(uut, m, tracer, 4);
     uut.rst = 0;
 }
 
@@ -123,9 +124,9 @@ int main(int argc, char *argv[]) {
 
     try{
         UUT uut{&context};
-        UUT.trace( &tracer, 99 );
+        uut.trace( &tracer, 99 );
         tracer.open("test.vcd");
-        reset(uut,m);
+        reset(uut,m, &tracer);
         srand(0);
         int rom_bank=0xff;
         //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
             auto matched = false;
             show(cpu, m, pc_old, fetched);
             for( int k=0; k<MAXCYCLES;k++ ) {
-                clock( uut, m, 1 );
+                clock( uut, m, &tracer, 1 );
                 if( cmp(uut,cpu) ) { matched=true; break; }
             }
             if( !matched ) {
