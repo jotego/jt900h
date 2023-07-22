@@ -3,6 +3,7 @@
 #include "UUT.h"
 #include "UUT_jt900h.h"
 #include "UUT_jt900h_regs.h"
+#include "verilated_vcd_c.h"
 
 using namespace std;
 
@@ -73,6 +74,7 @@ void show( T900H& c, Mem &m, uint32_t old_pc, int fetched ) {
 }
 
 void clock(UUT& uut, Mem &m, int times) {
+    vluint64_t simtime;
     times <<= 2;
     while( times-->0 ) {
         uut.clk=1-uut.clk;
@@ -81,6 +83,7 @@ void clock(UUT& uut, Mem &m, int times) {
             uut.din = m.Rd16(uut.addr);
         }
         uut.eval();
+        simtime += 5;
     }
 }
 
@@ -115,9 +118,13 @@ int main(int argc, char *argv[]) {
     Mem m;
     VerilatedContext context;
     context.commandArgs(argc, argv);
+    Verilated::traceEverOn(true);
+    VerilatedVcdC tracer;
 
     try{
         UUT uut{&context};
+        UUT.trace( &tracer, 99 );
+        tracer.open("test.vcd");
         reset(uut,m);
         srand(0);
         int rom_bank=0xff;
