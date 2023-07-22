@@ -9,4 +9,4 @@ if ! make -j -C obj_dir -f UUT.mk sim > make.log; then
     exit $?
 fi
 
-obj_dir/sim
+obj_dir/sim $*

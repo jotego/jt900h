@@ -42,7 +42,8 @@ module jt900h(
     output     [ 7:0] dmp_dout,
     // Debug
     input      [ 7:0] st_addr,
-    output     [ 7:0] st_dout
+    output     [ 7:0] st_dout,
+    output            op_start      // high when OP's 1st byte is decoded
 );
 
 parameter PC_RSTVAL=0; // Use FF1800 for NeoGeo Pocket
@@ -69,7 +70,7 @@ wire        idx_ok, idx_wr, ldd_write;
 wire [ 1:0] ram_dsel;
 
 // PC control
-wire [31:0] pc;
+wire [31:0] pc /* verilator public */;
 wire        pc_we, pc_rel;
 // offset register
 wire [ 7:0] idx_rdreg_aux;
@@ -187,7 +188,8 @@ jt900h_ctrl u_ctrl(
     // Debug
     .buserror       ( buserror          ),
     .st_addr        ( st_addr           ),
-    .st_dout        ( st_dout           )
+    .st_dout        ( st_dout           ),
+    .op_start       ( op_start          )
 );
 
 jt900h_regs u_regs(

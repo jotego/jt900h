@@ -55,6 +55,9 @@ struct T900H {
 	struct Bank{
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
+	struct {
+		int ld, add;
+	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
 	void Reset(Mem& m) {
@@ -66,6 +69,7 @@ struct T900H {
 		xsp.q = 0x100;
 		rfp = 0;
 		rf=&rr[0];
+		memset(&stats,0,sizeof(stats));
 	}
 	int Exec(Mem &m) {
 		uint8_t op[12];
@@ -76,24 +80,25 @@ struct T900H {
 			r = op[0]&7;
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
+			R = op[1]&7;
 			fetched++;
 			if( MASKCP2(op[1],0xF8,0x80) ) {  // ADD R,r
-				R = op[1]&7;
+				stats.add++;
 				switch(len) {
 					case 0: *shortReg8(R)  += *shortReg8(r); break;
 					case 1: *shortReg16(R) += *shortReg16(r); break;
 					case 2: shortReg(R)->q += shortReg(r)->q; break;
 				}
 			}
-			if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
-				R = op[1]&7;
+			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
+				stats.ld++;
 				switch(len) {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
 					case 2: *shortReg(R)   = *shortReg(r); break;
 				}
 			}
-			if( op[1]==0x03 ) { // LD r,#
+			else if( op[1]==0x03 ) { // LD r,#
 				auto aux = m.Rd32(pc.q);
 				auto f2 = assign( r, len, aux );
 				fetched += f2;

@@ -100,6 +100,22 @@ bool cmp( UUT& uut, T900H& emu ) {
     if( uut.jt900h->u_regs->xbc0 != emu.rr[0].xbc.q ) return false;
     if( uut.jt900h->u_regs->xde0 != emu.rr[0].xde.q ) return false;
     if( uut.jt900h->u_regs->xhl0 != emu.rr[0].xhl.q ) return false;
+
+    if( uut.jt900h->u_regs->xwa1 != emu.rr[1].xwa.q ) return false;
+    if( uut.jt900h->u_regs->xbc1 != emu.rr[1].xbc.q ) return false;
+    if( uut.jt900h->u_regs->xde1 != emu.rr[1].xde.q ) return false;
+    if( uut.jt900h->u_regs->xhl1 != emu.rr[1].xhl.q ) return false;
+
+    if( uut.jt900h->u_regs->xwa2 != emu.rr[2].xwa.q ) return false;
+    if( uut.jt900h->u_regs->xbc2 != emu.rr[2].xbc.q ) return false;
+    if( uut.jt900h->u_regs->xde2 != emu.rr[2].xde.q ) return false;
+    if( uut.jt900h->u_regs->xhl2 != emu.rr[2].xhl.q ) return false;
+
+    if( uut.jt900h->u_regs->xwa3 != emu.rr[3].xwa.q ) return false;
+    if( uut.jt900h->u_regs->xbc3 != emu.rr[3].xbc.q ) return false;
+    if( uut.jt900h->u_regs->xde3 != emu.rr[3].xde.q ) return false;
+    if( uut.jt900h->u_regs->xhl3 != emu.rr[3].xhl.q ) return false;
+
     if( uut.jt900h->u_regs->xix != emu.xix.q ) return false;
     if( uut.jt900h->u_regs->xiy != emu.xiy.q ) return false;
     if( uut.jt900h->u_regs->xiz != emu.xiz.q ) return false;
@@ -119,13 +135,13 @@ void show_comp( UUT& uut, T900H& emu ) {
     PCMP( "XIX ", emu.xix, regs->xix ) putchar('\n');
     PCMP( "XIY ", emu.xiy, regs->xiy ) putchar('\n');
     PCMP( "XIZ ", emu.xiz, regs->xiz ) putchar('\n');
-    PCMP( "XSP ", emu.xsp, regs->xsp ) putchar('\n');
+    PCMP( "XSP ", emu.xsp, regs->xsp ) PCMP( "PC ", emu.pc, uut.jt900h->pc ) putchar('\n');
+    printf("-----------------------------------------------\n");
     #undef PCMP
-    putchar('\n');
 }
 
 int main(int argc, char *argv[]) {
-    const int MAXCYCLES=14, MINCYCLES=4;
+    const int MAXCYCLES=40;
     T900H cpu;
     Mem m;
     VerilatedContext context;
@@ -134,12 +150,21 @@ int main(int argc, char *argv[]) {
     VerilatedVcdC tracer;
     auto verbose=false;
 
+    for( int k=1; k<argc; k++ ) {
+        if( strcmp(argv[k],"-v")==0 || strcmp(argv[k],"--verbose" )==0) {
+            verbose=true;
+            continue;
+        }
+        printf("Unknown argument %s\n",argv[k]);
+        return 1;
+    }
+
     try{
         UUT uut{&context};
         uut.trace( &tracer, 99 );
         tracer.open("test.vcd");
         reset(uut,m, &tracer);
-        srand(342);
+        srand(0);
         int rom_bank=0xff;
         //do { rom_bank = rand() % 0x100; } while( rom_bank==0 ); // bank 0 is the default
         // for the stack, leave it alone for now
@@ -157,10 +182,12 @@ int main(int argc, char *argv[]) {
         while( cpu.pc.q<end ) {
             auto pc_old = cpu.pc.q;
             auto fetched = cpu.Exec( m );
-            if( verbose ) show(cpu, m, pc_old, fetched);
-            for( int k=0; k<MAXCYCLES;k++ ) {
+            // if( verbose ) show(cpu, m, pc_old, fetched);
+            matched = false;
+            for( int k=0, pcok=0; k<MAXCYCLES; k++ ) {
                 clock( uut, m, &tracer, 1 );
-                if( cmp(uut,cpu) && k>MINCYCLES ) { matched=true; break; }
+                if( cmp(uut,cpu) && pcok ) { matched=true; break; }
+                if( uut.jt900h->pc == cpu.pc.q ) pcok=1;
             }
             if( !matched ) {
                 printf("JT900H and the CPU model diverged after %d instructions (%lu ps)\n", icount, simtime);
@@ -168,11 +195,16 @@ int main(int argc, char *argv[]) {
                 printf("register: model (verilog)\n");
                 show_comp( uut, cpu );
                 break;
-           }
-           icount++;
+            }
+            if( verbose ) {
+                show_comp( uut, cpu );
+            }
+            icount++;
         }
         if( matched ) {
-            printf("Finished after %d instructions (%lu ps)\n", icount, simtime);
+            printf("Finished after %d instructions (%lu ps)\nInstructions run per type:\n", icount, simtime);
+            printf("\t%d ADD\n", cpu.stats.add);
+            printf("\t%d LD\n", cpu.stats.ld);
         }
         tracer.flush();
     } catch( const char *error ) {

@@ -100,6 +100,7 @@ module jt900h_ctrl(
     output reg        ex_we,
     // Debugging
     output reg        buserror,
+    output reg        op_start,
     input      [ 7:0] st_addr,
     output reg [ 7:0] st_dout
 );
@@ -153,7 +154,7 @@ reg        nx_alu_smux, nx_alu_imux, nx_alu_wait,
            nx_keep_dec_xix, keep_dec_xix,
            nx_keep_inc_xde, keep_inc_xde,
            nx_keep_inc_xix, keep_inc_xix,
-           nx_ld_high,
+           nx_ld_high, nx_opstart,
            nx_ex_we, nx_keep_ex, keep_ex,
            keep_smux, nx_keep_smux,
            nx_imm2idx, imm2idx, nx_rda_irq, nx_rda_swi,
@@ -340,6 +341,7 @@ always @* begin
     nx_reti          = reti;
     nx_buserror      = buserror;
     nx_halted        = halted;
+    nx_opstart       = 0;
 
     // interrupts
     nx_intproc       = intproc;
@@ -403,6 +405,7 @@ always @* begin
                 // get out of a possible halted state
                 nx_halted = 0;
             end else if(!halted && !flag_we ) begin
+                nx_opstart = 1;
                 casez( op[7:0] )
                     8'b0000_0000: begin // NOP
                         fetched = 1;
@@ -1676,6 +1679,7 @@ always @(posedge clk, posedge rst) begin
         ld2imm         <= 0;
         buserror       <= 0;
         halted         <= 0;
+        op_start       <= 0;
     end else if(cen) begin
         op_phase       <= nx_phase;
         idx_en         <= nx_idx_en;
@@ -1762,6 +1766,7 @@ always @(posedge clk, posedge rst) begin
 
         buserror       <= nx_buserror;
         halted         <= nx_halted;
+        op_start       <= nx_opstart;
 
         if( latch_op ) last_op <= op[7:0];
     end

@@ -1,26 +1,33 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Sat Jul 22 05:54:40 2023
+[*] Sat Jul 22 12:46:57 2023
 [*]
 [dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/rand/test.vcd"
-[dumpfile_mtime] "Sat Jul 22 05:48:16 2023"
-[dumpfile_size] 52546
+[dumpfile_mtime] "Sat Jul 22 12:46:13 2023"
+[dumpfile_size] 75285
 [savefile] "/home/jtejada/jtcores/modules/jt900h/ver/rand/debug.gtkw"
-[timestart] 72
+[timestart] 1304
 [size] 1264 1013
-[pos] 1236 -51
-*-5.423808 115 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-7.412941 1755 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.jt900h.
 [sst_width] 219
-[signals_width] 193
+[signals_width] 249
 [sst_expanded] 1
 [sst_vpaned_height] 307
 @28
 TOP.rst
 @22
-TOP.addr[23:0]
 TOP.din[15:0]
+@200
+-
+@22
+TOP.jt900h.addr[23:1]
+TOP.jt900h.din[15:0]
+@23
+[color] 2
+TOP.jt900h.u_pc.pc24[23:0]
 @200
 -
 @22
@@ -30,6 +37,11 @@ TOP.jt900h.u_ctrl.op_rev[31:0]
 TOP.jt900h.u_ctrl.op_phase[4:0]
 @28
 TOP.jt900h.u_ctrl.op_ok
+@2022
+^2 /home/jtejada/jtcores/modules/jt900h/ver/top/alu.st
+TOP.jt900h.u_alu.sel[6:0]
+@28
+TOP.jt900h.op_start
 @200
 -
 @28
@@ -44,5 +56,30 @@ TOP.jt900h.u_regs.xix[31:0]
 TOP.jt900h.u_regs.xiy[31:0]
 TOP.jt900h.u_regs.xiz[31:0]
 TOP.jt900h.u_regs.xsp[31:0]
+TOP.jt900h.u_regs.xwa0[31:0]
+TOP.jt900h.u_regs.xbc0[31:0]
+TOP.jt900h.u_regs.xde0[31:0]
+TOP.jt900h.u_regs.xhl0[31:0]
+@200
+-
+@22
+TOP.jt900h.u_regs.xwa1[31:0]
+TOP.jt900h.u_regs.xbc1[31:0]
+TOP.jt900h.u_regs.xde1[31:0]
+TOP.jt900h.u_regs.xhl1[31:0]
+@200
+-
+@22
+TOP.jt900h.u_regs.xwa2[31:0]
+TOP.jt900h.u_regs.xbc2[31:0]
+TOP.jt900h.u_regs.xde2[31:0]
+TOP.jt900h.u_regs.xhl2[31:0]
+@200
+-
+@22
+TOP.jt900h.u_regs.xwa3[31:0]
+TOP.jt900h.u_regs.xbc3[31:0]
+TOP.jt900h.u_regs.xde3[31:0]
+TOP.jt900h.u_regs.xhl3[31:0]
 [pattern_trace] 1
 [pattern_trace] 0
