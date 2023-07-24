@@ -36,6 +36,9 @@ void fill( Mem& m, int bank ) {
             }
             // single byte instructions
             if( op[op_len]==0x12 || // CCF
+                op[op_len]==0x11 || // SCF
+                op[op_len]==0x10 || // RCF
+                op[op_len]==0x13 || // ZCF
                 op[op_len]==0x0c || // INCF
                 op[op_len]==0x0d    // DECF
             ) { op_len++; break; }
@@ -48,6 +51,7 @@ void fill( Mem& m, int bank ) {
                 while(true) {
                     op[op_len] = (char)rand();
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
+                    if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -221,8 +225,12 @@ int main(int argc, char *argv[]) {
         if( matched ) {
             printf("Finished after %d instructions (%lu ps)\nInstructions run per type:\n", icount, simtime);
             printf("\t%d ADD\n", cpu.stats.add);
+            printf("\t%d AND\n", cpu.stats.and_op);
             printf("\t%d LD\n", cpu.stats.ld);
             printf("\t%d CCF\n", cpu.stats.ccf);
+            printf("\t%d RCF\n", cpu.stats.rcf);
+            printf("\t%d SCF\n", cpu.stats.scf);
+            printf("\t%d ZCF\n", cpu.stats.zcf);
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
         }

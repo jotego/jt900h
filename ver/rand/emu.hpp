@@ -65,6 +65,14 @@ template<typename T> void set_sz( T a, uint8_t& flags ) {
 	if( a&MSB ) flags |= FLAG_S; else flags &= FLAG_NS;
 }
 
+template<typename T> void parity( T data, uint8_t& flags){
+	data ^= data >> 8;
+	data ^= data >> 4;
+	data ^= data >> 2;
+ 	data ^= data >> 1;
+  	if ( !(data & 1) ) flags |= FLAG_V; else flags &= FLAG_NV;
+}
+
 template <typename T> T add( T a, T b, uint8_t &flags ) {
 	T rs = a+b;
 	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
@@ -86,6 +94,17 @@ template <typename T> T add( T a, T b, uint8_t &flags ) {
 	// printf("Add %X+%X = %X (%X)\n",(int)a&MASK,(int)b&MASK,(unsigned)rs,(int)u);
 	return rs;
 }
+template <typename T> T and_op( T a, T b, uint8_t &flags ) {
+	T rs = a & b;
+	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
+	int64_t u = (((int64_t)a)&MASK)+(((int64_t)b)&MASK);
+	flags |= FLAG_H; // H=1
+	flags &= FLAG_NN; // N=0
+	flags &= FLAG_NC; // C=0
+	parity( rs, flags );
+	set_sz( rs, flags );
+	return rs;
+}
 
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
@@ -93,7 +112,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -116,6 +135,9 @@ struct T900H {
 		int fetched=1;
 		int r,R, len;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
+		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
+		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
+		if( op[0]==0x13 ) { stats.zcf++;  flags &= FLAG_NN; if ( flags & FLAG_Z ) flags &= FLAG_NC; else flags |= FLAG_C; } // ZCF
 		if( op[0]==0x0C ) { stats.incf++; rfp++; rfp&=3; rf=&rr[rfp]; } // INCF
 		if( op[0]==0x0D ) { stats.decf++; rfp--; rfp&=3; rf=&rr[rfp]; } // DECF
 		if( MASKCP(op[0],0xc8) && !MASKCP(op[0],0x30) ) {
@@ -130,6 +152,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = add( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = add( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = add( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
+				stats.and_op++;
+				switch(len) {
+					case 0: *shortReg8(R)  = and_op( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = and_op( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = and_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
