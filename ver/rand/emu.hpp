@@ -111,6 +111,15 @@ template <typename T> T or_op( T a, T b, uint8_t &flags ) {
 	set_sz( rs, flags );
 	return rs;
 }
+template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
+	T rs = a ^ b;
+	flags &= FLAG_NH; // H=1
+	flags &= FLAG_NN; // N=0
+	flags &= FLAG_NC; // C=0
+	parity( rs, flags );
+	set_sz( rs, flags );
+	return rs;
+}
 
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
@@ -118,7 +127,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -166,6 +175,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = and_op( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = and_op( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = and_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0xD0) ) {  // XOR R,r
+				stats.xor_op++;
+				switch(len) {
+					case 0: *shortReg8(R)  = xor_op( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = xor_op( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = xor_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0xE0) ) {  // OR R,r
