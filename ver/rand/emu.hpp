@@ -64,7 +64,6 @@ template<typename T> void set_sz( T a, uint8_t& flags ) {
 	if( a==0  ) flags |= FLAG_Z; else flags &= FLAG_NZ;
 	if( a&MSB ) flags |= FLAG_S; else flags &= FLAG_NS;
 }
-
 template<typename T> void parity( T data, uint8_t& flags){
 	data ^= data >> 8;
 	data ^= data >> 4;
@@ -96,9 +95,16 @@ template <typename T> T add( T a, T b, uint8_t &flags ) {
 }
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
-	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
-	int64_t u = (((int64_t)a)&MASK)+(((int64_t)b)&MASK);
 	flags |= FLAG_H; // H=1
+	flags &= FLAG_NN; // N=0
+	flags &= FLAG_NC; // C=0
+	parity( rs, flags );
+	set_sz( rs, flags );
+	return rs;
+}
+template <typename T> T or_op( T a, T b, uint8_t &flags ) {
+	T rs = a | b;
+	flags &= FLAG_NH; // H=1
 	flags &= FLAG_NN; // N=0
 	flags &= FLAG_NC; // C=0
 	parity( rs, flags );
@@ -112,7 +118,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -160,6 +166,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = and_op( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = and_op( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = and_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0xE0) ) {  // OR R,r
+				stats.or_op++;
+				switch(len) {
+					case 0: *shortReg8(R)  = or_op( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = or_op( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = or_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r

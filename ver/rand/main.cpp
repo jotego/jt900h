@@ -52,6 +52,7 @@ void fill( Mem& m, int bank ) {
                     op[op_len] = (char)rand();
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
+                    if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -226,6 +227,7 @@ int main(int argc, char *argv[]) {
             printf("Finished after %d instructions (%lu ps)\nInstructions run per type:\n", icount, simtime);
             printf("\t%d ADD\n", cpu.stats.add);
             printf("\t%d AND\n", cpu.stats.and_op);
+            printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d LD\n", cpu.stats.ld);
             printf("\t%d CCF\n", cpu.stats.ccf);
             printf("\t%d RCF\n", cpu.stats.rcf);
