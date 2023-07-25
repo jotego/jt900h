@@ -140,6 +140,14 @@ template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
 	set_sz( rs, flags );
 	return rs;
 }
+template <typename T> T extz( T a ) {
+	T rs;
+	if (sizeof(T)==2)
+		rs = a & 0x00ff;
+	else
+		rs = a & 0x0000ffff;
+	return rs;
+}
 template <typename T> T exts( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -155,7 +163,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, exts;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, extz, exts;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -237,7 +245,14 @@ struct T900H {
 					case 2: *shortReg(R)   = *shortReg(r); break;
 				}
 			}
-
+			else if( op[1]==0x12 ) {  //  EXTZ r
+				stats.extz++;
+				switch(len) {
+					// case 0: break;
+					case 1: *shortReg16(r) = extz((int16_t)*shortReg16(r)); break;
+					case 2: shortReg(r)->q   = extz(shortReg(r)->qs); break;
+				}
+			}
 			else if( op[1]==0x13 ) {  //  EXTS r
 				stats.exts++;
 				switch(len) {
