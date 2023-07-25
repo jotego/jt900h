@@ -61,6 +61,7 @@ void fill( Mem& m, int bank ) {
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
+                    if( op[op_len]==0x13 ) { op_len++; break; } // EXTS
                 }
             }
         }
@@ -233,6 +234,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
             printf("\t%d LD\n", cpu.stats.ld);
+            printf("\t%d EXTS\n", cpu.stats.exts);
             printf("\t%d CCF\n", cpu.stats.ccf);
             printf("\t%d RCF\n", cpu.stats.rcf);
             printf("\t%d SCF\n", cpu.stats.scf);
