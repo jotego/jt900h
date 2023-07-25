@@ -93,6 +93,26 @@ template <typename T> T add( T a, T b, uint8_t &flags ) {
 	// printf("Add %X+%X = %X (%X)\n",(int)a&MASK,(int)b&MASK,(unsigned)rs,(int)u);
 	return rs;
 }
+template <typename T> T adc( T a, T b, uint8_t &flags ) {
+	T rs = a+b+(flags&FLAG_C);
+	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
+	int64_t u = (((int64_t)a)&MASK)+(((int64_t)b)&MASK)+(flags&FLAG_C);
+	flags &= FLAG_NN; // N=0
+	set_sz( rs, flags );
+	if( ((a&0xf)+(b&0xf)+(flags&FLAG_C)) > 0xf )
+		flags |= FLAG_H;
+	else
+		flags &= FLAG_NH;
+	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0) )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	if( u>MASK )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+	return rs;
+}
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
 	flags |= FLAG_H; // H=1
@@ -127,7 +147,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -167,6 +187,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = add( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = add( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = add( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			if( MASKCP2(op[1],0xF8,0x90) ) {  // ADC R,r
+				stats.adc++;
+				switch(len) {
+					case 0: *shortReg8(R)  = adc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = adc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = adc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
