@@ -52,6 +52,7 @@ void fill( Mem& m, int bank ) {
                     op[op_len] = (char)rand();
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
+                    if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
@@ -61,8 +62,8 @@ void fill( Mem& m, int bank ) {
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
-                    if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ
-                    if( op[op_len]==0x13 ) { op_len++; break; } // EXTS
+                    if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
+                    if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                 }
             }
         }
@@ -231,6 +232,8 @@ int main(int argc, char *argv[]) {
             printf("Finished after %d instructions (%lu ps)\nInstructions run per type:\n", icount, simtime);
             printf("\t%d ADD\n", cpu.stats.add);
             printf("\t%d ADC\n", cpu.stats.adc);
+            printf("\t%d SUB\n", cpu.stats.sub);
+            printf("\t%d SBC\n", cpu.stats.sub);
             printf("\t%d AND\n", cpu.stats.and_op);
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);

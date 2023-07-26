@@ -117,6 +117,31 @@ template <typename T> T adc( T a, T b, uint8_t &flags ) {
 	return rs;
 }
 
+template <typename T> T sub( T a, T b, uint8_t &flags ) {
+	T rs = a-b;
+	T c = a ^ b ^ rs;
+  	T v = (a ^ rs) & (b ^ a);
+  	// const T carryH = sizeof(T)==1 ? (((a & 0x0F) - (b & 0x0F)) & 0x10) >> 4 : sizeof(T)==2 ? (((a & 0x000F) - (b & 0x000F)) & 0x0010) >> 4 : (flags&FLAG_H);
+  	const T carryH = (((a & 0x0F) - (b & 0x0F)) & 0x10) >> 4;
+	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
+	const T carry = sizeof(T)==1 ? (c ^ v) >> 8 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
+	flags |= FLAG_N; // N=1
+	set_sz( rs, flags );
+	if( MSB )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	if( carryH )
+		flags |= FLAG_H;
+	else
+		flags &= FLAG_NH;
+	if( carry )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+	return rs;
+}
+
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
 	flags |= FLAG_H; // H=1
@@ -129,7 +154,7 @@ template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 
 template <typename T> T or_op( T a, T b, uint8_t &flags ) {
 	T rs = a | b;
-	flags &= FLAG_NH; // H=1
+	flags &= FLAG_NH; // H=0
 	flags &= FLAG_NN; // N=0
 	flags &= FLAG_NC; // C=0
 	parity( rs, flags );
@@ -139,7 +164,7 @@ template <typename T> T or_op( T a, T b, uint8_t &flags ) {
 
 template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
 	T rs = a ^ b;
-	flags &= FLAG_NH; // H=1
+	flags &= FLAG_NH; // H=0
 	flags &= FLAG_NN; // N=0
 	flags &= FLAG_NC; // C=0
 	parity( rs, flags );
@@ -165,13 +190,14 @@ template <typename T> T exts( T a ) {
 	return rs;
 }
 
+
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
 	struct Bank{
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, extz, exts;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, extz, exts;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -221,6 +247,14 @@ struct T900H {
 					case 2: shortReg(R)->q = adc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
+			else if( MASKCP2(op[1],0xF8,0xA0) ) {  // SUB R,r
+				stats.sub++;
+				switch(len) {
+					case 0: *shortReg8(R)  = sub( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = sub( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = sub( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
 			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
 				stats.and_op++;
 				switch(len) {
@@ -258,7 +292,7 @@ struct T900H {
 				switch(len) {
 					case 0: break;
 					case 1: *shortReg16(r) = extz((int16_t)*shortReg16(r)); break;
-					case 2: shortReg(r)->q   = extz(shortReg(r)->qs); break;
+					case 2: shortReg(r)->q = extz(shortReg(r)->qs); break;
 				}
 			}
 			else if( op[1]==0x13 ) {  //  EXTS r
@@ -266,7 +300,7 @@ struct T900H {
 				switch(len) {
 					case 0: break;
 					case 1: *shortReg16(r) = exts((int16_t)*shortReg16(r)); break;
-					case 2: shortReg(r)->q   = exts(shortReg(r)->qs); break;
+					case 2: shortReg(r)->q = exts(shortReg(r)->qs); break;
 				}
 			}
 			else if( op[1]==0x03 ) { // LD r,#
