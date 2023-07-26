@@ -93,17 +93,20 @@ template <typename T> T add( T a, T b, uint8_t &flags ) {
 	// printf("Add %X+%X = %X (%X)\n",(int)a&MASK,(int)b&MASK,(unsigned)rs,(int)u);
 	return rs;
 }
+
 template <typename T> T adc( T a, T b, uint8_t &flags ) {
 	T rs = a+b+(flags&FLAG_C);
 	const int64_t MASK=sizeof(T)==1 ? 0xff : sizeof(T)==2 ? 0xffff : 0xffffffff;
 	int64_t u = (((int64_t)a)&MASK)+(((int64_t)b)&MASK)+(flags&FLAG_C);
+	T v = (a ^ rs) & (b ^ rs);
+	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
 	flags &= FLAG_NN; // N=0
 	set_sz( rs, flags );
 	if( ((a&0xf)+(b&0xf)+(flags&FLAG_C)) > 0xf )
 		flags |= FLAG_H;
 	else
 		flags &= FLAG_NH;
-	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0) )
+	if( MSB )
 		flags |= FLAG_V;
 	else
 		flags &= FLAG_NV;
@@ -113,6 +116,7 @@ template <typename T> T adc( T a, T b, uint8_t &flags ) {
 		flags &= FLAG_NC;
 	return rs;
 }
+
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
 	flags |= FLAG_H; // H=1
@@ -122,6 +126,7 @@ template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	set_sz( rs, flags );
 	return rs;
 }
+
 template <typename T> T or_op( T a, T b, uint8_t &flags ) {
 	T rs = a | b;
 	flags &= FLAG_NH; // H=1
@@ -131,6 +136,7 @@ template <typename T> T or_op( T a, T b, uint8_t &flags ) {
 	set_sz( rs, flags );
 	return rs;
 }
+
 template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
 	T rs = a ^ b;
 	flags &= FLAG_NH; // H=1
@@ -140,6 +146,7 @@ template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
 	set_sz( rs, flags );
 	return rs;
 }
+
 template <typename T> T extz( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -148,6 +155,7 @@ template <typename T> T extz( T a ) {
 		rs = a & 0x0000ffff;
 	return rs;
 }
+
 template <typename T> T exts( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -248,7 +256,7 @@ struct T900H {
 			else if( op[1]==0x12 ) {  //  EXTZ r
 				stats.extz++;
 				switch(len) {
-					// case 0: break;
+					case 0: break;
 					case 1: *shortReg16(r) = extz((int16_t)*shortReg16(r)); break;
 					case 2: shortReg(r)->q   = extz(shortReg(r)->qs); break;
 				}
@@ -256,7 +264,7 @@ struct T900H {
 			else if( op[1]==0x13 ) {  //  EXTS r
 				stats.exts++;
 				switch(len) {
-					// case 0: break;
+					case 0: break;
 					case 1: *shortReg16(r) = exts((int16_t)*shortReg16(r)); break;
 					case 2: shortReg(r)->q   = exts(shortReg(r)->qs); break;
 				}
