@@ -175,7 +175,7 @@ jt900h uut(
     .clk        ( clk       ),
     .cen        ( cen       ),
 
-    .addr       ( ram_addr  ),
+    .addr       ( ram_addr[23:1]  ),
     .din        ( ram_dout  ),
     .dout       ( ram_din   ),
     .we         ( ram_we    ),
