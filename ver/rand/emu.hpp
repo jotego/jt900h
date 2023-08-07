@@ -106,7 +106,7 @@ template <typename T> T adc( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_H;
 	else
 		flags &= FLAG_NH;
-	if( MSB )
+	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0))
 		flags |= FLAG_V;
 	else
 		flags &= FLAG_NV;
@@ -141,13 +141,10 @@ template <typename T> T sub( T a, T b, uint8_t &flags ) {
 	return rs;
 }
 
-template <typename T> T sbc( T a, T b, uint8_t &flags ) {
-
-	// printf("flags H=%X C%X V=%X \n",(flags&FLAG_H),(flags&FLAG_C),(flags&FLAG_V));
-	T rs = a-b-(flags&FLAG_C);
+template <typename T> void cp( T a, T b, uint8_t &flags ) {
+	T rs = a-b;
 	T c = a ^ b ^ rs;
   	T v = (a ^ b) & (a ^ rs);
-
   	const T carryH = (c & 0x10) >> 4;
 	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
 	const T carry = sizeof(T)==1 ? (c ^ v) >> 7 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
@@ -165,10 +162,33 @@ template <typename T> T sbc( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
-	// printf("SBC %X-%X-%X = %X (%X)\n",(int)a,(int)b,(flags&FLAG_C),rs,(flags&FLAG_V));
-	return rs;
-
 }
+
+// template <typename T> T sbc( T a, T b, uint8_t &flags ) {
+// 	printf("flags H=%X C=%X V=%X \n",(flags&FLAG_H),(flags&FLAG_C),(flags&FLAG_V));
+// 	T rs = a-b-(flags&FLAG_C);
+// 	T c = a ^ b ^ rs;
+//   	T v = (a ^ b) & (b ^ rs);
+//   	const T carryH = (c & 0x10) >> 4;
+// 	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
+// 	const T carry = sizeof(T)==1 ? (c ^ v) >> 7 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
+// 	flags |= FLAG_N; // N=1
+// 	set_sz( rs, flags );
+// 	if( MSB )
+// 		flags |= FLAG_V;
+// 	else
+// 		flags &= FLAG_NV;
+// 	if( carryH )
+// 		flags |= FLAG_H;
+// 	else
+// 		flags &= FLAG_NH;
+// 	if( carry )
+// 		flags |= FLAG_C;
+// 	else
+// 		flags &= FLAG_NC;
+// 	printf("SBC %X-%X-%X = %X (%X)\n",(int)a,(int)b,(flags&FLAG_C),rs,(flags&FLAG_V));
+// 	return rs;
+// }
 
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
@@ -229,7 +249,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, extz, exts, paa;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, extz, exts, paa;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -287,14 +307,22 @@ struct T900H {
 					case 2: shortReg(R)->q = sub( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
-			else if( MASKCP2(op[1],0xF8,0xB0) ) {  // SBC R,r
-				stats.sbc++;
+			else if( MASKCP2(op[1],0xF8,0xF0) ) {  // CP R,r
+				stats.cp++;
 				switch(len) {
-					case 0: *shortReg8(R)  = sbc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
-					case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
-					case 2: shortReg(R)->q = sbc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+					case 0: cp( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: cp( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: cp( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
+			// else if( MASKCP2(op[1],0xF8,0xB0) ) {  // SBC R,r
+			// 	stats.sbc++;
+			// 	switch(len) {
+			// 		case 0: *shortReg8(R)  = sbc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+			// 		case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+			// 		case 2: shortReg(R)->q = sbc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+			// 	}
+			// }
 			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
 				stats.and_op++;
 				switch(len) {
