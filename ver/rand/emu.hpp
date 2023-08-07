@@ -164,31 +164,31 @@ template <typename T> void cp( T a, T b, uint8_t &flags ) {
 		flags &= FLAG_NC;
 }
 
-// template <typename T> T sbc( T a, T b, uint8_t &flags ) {
-// 	printf("flags H=%X C=%X V=%X \n",(flags&FLAG_H),(flags&FLAG_C),(flags&FLAG_V));
-// 	T rs = a-b-(flags&FLAG_C);
-// 	T c = a ^ b ^ rs;
-//   	T v = (a ^ b) & (b ^ rs);
-//   	const T carryH = (c & 0x10) >> 4;
-// 	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
-// 	const T carry = sizeof(T)==1 ? (c ^ v) >> 7 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
-// 	flags |= FLAG_N; // N=1
-// 	set_sz( rs, flags );
-// 	if( MSB )
-// 		flags |= FLAG_V;
-// 	else
-// 		flags &= FLAG_NV;
-// 	if( carryH )
-// 		flags |= FLAG_H;
-// 	else
-// 		flags &= FLAG_NH;
-// 	if( carry )
-// 		flags |= FLAG_C;
-// 	else
-// 		flags &= FLAG_NC;
-// 	printf("SBC %X-%X-%X = %X (%X)\n",(int)a,(int)b,(flags&FLAG_C),rs,(flags&FLAG_V));
-// 	return rs;
-// }
+template <typename T> T sbc( T a, T b, uint8_t &flags ) {
+	printf("flags H=%X C=%X V=%X \n",(flags&FLAG_H),(flags&FLAG_C),(flags&FLAG_V));
+	T rs = a-b-(flags&FLAG_C);
+	T c = a ^ b ^ rs;
+  	T v = (a ^ b) & (a ^ rs);
+  	const T carryH = (c & 0x10) >> 4;
+	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
+	const T carry = sizeof(T)==1 ? (c ^ v) >> 7 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
+	flags |= FLAG_N; // N=1
+	set_sz( rs, flags );
+	if( MSB )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	if( carryH )
+		flags |= FLAG_H;
+	else
+		flags &= FLAG_NH;
+	if( carry )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+	printf("SBC %X-%X-%X = %X (%X)\n",(int)a,(int)b,(flags&FLAG_C),rs,(flags&FLAG_V));
+	return rs;
+}
 
 template <typename T> T and_op( T a, T b, uint8_t &flags ) {
 	T rs = a & b;
@@ -315,14 +315,14 @@ struct T900H {
 					case 2: cp( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
-			// else if( MASKCP2(op[1],0xF8,0xB0) ) {  // SBC R,r
-			// 	stats.sbc++;
-			// 	switch(len) {
-			// 		case 0: *shortReg8(R)  = sbc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
-			// 		case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
-			// 		case 2: shortReg(R)->q = sbc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
-			// 	}
-			// }
+			else if( MASKCP2(op[1],0xF8,0xB0) ) {  // SBC R,r
+				stats.sbc++;
+				switch(len) {
+					case 0: *shortReg8(R)  = sbc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
+					case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
+					case 2: shortReg(R)->q = sbc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
 			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
 				stats.and_op++;
 				switch(len) {

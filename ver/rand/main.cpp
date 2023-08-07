@@ -54,7 +54,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
-                    // if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
+                    if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d ADC\n", cpu.stats.adc);
             printf("\t%d SUB\n", cpu.stats.sub);
             printf("\t%d CP\n", cpu.stats.cp);
-            // printf("\t%d SBC\n", cpu.stats.sbc);
+            printf("\t%d SBC\n", cpu.stats.sbc);
             printf("\t%d AND\n", cpu.stats.and_op);
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
