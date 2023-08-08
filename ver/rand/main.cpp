@@ -64,6 +64,7 @@ void fill( Mem& m, int bank ) {
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
+                    if( op[op_len]==0x07 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                 }
@@ -241,6 +242,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
             printf("\t%d LD\n", cpu.stats.ld);
+            printf("\t%d NEG\n", cpu.stats.neg);
             printf("\t%d EXTZ\n", cpu.stats.extz);
             printf("\t%d EXTS\n", cpu.stats.exts);
             printf("\t%d CCF\n", cpu.stats.ccf);

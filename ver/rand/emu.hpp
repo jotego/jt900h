@@ -162,6 +162,7 @@ template <typename T> void cp( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
+	printf("cp %X-%X = %X (%X)\n",(int)a,(int)b,(unsigned)rs, flags);
 }
 
 template <typename T> T sbc( T a, T b, uint8_t &flags ) {
@@ -185,6 +186,33 @@ template <typename T> T sbc( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
+	return rs;
+}
+
+template <typename T> T neg( T a, uint8_t &flags ) {
+	printf("Hello NEG \n ");
+	T rs = 0-a;
+	T c = 0 ^ a ^ rs;
+  	T v = (0 ^ a) & (0 ^ rs);
+  	const T carryH = (c & 0x10) >> 4;
+	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
+	const T carry = sizeof(T)==1 ? (c ^ v) >> 7 : sizeof(T)==2 ? (c ^ v) >> 15 : (c ^ v) >> 31;
+	flags |= FLAG_N; // N=1
+	set_sz( rs, flags );
+	if( MSB )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	if( carryH )
+		flags |= FLAG_H;
+	else
+		flags &= FLAG_NH;
+	if( carry )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+	printf("NEG 0-%X = %X (%X)\n",(int)a,(unsigned)rs, flags);
+
 	return rs;
 }
 
@@ -247,7 +275,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, extz, exts, paa;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, neg, extz, exts, paa;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -351,6 +379,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
 					case 2: *shortReg(R)   = *shortReg(r); break;
+				}
+			}
+			else if( op[1]==0x07 ) {  //  NEG r
+				stats.neg++;
+				switch(len) {
+					case 0: *shortReg8(r)  = neg((int8_t)*shortReg8(r), flags); break;
+					case 1: *shortReg16(r) = neg((int16_t)*shortReg16(r), flags); break;
+					case 2: break;
 				}
 			}
 			else if( op[1]==0x12 ) {  //  EXTZ r
