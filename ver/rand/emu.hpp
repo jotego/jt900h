@@ -106,7 +106,7 @@ template <typename T> T adc( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_H;
 	else
 		flags &= FLAG_NH;
-	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0))
+	if( MSB )
 		flags |= FLAG_V;
 	else
 		flags &= FLAG_NV;
@@ -165,7 +165,6 @@ template <typename T> void cp( T a, T b, uint8_t &flags ) {
 }
 
 template <typename T> T sbc( T a, T b, uint8_t &flags ) {
-	printf("flags H=%X C=%X V=%X \n",(flags&FLAG_H),(flags&FLAG_C),(flags&FLAG_V));
 	T rs = a-b-(flags&FLAG_C);
 	T c = a ^ b ^ rs;
   	T v = (a ^ b) & (a ^ rs);
@@ -186,7 +185,6 @@ template <typename T> T sbc( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
-	printf("SBC %X-%X-%X = %X (%X)\n",(int)a,(int)b,(flags&FLAG_C),rs,(flags&FLAG_V));
 	return rs;
 }
 
