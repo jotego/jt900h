@@ -285,7 +285,7 @@ always @* begin
             { cc[0], rslt[ 7: 4] } = {1'b0,op0_mux[ 7: 4]}-{1'b0,op2[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op0_mux[15: 8]}-{1'b0,op2[15: 8]}-{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0_mux[31:16]}-{1'b0,op2[31:16]}-{16'b0,cc[1]};
-            ext_rslt = ext_op0 - ext_op2;
+            ext_rslt = ext_op0 - ext_op2 - { 32'b0, (sel==ALU_SBC && carry)};
             if( sel!=ALU_DEC || w[0]  ) begin
                 nx_s = rslt_sign;
                 nx_z = is_zero;
@@ -302,7 +302,7 @@ always @* begin
             { cc[0], rslt[ 7: 4] } = {1'b0,op2[ 7: 4]}-{1'b0,op0_mux[ 7: 4]}-{ 4'b0,nx_h};
             { cc[1], rslt[15: 8] } = {1'b0,op2[15: 8]}-{1'b0,op0_mux[15: 8]}-{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op2[31:16]}-{1'b0,op0_mux[31:16]}-{16'b0,cc[1]};
-            ext_rslt = ext_op2 - ext_op0;
+            ext_rslt = ext_op2 - ext_op0 - { 32'b0, (sel==ALU_SBC && carry)};
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 1;
