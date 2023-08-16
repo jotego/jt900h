@@ -162,7 +162,6 @@ template <typename T> void cp( T a, T b, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
-	printf("cp %X-%X = %X (%X)\n",(int)a,(int)b,(unsigned)rs, flags);
 }
 
 template <typename T> T sbc( T a, T b, uint8_t &flags ) {
@@ -190,7 +189,6 @@ template <typename T> T sbc( T a, T b, uint8_t &flags ) {
 }
 
 template <typename T> T neg( T a, uint8_t &flags ) {
-	printf("Hello NEG \n ");
 	T rs = 0-a;
 	T c = 0 ^ a ^ rs;
   	T v = (0 ^ a) & (0 ^ rs);
@@ -211,8 +209,6 @@ template <typename T> T neg( T a, uint8_t &flags ) {
 		flags |= FLAG_C;
 	else
 		flags &= FLAG_NC;
-	printf("NEG 0-%X = %X (%X)\n",(int)a,(unsigned)rs, flags);
-
 	return rs;
 }
 
@@ -264,10 +260,10 @@ template <typename T> T exts( T a ) {
 	return rs;
 }
 
-// template <typename T> T paa( T a ) {
-// 	T rs = a + (a & 1);
-// 	return rs;
-// }
+template <typename T> T paa( T a ) {
+	T rs = a + (a & 1);
+	return rs;
+}
 
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
@@ -386,7 +382,7 @@ struct T900H {
 				switch(len) {
 					case 0: *shortReg8(r)  = neg((int8_t)*shortReg8(r), flags); break;
 					case 1: *shortReg16(r) = neg((int16_t)*shortReg16(r), flags); break;
-					case 2: break;
+					case 2: shortReg(r)->q = neg(shortReg(r)->qs, flags); break;
 				}
 			}
 			else if( op[1]==0x12 ) {  //  EXTZ r
@@ -403,6 +399,14 @@ struct T900H {
 					case 0: break;
 					case 1: *shortReg16(r) = exts((int16_t)*shortReg16(r)); break;
 					case 2: shortReg(r)->q = exts(shortReg(r)->qs); break;
+				}
+			}
+			else if( op[1]==0x14 ) {  //  PAA r
+				stats.paa++;
+				switch(len) {
+					case 0: *shortReg8(r)  = paa((int8_t)*shortReg8(r)); break;
+					case 1: *shortReg16(r) = paa((int16_t)*shortReg16(r)); break;
+					case 2: shortReg(r)->q = paa(shortReg(r)->qs); break;
 				}
 			}
 			else if( op[1]==0x03 ) { // LD r,#

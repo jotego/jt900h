@@ -67,6 +67,7 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0x07 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
+                    if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
                 }
             }
         }
@@ -245,6 +246,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d NEG\n", cpu.stats.neg);
             printf("\t%d EXTZ\n", cpu.stats.extz);
             printf("\t%d EXTS\n", cpu.stats.exts);
+            printf("\t%d PAA\n", cpu.stats.paa);
             printf("\t%d CCF\n", cpu.stats.ccf);
             printf("\t%d RCF\n", cpu.stats.rcf);
             printf("\t%d SCF\n", cpu.stats.scf);
