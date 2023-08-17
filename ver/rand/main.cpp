@@ -64,7 +64,7 @@ void fill( Mem& m, int bank ) {
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
-                    if( op[op_len]==0x07 ) { op_len++; break; } // NEG r
+                    if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r

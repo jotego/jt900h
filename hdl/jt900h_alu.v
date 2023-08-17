@@ -475,7 +475,11 @@ always @* begin
             };
         end
         ALU_NEG: begin
-            rslt = -op0;
+            { nx_h,  rslt[ 3: 0] } = {5'b0} - {1'b0,op0[3:0]} - { 5'd0 };
+            { cc[0], rslt[ 7: 4] } = {5'b0} - {1'b0,op0[ 7: 4]}-{ 4'b0,nx_h};
+            { cc[1], rslt[15: 8] } = {8'b0} - {1'b0,op0[15: 8]}-{ 8'b0,cc[0]};
+            // { cc[2], rslt[31:16] } = {16'b0}- {1'b0,op0[31:16]}-{16'b0,cc[1]};
+            ext_rslt = 0 - extend(op0);
             nx_s = rslt_sign;
             nx_z = is_zero;
             nx_n = 1;
