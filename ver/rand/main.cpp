@@ -66,6 +66,7 @@ void fill( Mem& m, int bank ) {
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
+                    if( op[op_len]==0x06 && (op[0]&0x20)==0) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
@@ -257,6 +258,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d INCF\n", cpu.stats.incf);
             printf("\t%d INC\n", cpu.stats.inc);
             printf("\t%d DEC\n", cpu.stats.dec);
+            printf("\t%d CPL\n", cpu.stats.cpl);
         }
         tracer.flush();
     } catch( const char *error ) {

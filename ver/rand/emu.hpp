@@ -281,6 +281,13 @@ template <typename T> T dec_op( T a, T b, uint8_t &flags ) {
 	return rs;
 }
 
+template <typename T> T cpl( T a, uint8_t &flags ) {
+	T rs = ~a;
+	flags |= FLAG_H;
+	flags |= FLAG_N;
+	return rs;
+}
+
 template <typename T> T extz( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -311,7 +318,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec;
+			neg, extz, exts, paa, inc, dec, cpl;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -432,6 +439,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
 					case 2: *shortReg(R)   = *shortReg(r); break;
+				}
+			}
+			else if( op[1]==0x06 ) {  //  CPL r
+				stats.cpl++;
+				switch(len) {
+					case 0: *shortReg8(r)  = cpl((int8_t)*shortReg8(r), flags); break;
+					case 1: *shortReg16(r) = cpl((int16_t)*shortReg16(r), flags); break;
+					case 2: break;
 				}
 			}
 			else if( op[1]==0x07 ) {  //  NEG r
