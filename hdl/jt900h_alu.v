@@ -202,6 +202,9 @@ always @* begin
                 nx_n = 0;
                 nx_v = add_v;
             end
+            else begin
+                nx_h = halfc;
+            end
             if (sel!=ALU_INC ) begin
                 nx_c = rslt_c;
             end
@@ -291,6 +294,9 @@ always @* begin
                 nx_z = is_zero;
                 nx_n = 1;
                 nx_v = sel==ALU_CPD ? ~bc_unity : rslt_v;
+            end
+            else begin
+                nx_h = halfc;
             end
             if( sel!=ALU_DEC && sel!=ALU_CPD ) begin
                 nx_c = rslt_c;
