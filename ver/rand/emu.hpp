@@ -259,6 +259,27 @@ template <typename T> T inc_op( T a, T b, uint8_t &flags ) {
 	}
 	return rs;
 }
+template <typename T> T dec_op( T a, T b, uint8_t &flags ) {
+	if( !b ) b = 8;
+	T rs = a-b;
+	T c = a ^ b ^ rs;
+  	T v = (a ^ b) & (a ^ rs);
+  	const T carryH = (c & 0x10) >> 4;
+	const T MSB = sizeof(T)==1 ? (v >> 7) & 1 : sizeof(T)==2 ? (v >> 15) & 1 : (v >> 31) & 1;
+  	if ( sizeof(T)==1 ) {
+		flags |= FLAG_N; // N=1
+		set_sz( rs, flags );
+		if( MSB )
+			flags |= FLAG_V;
+		else
+			flags &= FLAG_NV;
+		if( carryH )
+			flags |= FLAG_H;
+		else
+			flags &= FLAG_NH;
+	}
+	return rs;
+}
 
 template <typename T> T extz( T a ) {
 	T rs;
@@ -290,7 +311,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc;
+			neg, extz, exts, paa, inc, dec;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -339,6 +360,14 @@ struct T900H {
 					case 0: *shortReg8(r)  = inc_op( (int8_t)*shortReg8(r), (int8_t)num3,  flags ); break;
 					case 1: *shortReg16(r) = inc_op( (int16_t)*shortReg16(r), (int16_t)num3, flags ); break;
 					case 2: shortReg(r)->q = inc_op( shortReg(r)->qs, num3, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0x68) ) {  //  DEC #3,r
+				stats.dec++;
+				switch(len) {
+					case 0: *shortReg8(r)  = dec_op( (int8_t)*shortReg8(r), (int8_t)num3,  flags ); break;
+					case 1: *shortReg16(r) = dec_op( (int16_t)*shortReg16(r), (int16_t)num3, flags ); break;
+					case 2: shortReg(r)->q = dec_op( shortReg(r)->qs, num3, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x90) ) {  // ADC R,r

@@ -51,6 +51,7 @@ void fill( Mem& m, int bank ) {
                 while(true) {
                     op[op_len] = (char)rand();
                     if( MASKCP2(op[op_len],0xF8,0x60) ) { op_len++; break; } // INC #3,r
+                    if( MASKCP2(op[op_len],0xF8,0x68) ) { op_len++; break; } // DEC #3,r
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
@@ -255,6 +256,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
             printf("\t%d INC\n", cpu.stats.inc);
+            printf("\t%d DEC\n", cpu.stats.dec);
         }
         tracer.flush();
     } catch( const char *error ) {
