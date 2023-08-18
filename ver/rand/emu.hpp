@@ -242,6 +242,24 @@ template <typename T> T xor_op( T a, T b, uint8_t &flags ) {
 	return rs;
 }
 
+template <typename T> T inc_op( T a, T b, uint8_t &flags ) {
+	if( !b ) b = 8;
+	T rs = a+b;
+	if ( sizeof(T)==1 ) {
+		flags &= FLAG_NN; // N=0
+		set_sz( rs, flags );
+		if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0) )
+			flags |= FLAG_V;
+		else
+			flags &= FLAG_NV;
+		if( (a&0xf)+(b&0xf) > 0xf)
+			flags |= FLAG_H;
+		else
+			flags &= FLAG_NH;
+	}
+	return rs;
+}
+
 template <typename T> T extz( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -271,7 +289,8 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, neg, extz, exts, paa;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
+			neg, extz, exts, paa, inc;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -292,7 +311,7 @@ struct T900H {
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len;
+		int r,R, len, num3;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
@@ -304,6 +323,7 @@ struct T900H {
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
 			R = op[1]&7;
+			num3 = op[1]&7;
 			fetched++;
 			if( MASKCP2(op[1],0xF8,0x80) ) {  // ADD R,r
 				stats.add++;
@@ -311,6 +331,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = add( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = add( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = add( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0x60) ) {  //  INC #3,r
+				stats.inc++;
+				switch(len) {
+					case 0: *shortReg8(r)  = inc_op( (int8_t)*shortReg8(r), (int8_t)num3,  flags ); break;
+					case 1: *shortReg16(r) = inc_op( (int16_t)*shortReg16(r), (int16_t)num3, flags ); break;
+					case 2: shortReg(r)->q = inc_op( shortReg(r)->qs, num3, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x90) ) {  // ADC R,r

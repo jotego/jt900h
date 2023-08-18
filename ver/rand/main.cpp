@@ -35,9 +35,9 @@ void fill( Mem& m, int bank ) {
                 break;
             }
             // single byte instructions
-            if( op[op_len]==0x12 || // CCF
+            if( op[op_len]==0x10 || // RCF
                 op[op_len]==0x11 || // SCF
-                op[op_len]==0x10 || // RCF
+                op[op_len]==0x12 || // CCF
                 op[op_len]==0x13 || // ZCF
                 op[op_len]==0x0c || // INCF
                 op[op_len]==0x0d    // DECF
@@ -50,6 +50,7 @@ void fill( Mem& m, int bank ) {
                 len=(op[0]>>4)&3;
                 while(true) {
                     op[op_len] = (char)rand();
+                    if( MASKCP2(op[op_len],0xF8,0x60) ) { op_len++; break; } // INC #3,r
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
@@ -253,6 +254,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d ZCF\n", cpu.stats.zcf);
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
+            printf("\t%d INC\n", cpu.stats.inc);
         }
         tracer.flush();
     } catch( const char *error ) {
