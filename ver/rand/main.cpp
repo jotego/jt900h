@@ -56,6 +56,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
+                    if( MASKCP2(op[op_len],0xF8,0xD8) ) { op_len++; break; } // CP r,#3
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
