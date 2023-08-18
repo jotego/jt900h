@@ -56,18 +56,18 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
-                    if( MASKCP2(op[op_len],0xF8,0xD8) ) { op_len++; break; } // CP r,#3
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
+                    if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0 ) { op_len++; break; } // CP r,#3
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
                         op_len+=make_imm(len, &op[op_len] );
                         break;
                     }
-                    if( op[op_len]==0x06 && (op[0]&0x20)==0) { op_len++; break; } // CPL r
+                    if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r

@@ -398,7 +398,7 @@ struct T900H {
 				switch(len) {
 					case 0: cp( (int8_t)*shortReg8(r), (int8_t)num3,  flags ); break;
 					case 1: cp( (int16_t)*shortReg16(r), (int16_t)num3, flags ); break;
-					case 2: cp( shortReg(r)->qs, num3, flags ); break;
+					case 2: break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0xF0) ) {  // CP R,r
