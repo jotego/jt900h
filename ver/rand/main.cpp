@@ -39,6 +39,7 @@ void fill( Mem& m, int bank ) {
                 op[op_len]==0x11 || // SCF
                 op[op_len]==0x12 || // CCF
                 op[op_len]==0x13 || // ZCF
+                op[op_len]==0x16 || // EX F,F'
                 op[op_len]==0x0c || // INCF
                 op[op_len]==0x0d    // DECF
             ) { op_len++; break; }
@@ -55,12 +56,14 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
+                    if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
+                    if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
                     if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0 ) { op_len++; break; } // CP r,#3
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -255,6 +258,8 @@ int main(int argc, char *argv[]) {
             printf("\t%d RCF\n", cpu.stats.rcf);
             printf("\t%d SCF\n", cpu.stats.scf);
             printf("\t%d ZCF\n", cpu.stats.zcf);
+            printf("\t%d EXFF\n", cpu.stats.exff);
+            printf("\t%d EX\n", cpu.stats.exff);
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
             printf("\t%d INC\n", cpu.stats.inc);

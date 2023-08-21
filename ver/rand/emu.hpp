@@ -318,11 +318,11 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl;
+			neg, extz, exts, paa, inc, dec, cpl, exff;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
-	uint8_t flags,fdash;
+	uint8_t flags,fdash, nx_fdash;
 	void Reset(Mem& m) {
 		pc.q = m.Rd32(0xffff00);
 		for( int k=0;k<4; k++ ) {
@@ -332,18 +332,20 @@ struct T900H {
 		xsp.q = 0x100;
 		rfp = 0;
 		rf=&rr[0];
-		flags = fdash = 0;
+		flags = nx_fdash = 0;
 		memset(&stats,0,sizeof(stats));
 	}
 	int Exec(Mem &m) {
+		fdash = nx_fdash;
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len, num3;
+		int r,R, len, num3, A;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
 		if( op[0]==0x13 ) { stats.zcf++;  flags &= FLAG_NN; if ( flags & FLAG_Z ) flags &= FLAG_NC; else flags |= FLAG_C; } // ZCF
+		if( op[0]==0x16 ) { stats.exff++; nx_fdash = flags; flags = fdash; } // EXFF
 		if( op[0]==0x0C ) { stats.incf++; rfp++; rfp&=3; rf=&rr[rfp]; } // INCF
 		if( op[0]==0x0D ) { stats.decf++; rfp--; rfp&=3; rf=&rr[rfp]; } // DECF
 		if( MASKCP(op[0],0xc8) && !MASKCP(op[0],0x30) ) {
@@ -433,7 +435,6 @@ struct T900H {
 					case 2: shortReg(R)->q = xor_op( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
 			}
-
 			else if( MASKCP2(op[1],0xF8,0xE0) ) {  // OR R,r
 				stats.or_op++;
 				switch(len) {
@@ -448,6 +449,14 @@ struct T900H {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
 					case 2: *shortReg(R)   = *shortReg(r); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0x98) ) {  // LD r,R
+				stats.ld++;
+				switch(len) {
+					case 0: *shortReg8(r)  = *shortReg8(R); break;
+					case 1: *shortReg16(r) = *shortReg16(R); break;
+					case 2: *shortReg(r)   = *shortReg(R); break;
 				}
 			}
 			else if( op[1]==0x06 ) {  //  CPL r
@@ -496,6 +505,7 @@ struct T900H {
 				fetched += f2;
 				pc.q += f2;
 			}
+
 		}
 		return fetched;
 	}
