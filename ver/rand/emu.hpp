@@ -318,7 +318,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl, exff;
+			neg, extz, exts, paa, inc, dec, cpl, ex;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -345,7 +345,7 @@ struct T900H {
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
 		if( op[0]==0x13 ) { stats.zcf++;  flags &= FLAG_NN; if ( flags & FLAG_Z ) flags &= FLAG_NC; else flags |= FLAG_C; } // ZCF
-		if( op[0]==0x16 ) { stats.exff++; nx_fdash = flags; flags = fdash; } // EXFF
+		if( op[0]==0x16 ) { stats.ex++; nx_fdash = flags; flags = fdash; } // EXFF
 		if( op[0]==0x0C ) { stats.incf++; rfp++; rfp&=3; rf=&rr[rfp]; } // INCF
 		if( op[0]==0x0D ) { stats.decf++; rfp--; rfp&=3; rf=&rr[rfp]; } // DECF
 		if( MASKCP(op[0],0xc8) && !MASKCP(op[0],0x30) ) {
@@ -418,6 +418,22 @@ struct T900H {
 					case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = sbc( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
 				}
+			}
+			else if( MASKCP2(op[1],0xF8,0xB8) ) {  // EX R,r
+				stats.ex++;
+				int temp = 0;
+				switch(len) {
+					case 0:	temp = *shortReg8(R);
+							*shortReg8(R) = *shortReg8(r);
+							*shortReg8(r) = temp;
+							break;
+					case 1: temp = *shortReg16(R);
+							*shortReg16(R) = *shortReg16(r);
+							*shortReg16(r) = temp;
+							break;
+					case 2: break;
+				}
+
 			}
 			else if( MASKCP2(op[1],0xF8,0xC0) ) {  // AND R,r
 				stats.and_op++;

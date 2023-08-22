@@ -64,6 +64,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
+                    if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0 ) { op_len++; break; } // EX R,r
                     if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0 ) { op_len++; break; } // CP r,#3
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -258,8 +259,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d RCF\n", cpu.stats.rcf);
             printf("\t%d SCF\n", cpu.stats.scf);
             printf("\t%d ZCF\n", cpu.stats.zcf);
-            printf("\t%d EXFF\n", cpu.stats.exff);
-            printf("\t%d EX\n", cpu.stats.exff);
+            printf("\t%d EX\n", cpu.stats.ex);
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
             printf("\t%d INC\n", cpu.stats.inc);
