@@ -281,6 +281,22 @@ template <typename T> T dec_op( T a, T b, uint8_t &flags ) {
 	return rs;
 }
 
+template <typename T> T sll(T a, int b, uint8_t &flags ) {
+	if( !b ) b = 16;
+    T rs = a << b;
+    T c = a << (b - 1);
+	const T MSB = sizeof(T)==1 ? (c >> 7) & 1 : sizeof(T)==2 ? (c >> 15) & 1 : (c >> 31) & 1;
+    flags &= FLAG_NH; // H=0
+    flags &= FLAG_NN; // N=0
+    parity( rs, flags );
+    set_sz( rs, flags );
+    if( MSB )
+		flags |= FLAG_C;
+	else
+		flags &= FLAG_NC;
+    return rs;
+}
+
 template <typename T> T cpl( T a, uint8_t &flags ) {
 	T rs = ~a;
 	flags |= FLAG_H;
@@ -318,7 +334,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl, ex;
+			neg, extz, exts, paa, inc, dec, cpl, ex, rlc, rrc, sll, srl;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -340,7 +356,7 @@ struct T900H {
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len, num3, A;
+		int r,R, len, num3;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
@@ -349,6 +365,7 @@ struct T900H {
 		if( op[0]==0x0C ) { stats.incf++; rfp++; rfp&=3; rf=&rr[rfp]; } // INCF
 		if( op[0]==0x0D ) { stats.decf++; rfp--; rfp&=3; rf=&rr[rfp]; } // DECF
 		if( MASKCP(op[0],0xc8) && !MASKCP(op[0],0x30) ) {
+			auto A = (rf->xwa.b[0])&0x0f; // (*rf).xwa.b[1]
 			r = op[0]&7;
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
@@ -461,6 +478,7 @@ struct T900H {
 			}
 			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
 				stats.ld++;
+				// printf("LD R,r R=%X r=%X \n", R,r);
 				switch(len) {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
@@ -469,6 +487,7 @@ struct T900H {
 			}
 			else if( MASKCP2(op[1],0xF8,0x98) ) {  // LD r,R
 				stats.ld++;
+				// printf("LD r,R \n");
 				switch(len) {
 					case 0: *shortReg8(r)  = *shortReg8(R); break;
 					case 1: *shortReg16(r) = *shortReg16(R); break;
@@ -489,6 +508,14 @@ struct T900H {
 					case 0: *shortReg8(r)  = neg((int8_t)*shortReg8(r), flags); break;
 					case 1: *shortReg16(r) = neg((int16_t)*shortReg16(r), flags); break;
 					case 2: shortReg(r)->q = neg(shortReg(r)->qs, flags); break;
+				}
+			}
+			else if( op[1]==0xFE ) {  // SLL A,r
+				stats.sll++;
+				switch(len) {
+					case 0: *shortReg8(r)  = sll( *shortReg8(r), A,  flags ); break;
+					case 1: *shortReg16(r) = sll( *shortReg16(r), A, flags ); break;
+					case 2: shortReg(r)->q = sll( shortReg(r)->qs, A, flags ); break;
 				}
 			}
 			else if( op[1]==0x12 ) {  //  EXTZ r
@@ -516,6 +543,7 @@ struct T900H {
 				}
 			}
 			else if( op[1]==0x03 ) { // LD r,#
+				// printf("LD r,# \n");
 				auto aux = m.Rd32(pc.q);
 				auto f2 = assign( r, len, aux );
 				fetched += f2;

@@ -64,7 +64,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
-                    if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0 ) { op_len++; break; } // EX R,r
+                    if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0) { op_len++; break; } // EX R,r
                     if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0 ) { op_len++; break; } // CP r,#3
                     if( op[op_len]==3 ) { // LD r,#
                         op_len++;
@@ -76,6 +76,10 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
+                    // if( op[op_len]==0xF8 ) { op_len++; break; } // RLC A,r
+                    // if( op[op_len]==0xF9 ) { op_len++; break; } // RRC A,r
+                    if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
+                    // if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
                 }
             }
         }
@@ -265,6 +269,10 @@ int main(int argc, char *argv[]) {
             printf("\t%d INC\n", cpu.stats.inc);
             printf("\t%d DEC\n", cpu.stats.dec);
             printf("\t%d CPL\n", cpu.stats.cpl);
+            printf("\t%d SLL\n", cpu.stats.sll);
+            // printf("\t%d SRL\n", cpu.stats.srl);
+            // printf("\t%d RLC\n", cpu.stats.rlc);
+            // printf("\t%d RRC\n", cpu.stats.rrc);
         }
         tracer.flush();
     } catch( const char *error ) {
