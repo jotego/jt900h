@@ -56,9 +56,8 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
-                    if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
-                    if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
+                    if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
@@ -79,7 +78,7 @@ void fill( Mem& m, int bank ) {
                     // if( op[op_len]==0xF8 ) { op_len++; break; } // RLC A,r
                     // if( op[op_len]==0xF9 ) { op_len++; break; } // RRC A,r
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
-                    // if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
+                    if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
                 }
             }
         }
@@ -270,8 +269,8 @@ int main(int argc, char *argv[]) {
             printf("\t%d DEC\n", cpu.stats.dec);
             printf("\t%d CPL\n", cpu.stats.cpl);
             printf("\t%d SLL\n", cpu.stats.sll);
-            // printf("\t%d SRL\n", cpu.stats.srl);
-            // printf("\t%d RLC\n", cpu.stats.rlc);
+            printf("\t%d SRL\n", cpu.stats.srl);
+            printf("\t%d RLC\n", cpu.stats.rlc);
             // printf("\t%d RRC\n", cpu.stats.rrc);
         }
         tracer.flush();
