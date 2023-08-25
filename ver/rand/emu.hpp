@@ -313,6 +313,28 @@ template <typename T> T srl(T a, int b, uint8_t &flags ) {
     return rs;
 }
 
+template <typename T> T sra(T a, int b, uint8_t &flags ) {
+    if( !b ) b = 16;
+    const T nb = sizeof(T) * 8;
+    T rs = a;
+    for (int i = 0; i < b ; i++) {
+    	if ( i == (b-1) ) {
+    		const T LSB = sizeof(T)==1 ? (rs & 1) : sizeof(T)==2 ? (rs & 1 ): (rs & 1);
+	    	if( LSB )
+		        flags |= FLAG_C;
+		    else
+		        flags &= FLAG_NC;
+    	}
+    	const T MSB = sizeof(T)==1 ? (rs >> 7) & 1 : sizeof(T)==2 ? (rs >> 15) & 1 : (rs >> 31) & 1;
+    	rs = (rs >> 1) | (MSB << (nb -1));
+    }
+    flags &= FLAG_NH; // H=0
+    flags &= FLAG_NN; // N=0
+    parity( rs, flags );
+    set_sz( rs, flags );
+    return rs;
+}
+
 template <typename T> T rlc(T a, int b, uint8_t &flags ) {
     if( !b ) b = 16;
     const T nb = sizeof(T) * 8;
@@ -348,7 +370,7 @@ template <typename T> T rrc(T a, int b, uint8_t &flags ) {
 template <typename T> T rl_op(T a, int b, uint8_t &flags ) {
     if( !b ) b = 16;
     T rs = a;
-    for (int i = 0; i < b ; ++i) {
+    for (int i = 0; i < b ; i++) {
         T MSB = sizeof(T)==1 ? (rs >> 7) & 1 : sizeof(T)==2 ? (rs >> 15) & 1 : (rs >> 31) & 1;
        	rs = (rs << 1) | flags&FLAG_C;
         if( MSB )
@@ -419,7 +441,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sll, srl;
+			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -632,6 +654,14 @@ struct T900H {
 					case 0: *shortReg8(r)  = sll( *shortReg8(r), A,  flags ); break;
 					case 1: *shortReg16(r) = sll( *shortReg16(r), A, flags ); break;
 					case 2: shortReg(r)->q = sll( shortReg(r)->qs, A, flags ); break;
+				}
+			}
+			else if( op[1]==0xFD ) {  // SRA A,r
+				stats.sra++;
+				switch(len) {
+					case 0: *shortReg8(r)  = sra( *shortReg8(r), A,  flags ); break;
+					case 1: *shortReg16(r) = sra( *shortReg16(r), A, flags ); break;
+					case 2: shortReg(r)->q = sra( shortReg(r)->q, A, flags ); break;
 				}
 			}
 			else if( op[1]==0xFE ) {  // SLL A,r

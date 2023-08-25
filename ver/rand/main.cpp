@@ -80,6 +80,7 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0xFA ) { op_len++; break; } // RL A,r
                     if( op[op_len]==0xFB ) { op_len++; break; } // RR A,r
                     if( op[op_len]==0xFC ) { op_len++; break; } // SLA A,r
+                    if( op[op_len]==0xFD ) { op_len++; break; } // SRA A,r
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
                 }
@@ -275,6 +276,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d CPL\n", cpu.stats.cpl);
             printf("\t%d SLL\n", cpu.stats.sll);
             printf("\t%d SLA\n", cpu.stats.sla);
+            printf("\t%d SRA\n", cpu.stats.sra);
             printf("\t%d SRL\n", cpu.stats.srl);
             printf("\t%d RL\n", cpu.stats.rl_op);
             printf("\t%d RR\n", cpu.stats.rr_op);
