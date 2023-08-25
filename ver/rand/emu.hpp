@@ -463,7 +463,7 @@ struct T900H {
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len, num3;
+		int r,R, len, num3,num4;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
@@ -624,6 +624,16 @@ struct T900H {
                     case 2: shortReg(r)->q = rlc( shortReg(r)->q, A, flags ); break;
                  }
             }
+            else if( op[1]==0xE8 ) {  // RLC #4,r
+            	op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+                stats.rlc++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rlc( *shortReg8(r), num4, flags ); break;
+                    case 1: *shortReg16(r) = rlc( *shortReg16(r), num4, flags ); break;
+                    case 2: shortReg(r)->q = rlc( shortReg(r)->q, num4, flags ); break;
+                 }
+            }
             else if( op[1]==0xF9 ) {  // RRC A,r
                 stats.rrc++;
                 switch(len) {
@@ -631,6 +641,16 @@ struct T900H {
                     case 1: *shortReg16(r) = rrc( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rrc( shortReg(r)->q, A, flags ); break;
              	}
+            }
+            else if( op[1]==0xE9 ) {  // RRC #4,r
+            	op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+                stats.rrc++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rrc( *shortReg8(r), num4, flags ); break;
+                    case 1: *shortReg16(r) = rrc( *shortReg16(r), num4, flags ); break;
+                    case 2: shortReg(r)->q = rrc( shortReg(r)->q, num4, flags ); break;
+                 }
             }
             else if( op[1]==0xFA ) {  // RL A,r
                 stats.rl_op++;
@@ -640,12 +660,32 @@ struct T900H {
                     case 2: shortReg(r)->q = rl_op( shortReg(r)->q, A, flags ); break;
                  }
             }
+            else if( op[1]==0xEA ) {  // RL A,r
+            	op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+                stats.rl_op++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rl_op( *shortReg8(r), num4, flags ); break;
+                    case 1: *shortReg16(r) = rl_op( *shortReg16(r), num4, flags ); break;
+                    case 2: shortReg(r)->q = rl_op( shortReg(r)->q, num4, flags ); break;
+                 }
+            }
             else if( op[1]==0xFB ) {  // RR A,r
                 stats.rr_op++;
                 switch(len) {
                     case 0: *shortReg8(r)  = rr_op( *shortReg8(r), A, flags ); break;
                     case 1: *shortReg16(r) = rr_op( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rr_op( shortReg(r)->q, A, flags ); break;
+                 }
+            }
+            else if( op[1]==0xEB ) {  // RR A,r
+            	op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+                stats.rr_op++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rr_op( *shortReg8(r), num4, flags ); break;
+                    case 1: *shortReg16(r) = rr_op( *shortReg16(r), num4, flags ); break;
+                    case 2: shortReg(r)->q = rr_op( shortReg(r)->q, num4, flags ); break;
                  }
             }
 			else if( op[1]==0xFC ) {  // SLA A,r

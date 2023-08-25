@@ -83,9 +83,35 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0xFD ) { op_len++; break; } // SRA A,r
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
+
+                    if( op[op_len]==0xE8 ) {  // RLC #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xE9 ) {  // RRC #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xEA ) {  // RL #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xEB ) {  // RR #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
                 }
             }
         }
+
         // copy to memory
         if( op_len+k > 0x1'0000 ) break;
         memcpy( p+k, op, op_len );
