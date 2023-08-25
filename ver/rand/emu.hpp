@@ -313,24 +313,36 @@ template <typename T> T srl(T a, int b, uint8_t &flags ) {
     return rs;
 }
 
-// template <typename T> T rlc(T a, int b, uint8_t &flags ) {
-//     if( !b ) b = 16;
-//     // if( b==0xF ) b = 15;
-//     const T nb = sizeof(T) * 8;
-//     // b %= nb;
-//     T rs = (a << b) | (a >> (nb - b));
-//     T c = rs & 1;
-//     flags &= FLAG_NH; // H=0
-//     flags &= FLAG_NN; // N=0
-//     parity( rs, flags );
-//     set_sz( rs, flags );
-//     if( c )
-//         flags |= FLAG_C;
-//     else
-//         flags &= FLAG_NC;
-//     printf("RLC %X << %X = %X (%X) \n",(int)a,(int)b,(unsigned)rs,(nb - b));
-//     return rs;
-// }
+template <typename T> T rlc(T a, int b, uint8_t &flags ) {
+    if( !b ) b = 16;
+    const T nb = sizeof(T) * 8;
+    T rs = (a << b) | (a >> (nb - b));
+    T c = rs & 1;
+    flags &= FLAG_NH; // H=0
+    flags &= FLAG_NN; // N=0
+    parity( rs, flags );
+    set_sz( rs, flags );
+    if( c )
+        flags |= FLAG_C;
+    else
+        flags &= FLAG_NC;
+    return rs;
+}
+template <typename T> T rrc(T a, int b, uint8_t &flags ) {
+    if( !b ) b = 16;
+    const T nb = sizeof(T) * 8;
+    T rs = (a >> b) | (a << (nb - b));
+    const T MSB = sizeof(T)==1 ? (rs >> 7) & 1 : sizeof(T)==2 ? (rs >> 15) & 1 : (rs >> 31) & 1;
+    flags &= FLAG_NH; // H=0
+    flags &= FLAG_NN; // N=0
+    parity( rs, flags );
+    set_sz( rs, flags );
+    if( MSB )
+        flags |= FLAG_C;
+    else
+        flags &= FLAG_NC;
+    return rs;
+}
 
 template <typename T> T cpl( T a, uint8_t &flags ) {
 	T rs = ~a;
@@ -514,7 +526,6 @@ struct T900H {
 			}
 			else if( MASKCP2(op[1],0xF8,0x88) ) {  // LD R,r
 				stats.ld++;
-				// printf("LD R,r R=%X r=%X \n", R,r);
 				switch(len) {
 					case 0: *shortReg8(R)  = *shortReg8(r); break;
 					case 1: *shortReg16(R) = *shortReg16(r); break;
@@ -523,7 +534,6 @@ struct T900H {
 			}
 			else if( MASKCP2(op[1],0xF8,0x98) ) {  // LD r,R
 				stats.ld++;
-				// printf("LD r,R \n");
 				switch(len) {
 					case 0: *shortReg8(r)  = *shortReg8(R); break;
 					case 1: *shortReg16(r) = *shortReg16(R); break;
@@ -546,15 +556,22 @@ struct T900H {
 					case 2: shortReg(r)->q = neg(shortReg(r)->qs, flags); break;
 				}
 			}
-			// else if( op[1]==0xF8 ) {  // RLC A,r
-            //     stats.rlc++;
-            //     printf (" RLC len case %X \n", len);
-            //     switch(len) {
-            //         case 0: *shortReg8(r)  = rlc( *shortReg8(r), A, flags ); break;
-            //         case 1: *shortReg16(r) = rlc( *shortReg16(r), A, flags ); break;
-            //         case 2: shortReg(r)->q = rlc( shortReg(r)->q, A, flags ); break;
-            //      }
-            // }
+			else if( op[1]==0xF8 ) {  // RLC A,r
+                stats.rlc++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rlc( *shortReg8(r), A, flags ); break;
+                    case 1: *shortReg16(r) = rlc( *shortReg16(r), A, flags ); break;
+                    case 2: shortReg(r)->q = rlc( shortReg(r)->q, A, flags ); break;
+                 }
+            }
+            else if( op[1]==0xF9 ) {  // RRC A,r
+                stats.rrc++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rrc( *shortReg8(r), A, flags ); break;
+                    case 1: *shortReg16(r) = rrc( *shortReg16(r), A, flags ); break;
+                    case 2: shortReg(r)->q = rrc( shortReg(r)->q, A, flags ); break;
+             	}
+            }
 			else if( op[1]==0xFE ) {  // SLL A,r
 				stats.sll++;
 				switch(len) {
@@ -596,7 +613,6 @@ struct T900H {
 				}
 			}
 			else if( op[1]==0x03 ) { // LD r,#
-				// printf("LD r,# \n");
 				auto aux = m.Rd32(pc.q);
 				auto f2 = assign( r, len, aux );
 				fetched += f2;
