@@ -363,6 +363,25 @@ template <typename T> T rl_op(T a, int b, uint8_t &flags ) {
     return rs;
 }
 
+template <typename T> T rr_op(T a, int b, uint8_t &flags ) {
+    if( !b ) b = 16;
+    T rs = a;
+    const T nb = sizeof(T) * 8;
+    for (int i = 0; i < b ; ++i) {
+    	T c = rs & 1;
+        rs = (rs >> 1) | (flags&FLAG_C) << (nb -1);
+        if( c )
+            flags |= FLAG_C;
+        else
+            flags &= FLAG_NC;
+    }
+    flags &= FLAG_NH; // H=0
+    flags &= FLAG_NN; // N=0
+    parity( rs, flags );
+    set_sz( rs, flags );
+    return rs;
+}
+
 template <typename T> T cpl( T a, uint8_t &flags ) {
 	T rs = ~a;
 	flags |= FLAG_H;
@@ -400,7 +419,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rlc, rrc, sla, sll, srl;
+			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sll, srl;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -597,6 +616,14 @@ struct T900H {
                     case 0: *shortReg8(r)  = rl_op( *shortReg8(r), A, flags ); break;
                     case 1: *shortReg16(r) = rl_op( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rl_op( shortReg(r)->q, A, flags ); break;
+                 }
+            }
+            else if( op[1]==0xFB ) {  // RR A,r
+                stats.rr_op++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = rr_op( *shortReg8(r), A, flags ); break;
+                    case 1: *shortReg16(r) = rr_op( *shortReg16(r), A, flags ); break;
+                    case 2: shortReg(r)->q = rr_op( shortReg(r)->q, A, flags ); break;
                  }
             }
 			else if( op[1]==0xFC ) {  // SLA A,r
