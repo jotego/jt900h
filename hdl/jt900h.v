@@ -89,7 +89,7 @@ wire [ 6:0] alu_op;
 wire [ 7:0] flags /* verilator public */;
 wire [ 2:0] alu_we;
 wire        alu_smux, alu_imux;
-wire        alu_wait, alu_busy;
+wire        alu_wait, alu_busy /* verilator public */;
 wire        flag_we, djnz, flag_only, nx_v, nx_z;
 
 // Memory controller

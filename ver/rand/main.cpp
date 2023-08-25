@@ -175,7 +175,7 @@ void show_comp( UUT& uut, T900H& emu ) {
 }
 
 int main(int argc, char *argv[]) {
-    const int MAXCYCLES=41;
+    const int MAXCYCLES=20;
     T900H cpu;
     Mem m;
     VerilatedContext context;
@@ -218,9 +218,11 @@ int main(int argc, char *argv[]) {
             auto fetched = cpu.Exec( m );
             // if( verbose ) show(cpu, m, pc_old, fetched);
             matched = false;
-            for( int k=0, pcok=0; k<MAXCYCLES; k++ ) {
+            for( int k=0, pcok=0; k<MAXCYCLES;  ) {
                 clock( uut, m, &tracer, 1 );
-                if( uut.jt900h->pc >= cpu.pc.q && !uut.jt900h->alu_busy ) pcok=1;
+                if( uut.jt900h->alu_busy ) continue;
+                k++;
+                if( uut.jt900h->pc >= cpu.pc.q ) pcok=1;
                 if( pcok ) {
                     if( cmp(uut,cpu) ) {
                         matched=true;
