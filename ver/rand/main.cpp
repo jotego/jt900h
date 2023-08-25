@@ -77,6 +77,7 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
                     if( op[op_len]==0xF8 ) { op_len++; break; } // RLC A,r
                     if( op[op_len]==0xF9 ) { op_len++; break; } // RRC A,r
+                    if( op[op_len]==0xFC ) { op_len++; break; } // SLA A,r
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
                 }
@@ -271,6 +272,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d DEC\n", cpu.stats.dec);
             printf("\t%d CPL\n", cpu.stats.cpl);
             printf("\t%d SLL\n", cpu.stats.sll);
+            printf("\t%d SLA\n", cpu.stats.sla);
             printf("\t%d SRL\n", cpu.stats.srl);
             printf("\t%d RLC\n", cpu.stats.rlc);
             printf("\t%d RRC\n", cpu.stats.rrc);

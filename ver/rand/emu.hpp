@@ -381,7 +381,7 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rlc, rrc, sll, srl;
+			neg, extz, exts, paa, inc, dec, cpl, ex, rlc, rrc, sla, sll, srl;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -572,6 +572,14 @@ struct T900H {
                     case 2: shortReg(r)->q = rrc( shortReg(r)->q, A, flags ); break;
              	}
             }
+			else if( op[1]==0xFC ) {  // SLA A,r
+				stats.sla++;
+				switch(len) {
+					case 0: *shortReg8(r)  = sll( *shortReg8(r), A,  flags ); break;
+					case 1: *shortReg16(r) = sll( *shortReg16(r), A, flags ); break;
+					case 2: shortReg(r)->q = sll( shortReg(r)->qs, A, flags ); break;
+				}
+			}
 			else if( op[1]==0xFE ) {  // SLL A,r
 				stats.sll++;
 				switch(len) {
