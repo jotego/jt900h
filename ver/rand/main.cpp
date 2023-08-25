@@ -175,7 +175,7 @@ void show_comp( UUT& uut, T900H& emu ) {
 }
 
 int main(int argc, char *argv[]) {
-    const int MAXCYCLES=40;
+    const int MAXCYCLES=41;
     T900H cpu;
     Mem m;
     VerilatedContext context;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
             matched = false;
             for( int k=0, pcok=0; k<MAXCYCLES; k++ ) {
                 clock( uut, m, &tracer, 1 );
-                if( uut.jt900h->pc >= cpu.pc.q ) pcok=1;
+                if( uut.jt900h->pc >= cpu.pc.q && !uut.jt900h->alu_busy ) pcok=1;
                 if( pcok ) {
                     if( cmp(uut,cpu) ) {
                         matched=true;
