@@ -108,6 +108,30 @@ void fill( Mem& m, int bank ) {
                         op_len++;
                         break;
                     }
+                    if( op[op_len]==0xEC ) {  // SLA #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xED ) {  // SRA #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xEE ) {  // SLL #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0xEF ) {  // SRL #4,r
+                        op_len++;
+                        op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
                 }
             }
         }
