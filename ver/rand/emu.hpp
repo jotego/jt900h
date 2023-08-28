@@ -404,6 +404,29 @@ template <typename T> T rr_op(T a, int b, uint8_t &flags ) {
     return rs;
 }
 
+template <typename T> void andcf( T a, int b, uint8_t &flags )  {
+    a = (a >> b) & 1;
+    T rs = (flags&FLAG_C) && a;
+        if ( rs )
+            flags |= FLAG_C;
+        else
+            flags &= FLAG_NC;
+}
+
+template <typename T> void bit_op( T a, int b, uint8_t &flags )  {
+	a = (a >> b) & 1;
+    if (sizeof(T)==1 && b > 7 )
+    	flags = flags;
+    else {
+    	if ( a )
+    		flags &= FLAG_NZ;
+    	else
+    		flags |= FLAG_Z;
+    }
+	flags |= FLAG_H; // H=1
+    flags &= FLAG_NN; // N=0
+}
+
 template <typename T> T cpl( T a, uint8_t &flags ) {
 	T rs = ~a;
 	flags |= FLAG_H;
@@ -440,7 +463,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp,
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl;
 	} stats;
 	Bank *rf;
@@ -616,6 +639,24 @@ struct T900H {
 					case 2: shortReg(r)->q = neg(shortReg(r)->qs, flags); break;
 				}
 			}
+			else if( op[1]==0x20 ) {  // ANDCF A,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.andcf++;
+                switch(len) {
+                    case 0: andcf(*shortReg8(r), num4, flags ); break;
+                    case 1: andcf(*shortReg16(r), num4, flags ); break;
+                 }
+            }
+            else if( op[1]==0x33 ) {  // BIT A,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.bit_op++;
+                switch(len) {
+                    case 0: bit_op((int8_t)*shortReg8(r), num4, flags ); break;
+                    case 1: bit_op((int16_t)*shortReg16(r), num4, flags ); break;
+                 }
+            }
 			else if( op[1]==0xF8 ) {  // RLC A,r
                 stats.rlc++;
                 switch(len) {

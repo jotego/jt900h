@@ -72,6 +72,7 @@ void fill( Mem& m, int bank ) {
                     }
                     if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
+                    // if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
@@ -84,6 +85,24 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
 
+                    if( op[op_len]==0x20 && (op[0]&0x20)==0) {  // ANDCF #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0x33 && (op[0]&0x20)==0) {  // BIT #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
                     if( op[op_len]==0xE8 ) {  // RLC #4,r
                         op_len++;
                         op[op_len] = ((char)rand()&0x0f);
@@ -307,6 +326,8 @@ int main(int argc, char *argv[]) {
             printf("\t%d CP\n", cpu.stats.cp);
             printf("\t%d SBC\n", cpu.stats.sbc);
             printf("\t%d AND\n", cpu.stats.and_op);
+            printf("\t%d ANDCF\n", cpu.stats.andcf);
+            printf("\t%d BIT\n", cpu.stats.bit_op);
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
             printf("\t%d LD\n", cpu.stats.ld);
