@@ -407,41 +407,37 @@ template <typename T> T rr_op(T a, int b, uint8_t &flags ) {
 template <typename T> void andcf( T a, int b, uint8_t &flags )  {
     a = (a >> b) & 1;
     T rs = (flags&FLAG_C) && a;
-        if ( rs )
-            flags |= FLAG_C;
-        else
-            flags &= FLAG_NC;
+    if ( rs )
+        flags |= FLAG_C;
+    else
+        flags &= FLAG_NC;
 }
 
 template <typename T> void xorcf( T a, int b, uint8_t &flags )  {
     a = (a >> b) & 1;
     T rs = (flags&FLAG_C) ^ a;
-        if ( rs )
-            flags |= FLAG_C;
-        else
-            flags &= FLAG_NC;
+    if ( rs )
+        flags |= FLAG_C;
+    else
+        flags &= FLAG_NC;
 }
 
 template <typename T> void orcf( T a, int b, uint8_t &flags )  {
     // printf(" ORCF a=%X b=%X \n",a,b );
     a = (a >> b) & 1;
     T rs = (flags&FLAG_C) || a;
-        if ( rs )
-            flags |= FLAG_C;
-        else
-            flags &= FLAG_NC;
+    if ( rs )
+        flags |= FLAG_C;
+    else
+        flags &= FLAG_NC;
 }
 
 template <typename T> void bit_op( T a, int b, uint8_t &flags )  {
 	a = (a >> b) & 1;
-    if (sizeof(T)==1 && b > 7 )
-    	flags = flags;
-    else {
-    	if ( a )
-    		flags &= FLAG_NZ;
-    	else
-    		flags |= FLAG_Z;
-    }
+    if ( a )
+    	flags &= FLAG_NZ;
+    else
+    	flags |= FLAG_Z;
 	flags |= FLAG_H; // H=1
     flags &= FLAG_NN; // N=0
 }
@@ -467,7 +463,6 @@ template <typename T> void ldcf( T a, int b, uint8_t &flags) {
     	flags &= FLAG_NC;
     else
     	flags |= FLAG_C;
-	// return a;
 }
 
 template <typename T> T tset( T a, int b, uint8_t &flags )  {
@@ -482,26 +477,12 @@ template <typename T> T tset( T a, int b, uint8_t &flags )  {
     return rs;
 }
 
-template <typename T> T extz( T a ) {
-	T rs;
-	if (sizeof(T)==2)
-		rs = a & 0x00ff;
-	else
-		rs = a & 0x0000ffff;
-	return rs;
-}
-
 template <typename T> T exts( T a ) {
 	T rs;
 	if (sizeof(T)==2)
 		rs = ((a & 0x0080) ? 0xFF00 : 0x0000) | (a & 0x00FF);
 	else
 		rs = ((a & 0x00008000) ? 0xFFFF0000 : 0x00000000) | (a & 0x0000FFFF);
-	return rs;
-}
-
-template <typename T> T paa( T a ) {
-	T rs = a + (a & 1);
 	return rs;
 }
 
@@ -513,7 +494,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf;
+			stcf, ldcf, mul;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -926,8 +907,8 @@ struct T900H {
 				stats.extz++;
 				switch(len) {
 					case 0: break;
-					case 1: *shortReg16(r) = extz((int16_t)*shortReg16(r)); break;
-					case 2: shortReg(r)->q = extz(shortReg(r)->qs); break;
+					case 1: *shortReg16(r) = (int16_t)*shortReg16(r) & 0x00ff; break;
+					case 2: shortReg(r)->q = shortReg(r)->qs & 0x0000ffff; break;
 				}
 			}
 			else if( op[1]==0x13 ) {  //  EXTS r
@@ -938,12 +919,12 @@ struct T900H {
 					case 2: shortReg(r)->q = exts(shortReg(r)->qs); break;
 				}
 			}
-			else if( op[1]==0x14 ) {  //  PAA r
+			else if( op[1]==0x14 ) {  //  PAA r a + (a & 1)
 				stats.paa++;
 				switch(len) {
-					case 0: *shortReg8(r)  = paa((int8_t)*shortReg8(r)); break;
-					case 1: *shortReg16(r) = paa((int16_t)*shortReg16(r)); break;
-					case 2: shortReg(r)->q = paa(shortReg(r)->qs); break;
+					case 0: *shortReg8(r)  = (int8_t)*shortReg8(r) + ((int8_t)*shortReg8(r) & 1 ); break;
+					case 1: *shortReg16(r) = (int16_t)*shortReg16(r) + ((int16_t)*shortReg16(r) & 1); break;
+					case 2: shortReg(r)->q = shortReg(r)->qs + (shortReg(r)->qs & 1); break;
 				}
 			}
 			else if( op[1]==0x03 ) { // LD r,#
