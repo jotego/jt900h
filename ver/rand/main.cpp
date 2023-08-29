@@ -88,9 +88,13 @@ void fill( Mem& m, int bank ) {
                     if(( op[op_len]==0x20 ||    // ANDCF #4,r
                          op[op_len]==0x21 ||    // ORCF #4,r
                          op[op_len]==0x22 ||    // XORCF #4,r
+                         op[op_len]==0x23 ||    // LDCF #4,r
+                         op[op_len]==0x24 ||    // STCF #4,r
                          op[op_len]==0x30 ||    // RES #4,r
                          op[op_len]==0x31 ||    // SET #4,r
-                         op[op_len]==0x33 )     // BIT #4,r
+                         op[op_len]==0x32 ||    // CHG #4,r
+                         op[op_len]==0x33 ||    // BIT #4,r
+                         op[op_len]==0x34 )     // TSET #4,r
                         && (op[0]&0x20)==0) {
                             op_len++;
                             if ( !len )
@@ -291,9 +295,13 @@ int main(int argc, char *argv[]) {
             printf("\t%d ANDCF\n", cpu.stats.andcf);
             printf("\t%d ORCF\n", cpu.stats.orcf);
             printf("\t%d XORCF\n", cpu.stats.xorcf);
+            printf("\t%d STCF\n", cpu.stats.stcf);
+            printf("\t%d LDCF\n", cpu.stats.ldcf);
             printf("\t%d BIT\n", cpu.stats.bit_op);
             printf("\t%d RES\n", cpu.stats.res_op);
             printf("\t%d SET\n", cpu.stats.set_op);
+            printf("\t%d CHG\n", cpu.stats.chg);
+            printf("\t%d TSET\n", cpu.stats.tset);
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
             printf("\t%d LD\n", cpu.stats.ld);

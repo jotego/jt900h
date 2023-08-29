@@ -453,9 +453,33 @@ template <typename T> T cpl( T a, uint8_t &flags ) {
 	return rs;
 }
 
-template <typename T> T res_op( T a, int b)  {
-    a &= ~(1 << b);
-    return a;
+template <typename T> T stcf( T a, int b, uint8_t &flags) {
+	if ( flags&FLAG_C )
+		a |= (1 << b);
+	else
+		a &= ~(1 << b);
+	return a;
+}
+
+template <typename T> void ldcf( T a, int b, uint8_t &flags) {
+	a = (a >> b) & 1;
+	if ( !a )
+    	flags &= FLAG_NC;
+    else
+    	flags |= FLAG_C;
+	// return a;
+}
+
+template <typename T> T tset( T a, int b, uint8_t &flags )  {
+    T rs = a | (1 << b);
+    a ^= (1 << b);
+    if ( a!=rs )
+    	flags &= FLAG_NZ;
+    else
+    	flags |= FLAG_Z;
+    flags |= FLAG_H; // H=1
+    flags &= FLAG_NN; // N=0
+    return rs;
 }
 
 template <typename T> T extz( T a ) {
@@ -488,7 +512,8 @@ struct T900H {
 	} rr[4];
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op;
+			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
+			stcf, ldcf;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -690,6 +715,24 @@ struct T900H {
                     case 1: xorcf(*shortReg16(r), num4, flags ); break;
                 }
             }
+            else if( op[1]==0x23 ) {  // LDCF #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.ldcf++;
+                switch(len) {
+                    case 0: ldcf(*shortReg8(r), num4, flags); break;
+                    case 1: ldcf(*shortReg16(r), num4, flags); break;
+                }
+            }
+            else if( op[1]==0x24 ) {  // STCF #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.stcf++;
+                switch(len) {
+                    case 0: *shortReg8(r) = stcf(*shortReg8(r), num4, flags); break;
+                    case 1: *shortReg16(r) = stcf(*shortReg16(r), num4, flags); break;
+                }
+            }
             else if( op[1]==0x30 ) {  // RES #4,r
                 op[2] = m.Rd8(pc.q++);
             	num4 = op[2];
@@ -697,7 +740,7 @@ struct T900H {
                 switch(len) {
                     case 0: *shortReg8(r) &= ~(1 << num4); break;
                     case 1: *shortReg16(r) &= ~(1 << num4); break;
-                 }
+                }
             }
             else if( op[1]==0x31 ) {  // SET #4,r
                 op[2] = m.Rd8(pc.q++);
@@ -706,7 +749,16 @@ struct T900H {
                 switch(len) {
                     case 0: *shortReg8(r) |= (1 << num4); break;
                     case 1: *shortReg16(r) |= (1 << num4); break;
-                 }
+                }
+            }
+            else if( op[1]==0x32 ) {  // CHG #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.chg++;
+                switch(len) {
+                    case 0: *shortReg8(r) ^= (1 << num4); break;
+                    case 1: *shortReg16(r) ^= (1 << num4); break;
+                }
             }
             else if( op[1]==0x33 ) {  // BIT #4,r
                 op[2] = m.Rd8(pc.q++);
@@ -715,7 +767,16 @@ struct T900H {
                 switch(len) {
                     case 0: bit_op((int8_t)*shortReg8(r), num4, flags ); break;
                     case 1: bit_op((int16_t)*shortReg16(r), num4, flags ); break;
-                 }
+                }
+            }
+            else if( op[1]==0x34 ) {  // TSET #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.tset++;
+                switch(len) {
+                    case 0: *shortReg8(r)  = tset(*shortReg8(r), num4, flags ); break;
+                    case 1: *shortReg16(r) = tset(*shortReg16(r), num4, flags ); break;
+                }
             }
 			else if( op[1]==0xF8 ) {  // RLC A,r
                 stats.rlc++;
@@ -723,7 +784,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rlc( *shortReg8(r), A, flags ); break;
                     case 1: *shortReg16(r) = rlc( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rlc( shortReg(r)->q, A, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xE8 ) {  // RLC #4,r
             	op[2] = m.Rd8(pc.q++);
@@ -733,7 +794,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rlc( *shortReg8(r), num4, flags ); break;
                     case 1: *shortReg16(r) = rlc( *shortReg16(r), num4, flags ); break;
                     case 2: shortReg(r)->q = rlc( shortReg(r)->q, num4, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xF9 ) {  // RRC A,r
                 stats.rrc++;
@@ -751,7 +812,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rrc( *shortReg8(r), num4, flags ); break;
                     case 1: *shortReg16(r) = rrc( *shortReg16(r), num4, flags ); break;
                     case 2: shortReg(r)->q = rrc( shortReg(r)->q, num4, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xFA ) {  // RL A,r
                 stats.rl_op++;
@@ -759,7 +820,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rl_op( *shortReg8(r), A, flags ); break;
                     case 1: *shortReg16(r) = rl_op( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rl_op( shortReg(r)->q, A, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xEA ) {  // RL #4,r
             	op[2] = m.Rd8(pc.q++);
@@ -769,7 +830,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rl_op( *shortReg8(r), num4, flags ); break;
                     case 1: *shortReg16(r) = rl_op( *shortReg16(r), num4, flags ); break;
                     case 2: shortReg(r)->q = rl_op( shortReg(r)->q, num4, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xFB ) {  // RR A,r
                 stats.rr_op++;
@@ -777,7 +838,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rr_op( *shortReg8(r), A, flags ); break;
                     case 1: *shortReg16(r) = rr_op( *shortReg16(r), A, flags ); break;
                     case 2: shortReg(r)->q = rr_op( shortReg(r)->q, A, flags ); break;
-                 }
+                }
             }
             else if( op[1]==0xEB ) {  // RR #4,r
             	op[2] = m.Rd8(pc.q++);
@@ -787,7 +848,7 @@ struct T900H {
                     case 0: *shortReg8(r)  = rr_op( *shortReg8(r), num4, flags ); break;
                     case 1: *shortReg16(r) = rr_op( *shortReg16(r), num4, flags ); break;
                     case 2: shortReg(r)->q = rr_op( shortReg(r)->q, num4, flags ); break;
-                 }
+                }
             }
 			else if( op[1]==0xFC ) {  // SLA A,r
 				stats.sla++;
