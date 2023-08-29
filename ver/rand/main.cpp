@@ -94,6 +94,42 @@ void fill( Mem& m, int bank ) {
                         op_len++;
                         break;
                     }
+                    if( op[op_len]==0x21 && (op[0]&0x20)==0) {  // ORCF #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0x22 && (op[0]&0x20)==0) {  // XORCF #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0x30 && (op[0]&0x20)==0) {  // RES #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
+                    if( op[op_len]==0x31 && (op[0]&0x20)==0) {  // SET #4,r
+                        op_len++;
+                        if ( !len )
+                            op[op_len] = ((char)rand()&0x07);
+                        else
+                            op[op_len] = ((char)rand()&0x0f);
+                        op_len++;
+                        break;
+                    }
                     if( op[op_len]==0x33 && (op[0]&0x20)==0) {  // BIT #4,r
                         op_len++;
                         if ( !len )
@@ -327,7 +363,11 @@ int main(int argc, char *argv[]) {
             printf("\t%d SBC\n", cpu.stats.sbc);
             printf("\t%d AND\n", cpu.stats.and_op);
             printf("\t%d ANDCF\n", cpu.stats.andcf);
+            printf("\t%d ORCF\n", cpu.stats.orcf);
+            printf("\t%d XORCF\n", cpu.stats.xorcf);
             printf("\t%d BIT\n", cpu.stats.bit_op);
+            printf("\t%d RES\n", cpu.stats.res_op);
+            printf("\t%d SET\n", cpu.stats.set_op);
             printf("\t%d OR\n", cpu.stats.or_op);
             printf("\t%d XOR\n", cpu.stats.xor_op);
             printf("\t%d LD\n", cpu.stats.ld);

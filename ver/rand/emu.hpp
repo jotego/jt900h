@@ -413,6 +413,25 @@ template <typename T> void andcf( T a, int b, uint8_t &flags )  {
             flags &= FLAG_NC;
 }
 
+template <typename T> void xorcf( T a, int b, uint8_t &flags )  {
+    a = (a >> b) & 1;
+    T rs = (flags&FLAG_C) ^ a;
+        if ( rs )
+            flags |= FLAG_C;
+        else
+            flags &= FLAG_NC;
+}
+
+template <typename T> void orcf( T a, int b, uint8_t &flags )  {
+    // printf(" ORCF a=%X b=%X \n",a,b );
+    a = (a >> b) & 1;
+    T rs = (flags&FLAG_C) || a;
+        if ( rs )
+            flags |= FLAG_C;
+        else
+            flags &= FLAG_NC;
+}
+
 template <typename T> void bit_op( T a, int b, uint8_t &flags )  {
 	a = (a >> b) & 1;
     if (sizeof(T)==1 && b > 7 )
@@ -432,6 +451,11 @@ template <typename T> T cpl( T a, uint8_t &flags ) {
 	flags |= FLAG_H;
 	flags |= FLAG_N;
 	return rs;
+}
+
+template <typename T> T res_op( T a, int b)  {
+    a &= ~(1 << b);
+    return a;
 }
 
 template <typename T> T extz( T a ) {
@@ -463,8 +487,8 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, bit_op,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
+			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -648,7 +672,43 @@ struct T900H {
                     case 1: andcf(*shortReg16(r), num4, flags ); break;
                  }
             }
-            else if( op[1]==0x33 ) {  // BIT A,r
+            else if( op[1]==0x21 ) {  // ORCF A,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.orcf++;
+                switch(len) {
+                    case 0: orcf(*shortReg8(r), num4, flags ); break;
+                    case 1: orcf(*shortReg16(r), num4, flags ); break;
+                }
+            }
+            else if( op[1]==0x22 ) {  // XORCF A,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.xorcf++;
+                switch(len) {
+                    case 0: xorcf(*shortReg8(r), num4, flags ); break;
+                    case 1: xorcf(*shortReg16(r), num4, flags ); break;
+                }
+            }
+            else if( op[1]==0x30 ) {  // RES #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.res_op++;
+                switch(len) {
+                    case 0: *shortReg8(r) &= ~(1 << num4); break;
+                    case 1: *shortReg16(r) &= ~(1 << num4); break;
+                 }
+            }
+            else if( op[1]==0x31 ) {  // SET #4,r
+                op[2] = m.Rd8(pc.q++);
+            	num4 = op[2];
+            	stats.set_op++;
+                switch(len) {
+                    case 0: *shortReg8(r) |= (1 << num4); break;
+                    case 1: *shortReg16(r) |= (1 << num4); break;
+                 }
+            }
+            else if( op[1]==0x33 ) {  // BIT #4,r
                 op[2] = m.Rd8(pc.q++);
             	num4 = op[2];
             	stats.bit_op++;
