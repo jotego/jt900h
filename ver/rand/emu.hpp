@@ -663,7 +663,7 @@ struct T900H {
 					case 2: shortReg(r)->q = neg(shortReg(r)->qs, flags); break;
 				}
 			}
-			else if( op[1]==0x20 ) {  // ANDCF A,r
+			else if( op[1]==0x20 ) {  // ANDCF #4,r
                 op[2] = m.Rd8(pc.q++);
             	num4 = op[2];
             	stats.andcf++;
@@ -672,7 +672,7 @@ struct T900H {
                     case 1: andcf(*shortReg16(r), num4, flags ); break;
                  }
             }
-            else if( op[1]==0x21 ) {  // ORCF A,r
+            else if( op[1]==0x21 ) {  // ORCF #4,r
                 op[2] = m.Rd8(pc.q++);
             	num4 = op[2];
             	stats.orcf++;
@@ -681,7 +681,7 @@ struct T900H {
                     case 1: orcf(*shortReg16(r), num4, flags ); break;
                 }
             }
-            else if( op[1]==0x22 ) {  // XORCF A,r
+            else if( op[1]==0x22 ) {  // XORCF #4,r
                 op[2] = m.Rd8(pc.q++);
             	num4 = op[2];
             	stats.xorcf++;

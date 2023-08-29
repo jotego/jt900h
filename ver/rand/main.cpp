@@ -85,107 +85,33 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
 
-                    if( op[op_len]==0x20 && (op[0]&0x20)==0) {  // ANDCF #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
+                    if(( op[op_len]==0x20 ||    // ANDCF #4,r
+                         op[op_len]==0x21 ||    // ORCF #4,r
+                         op[op_len]==0x22 ||    // XORCF #4,r
+                         op[op_len]==0x30 ||    // RES #4,r
+                         op[op_len]==0x31 ||    // SET #4,r
+                         op[op_len]==0x33 )     // BIT #4,r
+                        && (op[0]&0x20)==0) {
+                            op_len++;
+                            if ( !len )
+                                op[op_len] = ((char)rand()&0x07);
+                            else
+                                op[op_len] = ((char)rand()&0x0f);
+                            op_len++;
+                            break;
+                    }
+                    if( op[op_len]==0xE8 ||     // RLC #4,r
+                        op[op_len]==0xE9 ||     // RRC #4,r
+                        op[op_len]==0xEA ||     // RL #4,r
+                        op[op_len]==0xEB ||     // RR #4,r
+                        op[op_len]==0xEC ||     // SLA #4,r
+                        op[op_len]==0xED ||     // SRA #4,r
+                        op[op_len]==0xEE ||     // SLL #4,r
+                        op[op_len]==0xEF ) {    // SRL #4,r
+                            op_len++;
                             op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0x21 && (op[0]&0x20)==0) {  // ORCF #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
-                            op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0x22 && (op[0]&0x20)==0) {  // XORCF #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
-                            op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0x30 && (op[0]&0x20)==0) {  // RES #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
-                            op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0x31 && (op[0]&0x20)==0) {  // SET #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
-                            op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0x33 && (op[0]&0x20)==0) {  // BIT #4,r
-                        op_len++;
-                        if ( !len )
-                            op[op_len] = ((char)rand()&0x07);
-                        else
-                            op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xE8 ) {  // RLC #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xE9 ) {  // RRC #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xEA ) {  // RL #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xEB ) {  // RR #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xEC ) {  // SLA #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xED ) {  // SRA #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xEE ) {  // SLL #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
-                    }
-                    if( op[op_len]==0xEF ) {  // SRL #4,r
-                        op_len++;
-                        op[op_len] = ((char)rand()&0x0f);
-                        op_len++;
-                        break;
+                            op_len++;
+                            break;
                     }
                 }
             }
