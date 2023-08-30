@@ -494,7 +494,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul;
+			stcf, ldcf, mul, muls;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -538,6 +538,20 @@ struct T900H {
 					case 0: *shortReg8(R)  = add( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = add( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
 					case 2: shortReg(R)->q = add( shortReg(R)->qs, shortReg(r)->qs, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0x40) ) {  // MUL RR,r
+				stats.mul++;
+				switch(len) {
+					case 0: *mulReg16(R) = (uint16_t)*mulReg8(R) * (uint16_t)*shortReg8(r); break;
+					case 1: shortReg(R)->q = (uint32_t)*shortReg16(R) * (uint32_t)*shortReg16(r); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF8,0x48) ) {  // MULS RR,r
+				stats.muls++;
+				switch(len) {
+					case 0: *mulReg16(R) = (int16_t)((int8_t)*mulReg8(R) * (int8_t)*shortReg8(r)); break;
+					case 1: shortReg(R)->qs = (int32_t)((int16_t)*shortReg16(R) * (int16_t)*shortReg16(r)); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x60) ) {  //  INC #3,r
@@ -974,6 +988,33 @@ private:
 		default: return &rf->xhl.b[0];
 		}
 	}
+
+	uint16_t* mulReg16( int r ) {
+		switch(r) {
+		case 0: return &rf->xwa.w[0];
+		case 1: return &rf->xwa.w[0];
+		case 2: return &rf->xbc.w[0];
+		case 3: return &rf->xbc.w[0];
+		case 4: return &rf->xde.w[0];
+		case 5: return &rf->xde.w[0];
+		case 6: return &rf->xhl.w[0];
+		default: return &rf->xhl.w[0];
+		}
+	}
+
+	uint8_t* mulReg8( int r ) {
+		switch(r) {
+		case 0: return &rf->xwa.b[0];
+		case 1: return &rf->xwa.b[0];
+		case 2: return &rf->xbc.b[0];
+		case 3: return &rf->xbc.b[0];
+		case 4: return &rf->xde.b[0];
+		case 5: return &rf->xde.b[0];
+		case 6: return &rf->xhl.b[0];
+		default: return &rf->xhl.b[0];
+		}
+	}
+
 	uint32_t assign( int r, int len, uint32_t v ) {
 		switch(len ) {
 			case 0: *shortReg8(r)  = v; return 1;
