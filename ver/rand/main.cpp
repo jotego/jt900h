@@ -64,17 +64,14 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
                     if( MASKCP2(op[op_len],0xF8,0x40) && (op[0]&0x20)==0) { op_len++; break; } // MUL RR,r
-                    if( MASKCP2(op[op_len],0xF8,0x48) && (op[0]&0x20)==0) { op_len++; break; } // MUL RR,r
+                    if( MASKCP2(op[op_len],0xF8,0x48) && (op[0]&0x20)==0) { op_len++; break; } // MULS RR,r
+                    // if( MASKCP2(op[op_len],0xF8,0x50) && (op[0]&0x20)==0) { op_len++; break; } // DIV RR,r
                     if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0) { op_len++; break; } // EX R,r
                     if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0) { op_len++; break; } // CP r,#3
-                    if( op[op_len]==3 ) { // LD r,#
-                        op_len++;
-                        op_len+=make_imm(len, &op[op_len] );
-                        break;
-                    }
+
                     if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
-                    // if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
+                    // if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // ANDCF A,r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
@@ -86,6 +83,17 @@ void fill( Mem& m, int bank ) {
                     if( op[op_len]==0xFD ) { op_len++; break; } // SRA A,r
                     if( op[op_len]==0xFE ) { op_len++; break; } // SLL A,r
                     if( op[op_len]==0xFF ) { op_len++; break; } // SRL A,r
+
+                    if( op[op_len]==0x03 ||     // LD r,#
+                        op[op_len]==0xC8 ||     // ADD r,#
+                        op[op_len]==0xC9 ||     // ADC r,#
+                        op[op_len]==0xCA ||     // SUB r,#
+                        op[op_len]==0xCB ||     // SBC r,#
+                        op[op_len]==0xCF ) {    // CP r,#
+                            op_len++;
+                            op_len+=make_imm(len, &op[op_len] );
+                            break;
+                    }
 
                     if(( op[op_len]==0x20 ||    // ANDCF #4,r
                          op[op_len]==0x21 ||    // ORCF #4,r

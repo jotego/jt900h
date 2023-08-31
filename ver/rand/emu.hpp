@@ -494,7 +494,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul, muls;
+			stcf, ldcf, mul, muls, div, divs;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -516,7 +516,7 @@ struct T900H {
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len, num3,num4;
+		int r,R, len, num3,num4, RR;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
@@ -529,6 +529,8 @@ struct T900H {
 			r = op[0]&7;
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
+			// if (op[1] & 1) RR=op[1]&7;
+			// else RR=1;
 			R = op[1]&7;
 			num3 = op[1]&7;
 			fetched++;
@@ -543,14 +545,14 @@ struct T900H {
 			else if( MASKCP2(op[1],0xF8,0x40) ) {  // MUL RR,r
 				stats.mul++;
 				switch(len) {
-					case 0: *mulReg16(R) = (uint16_t)*mulReg8(R) * (uint16_t)*shortReg8(r); break;
+					case 0: *extReg16(R) = (uint16_t)*extReg8(R) * (uint16_t)*shortReg8(r); break;
 					case 1: shortReg(R)->q = (uint32_t)*shortReg16(R) * (uint32_t)*shortReg16(r); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x48) ) {  // MULS RR,r
 				stats.muls++;
 				switch(len) {
-					case 0: *mulReg16(R) = (int16_t)((int8_t)*mulReg8(R) * (int8_t)*shortReg8(r)); break;
+					case 0: *extReg16(R) = (int16_t)((int8_t)*extReg8(R) * (int8_t)*shortReg8(r)); break;
 					case 1: shortReg(R)->qs = (int32_t)((int16_t)*shortReg16(R) * (int16_t)*shortReg16(r)); break;
 				}
 			}
@@ -604,7 +606,6 @@ struct T900H {
 			}
 			else if( MASKCP2(op[1],0xF8,0xB0) ) {  // SBC R,r
 				stats.sbc++;
-	             // printf (" SBC len case %X \n", len);
 				switch(len) {
 					case 0: *shortReg8(R)  = sbc( (int8_t)*shortReg8(R), (int8_t)*shortReg8(r),  flags ); break;
 					case 1: *shortReg16(R) = sbc( (int16_t)*shortReg16(R), (int16_t)*shortReg16(r), flags ); break;
@@ -947,6 +948,37 @@ struct T900H {
 				fetched += f2;
 				pc.q += f2;
 			}
+			else if( op[1]==0xC8 ) { // ADD r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignadd( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xC9 ) { // ADC r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignadc( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xCF ) { // CP r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assigncp( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xCA ) { // SUB r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignsub( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xCB ) { // SBC r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignsbc( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+				// printf("r=%X len=%X aux=%X \n",r,len,aux);
+			}
 
 		}
 		return fetched;
@@ -989,7 +1021,7 @@ private:
 		}
 	}
 
-	uint16_t* mulReg16( int r ) {
+	uint16_t* extReg16( int r ) {
 		switch(r) {
 		case 0: return &rf->xwa.w[0];
 		case 1: return &rf->xwa.w[0];
@@ -1002,7 +1034,7 @@ private:
 		}
 	}
 
-	uint8_t* mulReg8( int r ) {
+	uint8_t* extReg8( int r ) {
 		switch(r) {
 		case 0: return &rf->xwa.b[0];
 		case 1: return &rf->xwa.b[0];
@@ -1016,10 +1048,56 @@ private:
 	}
 
 	uint32_t assign( int r, int len, uint32_t v ) {
+		stats.ld++;
 		switch(len ) {
 			case 0: *shortReg8(r)  = v; return 1;
 			case 1: *shortReg16(r) = v; return 2;
 			case 2: shortReg(r)->q = v; return 4;
+		}
+		return 0;
+	}
+	uint32_t assignadd( int r, int len, uint32_t v ) {
+		stats.add++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = add( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = add( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = add( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignadc( int r, int len, uint32_t v ) {
+		stats.adc++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = adc( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = adc( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = adc( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assigncp( int r, int len, uint32_t v ) {
+		stats.cp++;
+		switch(len) {
+			case 0: cp( (int8_t)*shortReg8(r), (int8_t)v,  flags ); return 1;
+			case 1: cp( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: cp( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignsub( int r, int len, uint32_t v ) {
+		stats.sub++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = sub( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = sub( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = sub( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignsbc( int r, int len, uint32_t v ) {
+		stats.sbc++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = sbc( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = sbc( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = sbc( shortReg(r)->qs, (int32_t)v, flags ); return 4;
 		}
 		return 0;
 	}
