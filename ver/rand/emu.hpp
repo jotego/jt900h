@@ -977,7 +977,24 @@ struct T900H {
 				auto f2 = assignsbc( r, len, aux );
 				fetched += f2;
 				pc.q += f2;
-				// printf("r=%X len=%X aux=%X \n",r,len,aux);
+			}
+			else if( op[1]==0xCC ) { // AND r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignand( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xCD ) { // XOR r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignxor( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0xCE ) { // OR r,#
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignor( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
 			}
 
 		}
@@ -1098,6 +1115,33 @@ private:
 			case 0: *shortReg8(r)  = sbc( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
 			case 1: *shortReg16(r) = sbc( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
 			case 2: shortReg(r)->q = sbc( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignand( int r, int len, uint32_t v ) {
+		stats.and_op++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = and_op( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = and_op( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = and_op( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignxor( int r, int len, uint32_t v ) {
+		stats.xor_op++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = xor_op( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = xor_op( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = xor_op( shortReg(r)->qs, (int32_t)v, flags ); return 4;
+		}
+		return 0;
+	}
+	uint32_t assignor( int r, int len, uint32_t v ) {
+		stats.or_op++;
+		switch(len ) {
+			case 0: *shortReg8(r)  = or_op( (int8_t)*shortReg8(r), (int8_t)v, flags ); return 1;
+			case 1: *shortReg16(r) = or_op( (int16_t)*shortReg16(r), (int16_t)v, flags ); return 2;
+			case 2: shortReg(r)->q = or_op( shortReg(r)->qs, (int32_t)v, flags ); return 4;
 		}
 		return 0;
 	}

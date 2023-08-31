@@ -89,6 +89,9 @@ void fill( Mem& m, int bank ) {
                         op[op_len]==0xC9 ||     // ADC r,#
                         op[op_len]==0xCA ||     // SUB r,#
                         op[op_len]==0xCB ||     // SBC r,#
+                        op[op_len]==0xCC ||     // AND r,#
+                        op[op_len]==0xCD ||     // XOR r,#
+                        op[op_len]==0xCE ||     // OR r,#
                         op[op_len]==0xCF ) {    // CP r,#
                             op_len++;
                             op_len+=make_imm(len, &op[op_len] );
