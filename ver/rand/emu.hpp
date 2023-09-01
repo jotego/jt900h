@@ -486,6 +486,30 @@ template <typename T> T exts( T a ) {
 	return rs;
 }
 
+template <typename T> T scc( T a, uint8_t &flags ) {
+	T rs;
+	switch(a){
+		case  0: rs = 0; break;
+		case  1: rs = ((flags&FLAG_S)>>7)&1 ^ ((flags&FLAG_V)>>2)&1; break;
+		case  2: rs = ((flags&FLAG_Z)>>6)&1 | (((flags&FLAG_S)>>7)&1 ^ ((flags&FLAG_V)>>2)&1); break;
+		case  3: rs = ((flags&FLAG_C)&1 | (flags&FLAG_Z)>>6)&1; break;
+		case  4: rs = ((flags&FLAG_V)>>2)&1; break;
+		case  5: rs = ((flags&FLAG_S)>>7)&1; break;
+		case  6: rs = ((flags&FLAG_Z)>>6)&1; break;
+		case  7: rs = (flags&FLAG_C); break;
+		case  8: rs = 1; break;
+		case  9: rs = ~(((flags&FLAG_S)>>7)&1) ^ ((flags&FLAG_V)>>2)&1; break;
+		case 10: rs = ~(((flags&FLAG_Z)>>6)&1 | (((flags&FLAG_S)>>7)&1 ^ ((flags&FLAG_V)>>2)&1)); break;
+		case 11: rs = ~(((flags&FLAG_C)&1 | (flags&FLAG_Z)>>6)&1); break; break;
+		case 12: rs = ~((flags&FLAG_V)>>2)&1; break;
+		case 13: rs = ~((flags&FLAG_S)>>7)&1; break;
+		case 14: rs = ~((flags&FLAG_Z)>>6)&1; break;
+		case 15: rs = ~(flags&FLAG_C)&1; break;
+	}
+	return rs & 1;
+}
+
+
 struct T900H {
 	Reg32 xix,xiy,xiz,xsp, pc;
 	struct Bank{
@@ -494,7 +518,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul, muls, div, divs;
+			stcf, ldcf, mul, muls, scc;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -516,7 +540,7 @@ struct T900H {
 		uint8_t op[12];
 		op[0] = m.Rd8(pc.q++);
 		int fetched=1;
-		int r,R, len, num3,num4, RR;
+		int r,R, len, num3, num4, cc;
 		if( op[0]==0x12 ) { stats.ccf++;  flags &= FLAG_NN; flags = flags ^ 1; } // CCF
 		if( op[0]==0x11 ) { stats.scf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags |= FLAG_C;} // SCF
 		if( op[0]==0x10 ) { stats.rcf++;  flags &= FLAG_NH; flags &= FLAG_NN; flags &= FLAG_NC;} // RCF
@@ -532,6 +556,7 @@ struct T900H {
 			// if (op[1] & 1) RR=op[1]&7;
 			// else RR=1;
 			R = op[1]&7;
+			cc = op[1]&0xf;
 			num3 = op[1]&7;
 			fetched++;
 			if( MASKCP2(op[1],0xF8,0x80) ) {  // ADD R,r
@@ -570,6 +595,13 @@ struct T900H {
 					case 0: *shortReg8(r)  = dec_op( (int8_t)*shortReg8(r), (int8_t)num3,  flags ); break;
 					case 1: *shortReg16(r) = dec_op( (int16_t)*shortReg16(r), (int16_t)num3, flags ); break;
 					case 2: shortReg(r)->q = dec_op( shortReg(r)->qs, num3, flags ); break;
+				}
+			}
+			else if( MASKCP2(op[1],0xF0,0x70) ) {  // SCC cc,r
+				stats.scc++;
+				switch(len) {
+					case 0: *shortReg8(r)  = scc( (uint8_t)cc,  flags ); break;
+					case 1: *shortReg16(r) = scc( (uint8_t)cc, flags ); break;
 				}
 			}
 			else if( MASKCP2(op[1],0xF8,0x90) ) {  // ADC R,r

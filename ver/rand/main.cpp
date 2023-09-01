@@ -51,23 +51,24 @@ void fill( Mem& m, int bank ) {
                 len=(op[0]>>4)&3;
                 while(true) {
                     op[op_len] = (char)rand();
+                    if( MASKCP2(op[op_len],0xF0,0x70) && (op[0]&0x20)==0 ) { op_len++; break; } // SCC cc,r
+                    if( MASKCP2(op[op_len],0xF8,0x40) && (op[0]&0x20)==0 ) { op_len++; break; } // MUL RR,r
+                    if( MASKCP2(op[op_len],0xF8,0x48) && (op[0]&0x20)==0 ) { op_len++; break; } // MULS RR,r
+                    if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0 ) { op_len++; break; } // EX R,r
+                    if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0 ) { op_len++; break; } // CP r,#3
                     if( MASKCP2(op[op_len],0xF8,0x60) ) { op_len++; break; } // INC #3,r
                     if( MASKCP2(op[op_len],0xF8,0x68) ) { op_len++; break; } // DEC #3,r
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
+                    if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
+                    if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
-                    if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     if( MASKCP2(op[op_len],0xF8,0xC0) ) { op_len++; break; } // AND R,r
                     if( MASKCP2(op[op_len],0xF8,0xD0) ) { op_len++; break; } // XOR R,r
                     if( MASKCP2(op[op_len],0xF8,0xE0) ) { op_len++; break; } // OR R,r
-                    if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
-                    if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
-                    if( MASKCP2(op[op_len],0xF8,0x40) && (op[0]&0x20)==0) { op_len++; break; } // MUL RR,r
-                    if( MASKCP2(op[op_len],0xF8,0x48) && (op[0]&0x20)==0) { op_len++; break; } // MULS RR,r
+                    if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     // if( MASKCP2(op[op_len],0xF8,0x50) && (op[0]&0x20)==0) { op_len++; break; } // DIV RR,r
-                    if( MASKCP2(op[op_len],0xF8,0xB8) && (op[0]&0x20)==0) { op_len++; break; } // EX R,r
-                    if( MASKCP2(op[op_len],0xF8,0xD8) && (op[0]&0x20)==0) { op_len++; break; } // CP r,#3
 
                     if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
@@ -328,6 +329,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d RCF\n", cpu.stats.rcf);
             printf("\t%d SCF\n", cpu.stats.scf);
             printf("\t%d ZCF\n", cpu.stats.zcf);
+            printf("\t%d SCC\n", cpu.stats.scc);
             printf("\t%d EX\n", cpu.stats.ex);
             printf("\t%d DECF\n", cpu.stats.decf);
             printf("\t%d INCF\n", cpu.stats.incf);
