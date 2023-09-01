@@ -553,8 +553,6 @@ struct T900H {
 			r = op[0]&7;
 			len = (op[0]>>4)&3;
 			op[1] = m.Rd8(pc.q++);
-			// if (op[1] & 1) RR=op[1]&7;
-			// else RR=1;
 			R = op[1]&7;
 			cc = op[1]&0xf;
 			num3 = op[1]&7;
@@ -723,7 +721,15 @@ struct T900H {
                 switch(len) {
                     case 0: andcf(*shortReg8(r), num4, flags ); break;
                     case 1: andcf(*shortReg16(r), num4, flags ); break;
-                 }
+                }
+            }
+            else if( op[1]==0x28 ) {  // ANDCF A,r
+               	stats.andcf++;
+                if( len==0 ) A = A&7;
+                switch(len) {
+                    case 0: andcf(*shortReg8(r), (int8_t)A, flags ); break;
+                    case 1: andcf(*shortReg16(r), (int8_t)A, flags ); break;
+                }
             }
             else if( op[1]==0x21 ) {  // ORCF #4,r
                 op[2] = m.Rd8(pc.q++);
