@@ -477,6 +477,25 @@ template <typename T> T tset( T a, int b, uint8_t &flags )  {
     return rs;
 }
 
+template<typename T> T mirr( T a){
+	printf("mirr a %X \n",a);
+	a = a << 1 & 0xaaaa | a >> 1 & 0x5555;
+  	a = a << 2 & 0xcccc | a >> 2 & 0x3333;
+  	a = a << 4 & 0xf0f0 | a >> 4 & 0x0f0f;
+  	return a << 8 | a >> 8;
+}
+
+template<typename T> T bsf( T a, uint8_t &flags){
+	T rs;
+	for (int i=0; i<16; i++) {
+        if (a & (1 << i)) {
+            rs = i;
+            break;
+        }
+    }
+    return rs;
+}
+
 template <typename T> T exts( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -518,7 +537,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul, muls, scc;
+			stcf, ldcf, mul, muls, scc, mirr;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -703,8 +722,17 @@ struct T900H {
 				switch(len) {
 					case 0: *shortReg8(r)  = (uint8_t)num3; break;
 					case 1: *shortReg16(r) = (uint16_t)num3; break;
-					case 2: shortReg(r)->q  = (uint32_t)num3; break;
+					case 2: shortReg(r)->q = (uint32_t)num3; break;
 				}
+			}
+			else if( op[1]==0x16 ) {  //  MIRR r
+				stats.mirr++;
+				printf("op[0] %X \n",op[0]);
+				printf("len %X \n",len);
+				// switch(len) {
+				// 	case 0: *shortReg16(r) = mirr((uint16_t)*shortReg16(r)); break;
+				// }
+				*shortReg16(r) = mirr((uint16_t)*shortReg16(r));
 			}
 			else if( op[1]==0x06 ) {  //  CPL r
 				stats.cpl++;
@@ -714,6 +742,13 @@ struct T900H {
 					case 2: break;
 				}
 			}
+
+			// else if( op[1]==0x0E ){
+			// 	stats.bsf++;
+			// 	switch(len) {
+			// 		case 0: rf->xwa.b[0] = bsf( *shortReg16(r), flags ); break;
+			// 	}
+			// }
 			else if( op[1]==0x07 ) {  //  NEG r
 				stats.neg++;
 				switch(len) {
