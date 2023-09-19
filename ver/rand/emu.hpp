@@ -698,6 +698,14 @@ struct T900H {
 					case 2: *shortReg(r)   = *shortReg(R); break;
 				}
 			}
+			else if( MASKCP2(op[1],0xF8,0xA8) ) {  // LD r,#3
+				stats.ld++;
+				switch(len) {
+					case 0: *shortReg8(r)  = (uint8_t)num3; break;
+					case 1: *shortReg16(r) = (uint16_t)num3; break;
+					case 2: shortReg(r)->q  = (uint32_t)num3; break;
+				}
+			}
 			else if( op[1]==0x06 ) {  //  CPL r
 				stats.cpl++;
 				switch(len) {

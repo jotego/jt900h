@@ -62,6 +62,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0x80) ) { op_len++; break; } // ADD R,r
                     if( MASKCP2(op[op_len],0xF8,0x88) ) { op_len++; break; } // LD R,r
                     if( MASKCP2(op[op_len],0xF8,0x98) ) { op_len++; break; } // LD r,R
+                    if( MASKCP2(op[op_len],0xF8,0xA8) ) { op_len++; break; } // LD r,#3
                     if( MASKCP2(op[op_len],0xF8,0x90) ) { op_len++; break; } // ADC R,r
                     if( MASKCP2(op[op_len],0xF8,0xA0) ) { op_len++; break; } // SUB R,r
                     if( MASKCP2(op[op_len],0xF8,0xB0) ) { op_len++; break; } // SBC R,r
@@ -73,7 +74,7 @@ void fill( Mem& m, int bank ) {
 
                     if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
-                    if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // ANDCF A,r
+                    //if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // ANDCF A,r
                     if( op[op_len]==0x12 ) { op_len++; break; } // EXTZ r
                     if( op[op_len]==0x13 ) { op_len++; break; } // EXTS r
                     if( op[op_len]==0x14 ) { op_len++; break; } // PAA r
