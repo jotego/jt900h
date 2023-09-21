@@ -72,9 +72,6 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP2(op[op_len],0xF8,0xF0) ) { op_len++; break; } // CP R,r
                     // if( MASKCP2(op[op_len],0xF8,0x50) && (op[0]&0x20)==0) { op_len++; break; } // DIV RR,r
 
-                    if( op[op_len]==0x16 && (op[0]&0x20)==0) { op_len++; break; } // MIRR r
-                    // if( op[op_len]==0x0E && (op[0]&0x20)==0) { op_len++; break; } // BS1B r
-
                     if( op[op_len]==0x06 && (op[0]&0x20)==0 ) { op_len++; break; } // CPL r
                     if( op[op_len]==0x07 && (op[0]&0x20)==0 ) { op_len++; break; } // NEG r
                     //if( op[op_len]==0x28 && (op[0]&0x20)==0 ) { op_len++; break; } // ANDCF A,r
@@ -134,6 +131,10 @@ void fill( Mem& m, int bank ) {
                             op[op_len] = ((char)rand()&0x0f);
                             op_len++;
                             break;
+                    }
+                    if( MASKCP(op[0],0xd8) ) {
+                        if( op[op_len]==0x16 ) {op_len++; break; } // MIRR r
+                        // if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
                     }
                 }
             }
@@ -349,6 +350,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d RLC\n", cpu.stats.rlc);
             printf("\t%d RRC\n", cpu.stats.rrc);
             printf("\t%d MIRR\n", cpu.stats.mirr);
+            printf("\t%d BS1F\n", cpu.stats.bs1f);
         }
         tracer.flush();
     } catch( const char *error ) {
