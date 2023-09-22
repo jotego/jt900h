@@ -135,6 +135,7 @@ void fill( Mem& m, int bank ) {
                     if( MASKCP(op[0],0xd8) ) {
                         if( op[op_len]==0x16 ) {op_len++; break; } // MIRR r
                         if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
+                        if( op[op_len]==0x0F ) { op_len++; break; } // BS1B r
                     }
                 }
             }
@@ -351,6 +352,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d RRC\n", cpu.stats.rrc);
             printf("\t%d MIRR\n", cpu.stats.mirr);
             printf("\t%d BS1F\n", cpu.stats.bs1f);
+            printf("\t%d BS1B\n", cpu.stats.bs1b);
         }
         tracer.flush();
     } catch( const char *error ) {

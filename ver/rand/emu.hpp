@@ -500,6 +500,22 @@ template<typename T> T bsf( T a, uint8_t &flags){
     return rs;
 }
 
+template<typename T> T bsb( T a, uint8_t &flags){
+	T rs;
+	for (int i=16; i>=0; i--) {
+        if (a & (1 << i)) {
+            rs = i;
+            break;
+        }
+    }
+    if ( !a ) {
+    	rs = 0;
+    	flags |= FLAG_V;
+    } else
+    	flags &= FLAG_NV;
+    return rs;
+}
+
 template <typename T> T exts( T a ) {
 	T rs;
 	if (sizeof(T)==2)
@@ -541,7 +557,7 @@ struct T900H {
 	struct {
 		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
 			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul, muls, scc, mirr, bs1f;
+			stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -733,9 +749,13 @@ struct T900H {
 				stats.mirr++;
 				*shortReg16(r) = mirr(*shortReg16(r));
 			}
-			else if( op[1]==0x0E ){
+			else if( op[1]==0x0E ){  // BS1F r
 				stats.bs1f++;
 				rf->xwa.b[0] = bsf(*shortReg16(r), flags );
+			}
+			else if( op[1]==0x0F ){	 // BS1B r
+				stats.bs1b++;
+				rf->xwa.b[0] = bsb(*shortReg16(r), flags );
 			}
 			else if( op[1]==0x06 ) {  //  CPL r
 				stats.cpl++;
