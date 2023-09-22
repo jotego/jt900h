@@ -13,6 +13,12 @@
     sub a,3
     jp ne,bad_end
 
+    ld wa,0x5555
+    ld de,0x0001
+
+    bs1f a,de
+    cp wa,0x5500
+    jp ne,bad_end
 
     include finish.inc
 data:
