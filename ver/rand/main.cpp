@@ -134,7 +134,7 @@ void fill( Mem& m, int bank ) {
                     }
                     if( MASKCP(op[0],0xd8) ) {
                         if( op[op_len]==0x16 ) {op_len++; break; } // MIRR r
-                        // if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
+                        if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
                     }
                 }
             }

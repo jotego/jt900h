@@ -492,6 +492,11 @@ template<typename T> T bsf( T a, uint8_t &flags){
             break;
         }
     }
+    if ( !a ) {
+    	rs = 0;
+    	flags |= FLAG_V;
+    } else
+    	flags &= FLAG_NV;
     return rs;
 }
 
@@ -728,10 +733,10 @@ struct T900H {
 				stats.mirr++;
 				*shortReg16(r) = mirr(*shortReg16(r));
 			}
-			// else if( op[1]==0x0E ){
-			// 	stats.bs1f++;
-			// 	rf->xwa.b[0] = bsf(*shortReg16(r), flags );
-			// }
+			else if( op[1]==0x0E ){
+				stats.bs1f++;
+				rf->xwa.b[0] = bsf(*shortReg16(r), flags );
+			}
 			else if( op[1]==0x06 ) {  //  CPL r
 				stats.cpl++;
 				switch(len) {
