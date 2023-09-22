@@ -1199,6 +1199,7 @@ always @* begin
                 10'b0001_0110_00: begin // MIRR
                     nx_regs_we = 3'b010;
                     nx_alu_op  = ALU_MIRR;
+                    nx_buserror = op_zz!=2'b01;
                     fetched    = 1;
                 end
                 10'b0001_1100_??: begin // DJNZ
