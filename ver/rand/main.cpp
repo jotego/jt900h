@@ -133,9 +133,10 @@ void fill( Mem& m, int bank ) {
                             break;
                     }
                     if( MASKCP(op[0],0xd8) ) {
-                        if( op[op_len]==0x16 ) {op_len++; break; } // MIRR r
                         if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
                         if( op[op_len]==0x0F ) { op_len++; break; } // BS1B r
+                        if( op[op_len]==0x16 ) { op_len++; break; } // MIRR r
+                        if( op[op_len]==0x19 && (op[0]&7)!=3 ) { op_len++; break; } // MULA rr
                     }
                 }
             }
@@ -353,6 +354,7 @@ int main(int argc, char *argv[]) {
             printf("\t%d MIRR\n", cpu.stats.mirr);
             printf("\t%d BS1F\n", cpu.stats.bs1f);
             printf("\t%d BS1B\n", cpu.stats.bs1b);
+            printf("\t%d MULA\n", cpu.stats.mula);
         }
         tracer.flush();
     } catch( const char *error ) {

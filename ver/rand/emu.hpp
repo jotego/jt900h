@@ -25,14 +25,16 @@ struct Mem {
 		}
 	}
 	~Mem() { if(p) delete []p; }
-	uint8_t Rd8( uint32_t a ) { return p[a]; }
+	uint8_t Rd8( uint32_t a ) { a &=0xF'FFFFF; return p[a]; }
 	uint16_t Rd16(uint32_t a) {
 		Reg32 aux;
+		a &=0xF'FFFFF;
 		aux.b[0] = p[a];
 		aux.b[1] = p[a+1];
 		return aux.w[0];
 	}
 	uint32_t Rd32(uint32_t a) {
+		a &=0xF'FFFFF;
 		if( (a&3)==0 ) {
 			return *(((uint32_t*)p)+(a>>2));
 		}
@@ -484,6 +486,16 @@ template<typename T> T mirr( T a){
   	return a << 8 | a >> 8;
 }
 
+template<typename T> T mula( T a, T b, uint8_t &flags){
+	T rs = a + b;
+    set_sz( rs, flags );
+	if( (a>0 && b>0 && rs<0) || (a<0 && b<0 && rs>=0) )
+		flags |= FLAG_V;
+	else
+		flags &= FLAG_NV;
+	return rs;
+}
+
 template<typename T> T bsf( T a, uint8_t &flags){
 	T rs;
 	for (int i=0; i<16; i++) {
@@ -555,9 +567,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op,
-			neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset,
-			stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op, neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset, stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b, mula;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -744,18 +754,6 @@ struct T900H {
 					case 1: *shortReg16(r) = (uint16_t)num3; break;
 					case 2: shortReg(r)->q = (uint32_t)num3; break;
 				}
-			}
-			else if( op[1]==0x16 ) {  //  MIRR r
-				stats.mirr++;
-				*shortReg16(r) = mirr(*shortReg16(r));
-			}
-			else if( op[1]==0x0E ){  // BS1F r
-				stats.bs1f++;
-				rf->xwa.b[0] = bsf(*shortReg16(r), flags );
-			}
-			else if( op[1]==0x0F ){	 // BS1B r
-				stats.bs1b++;
-				rf->xwa.b[0] = bsb(*shortReg16(r), flags );
 			}
 			else if( op[1]==0x06 ) {  //  CPL r
 				stats.cpl++;
@@ -1038,6 +1036,26 @@ struct T900H {
 					case 1: *shortReg16(r) = (int16_t)*shortReg16(r) + ((int16_t)*shortReg16(r) & 1); break;
 					case 2: shortReg(r)->q = shortReg(r)->qs + (shortReg(r)->qs & 1); break;
 				}
+			}
+			else if( op[1]==0x16 ) {  //  MIRR r
+				stats.mirr++;
+				*shortReg16(r) = mirr(*shortReg16(r));
+			}
+			else if( op[1]==0x0E ){  // BS1F r
+				stats.bs1f++;
+				rf->xwa.b[0] = bsf(*shortReg16(r), flags );
+			}
+			else if( op[1]==0x0F ){	 // BS1B r
+				stats.bs1b++;
+				rf->xwa.b[0] = bsb(*shortReg16(r), flags );
+			}
+			else if( op[1]==0x19 ){	 // MULA rr
+				stats.mula++;
+				auto rxde = m.Rd16(rf->xde.q);
+				auto rxhl = m.Rd16(rf->xhl.q);
+				auto aux = (int32_t)((int16_t)rxde * (int16_t)rxhl);
+				shortReg(r)->q = mula(shortReg(r)->qs, aux, flags );
+				rf->xhl.q = rf->xhl.q-2;
 			}
 			else if( op[1]==0x03 ) { // LD r,#
 				auto aux = m.Rd32(pc.q);
