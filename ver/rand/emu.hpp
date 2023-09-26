@@ -567,7 +567,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op, neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset, stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b, mula, minc1;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op, neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset, stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b, mula, minc1, minc2, minc4;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
@@ -1063,6 +1063,18 @@ struct T900H {
 				fetched += f2;
 				pc.q += f2;
 			}
+			else if( op[1]==0x39 ) { // MINC2 #,r
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignminc2( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
+			else if( op[1]==0x3A ) { // MINC4 #,r
+				auto aux = m.Rd32(pc.q);
+				auto f2 = assignminc4( r, len, aux );
+				fetched += f2;
+				pc.q += f2;
+			}
 			else if( op[1]==0x03 ) { // LD r,#
 				auto aux = m.Rd32(pc.q);
 				auto f2 = assign( r, len, aux );
@@ -1271,7 +1283,24 @@ private:
 			*shortReg16(r) -= (uint16_t)v; return 2;
 		}else {
 			*shortReg16(r) += 1; return 2;
-
+		}
+		return 0;
+	}
+	uint32_t assignminc2( int r, int len, uint32_t v ) {
+		stats.minc2++;
+		if ( (*shortReg16(r) & (uint16_t)v) == (uint16_t)v ){
+			*shortReg16(r) -= (uint16_t)v; return 2;
+		}else {
+			*shortReg16(r) += 2; return 2;
+		}
+		return 0;
+	}
+	uint32_t assignminc4( int r, int len, uint32_t v ) {
+		stats.minc4++;
+		if ( (*shortReg16(r) & (uint16_t)v) == (uint16_t)v ){
+			*shortReg16(r) -= (uint16_t)v; return 2;
+		}else {
+			*shortReg16(r) += 4; return 2;
 		}
 		return 0;
 	}
