@@ -137,9 +137,12 @@ void fill( Mem& m, int bank ) {
                         if( op[op_len]==0x0F ) { op_len++; break; } // BS1B r
                         if( op[op_len]==0x16 ) { op_len++; break; } // MIRR r
                         // if( op[op_len]==0x19 && (op[0]&7)!=3 ) { op_len++; break; } // MULA rr
-                        if( op[op_len]==0x38 && (op[0]&0x20)==0 ||
-                            op[op_len]==0x39 && (op[0]&0x20)==0 ||
-                            op[op_len]==0x3A && (op[0]&0x20)==0 ) {    // MINC #,r
+                        if( op[op_len]==0x38 && (op[0]&0x20)==0 ||      // MINC1 #,r
+                            op[op_len]==0x39 && (op[0]&0x20)==0 ||      // MINC2 #,r
+                            op[op_len]==0x3A && (op[0]&0x20)==0 ||      // MINC4 #,r
+                            op[op_len]==0x3C && (op[0]&0x20)==0 ||      // MDEC1 #,r
+                            op[op_len]==0x3D && (op[0]&0x20)==0 ||      // MDEC2 #,r
+                            op[op_len]==0x3E && (op[0]&0x20)==0 ) {     // MDEC4 #,r
                                 op_len++;
                                 op_len+=make_imm(len, &op[op_len] );
                                 break;
@@ -365,6 +368,9 @@ int main(int argc, char *argv[]) {
             printf("\t%d MINC1\n", cpu.stats.minc1);
             printf("\t%d MINC2\n", cpu.stats.minc2);
             printf("\t%d MINC4\n", cpu.stats.minc4);
+            printf("\t%d MDEC1\n", cpu.stats.mdec1);
+            printf("\t%d MDEC2\n", cpu.stats.mdec2);
+            printf("\t%d MDEC4\n", cpu.stats.mdec4);
         }
         tracer.flush();
     } catch( const char *error ) {
