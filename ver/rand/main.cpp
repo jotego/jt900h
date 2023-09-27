@@ -136,7 +136,7 @@ void fill( Mem& m, int bank ) {
                         if( op[op_len]==0x0E ) { op_len++; break; } // BS1F r
                         if( op[op_len]==0x0F ) { op_len++; break; } // BS1B r
                         if( op[op_len]==0x16 ) { op_len++; break; } // MIRR r
-                        // if( op[op_len]==0x19 && (op[0]&7)!=3 ) { op_len++; break; } // MULA rr
+                        if( op[op_len]==0x19 && (op[0]&7)!=3 ) { op_len++; break; } // MULA rr
                         if( op[op_len]==0x38 && (op[0]&0x20)==0 ||      // MINC1 #,r
                             op[op_len]==0x39 && (op[0]&0x20)==0 ||      // MINC2 #,r
                             op[op_len]==0x3A && (op[0]&0x20)==0 ||      // MINC4 #,r

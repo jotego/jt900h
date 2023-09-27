@@ -30,7 +30,9 @@ struct Mem {
 		Reg32 aux;
 		a &=0xF'FFFFF;
 		aux.b[0] = p[a];
-		aux.b[1] = p[a+1];
+		a++;
+		a &=0xF'FFFFF;
+		aux.b[1] = p[a];
 		return aux.w[0];
 	}
 	uint32_t Rd32(uint32_t a) {
@@ -46,9 +48,9 @@ struct Mem {
 			aux.w[1] = *p16;
 		} else {
 			aux.b[0] = p[a];
-			aux.b[1] = p[a+1];
-			aux.b[2] = p[a+2];
-			aux.b[3] = p[a+3];
+			aux.b[1] = p[(a+1)&0xF'FFFFF];
+			aux.b[2] = p[(a+2)&0xF'FFFFF];
+			aux.b[3] = p[(a+3)&0xF'FFFFF];
 		}
 		return aux.q;
 	}
