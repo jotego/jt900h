@@ -41,6 +41,8 @@ void fill( Mem& m, int bank ) {
                 op[op_len]==0x12 || // CCF
                 op[op_len]==0x13 || // ZCF
                 op[op_len]==0x16 || // EX F,F'
+                //op[op_len]==0x18 || // PUSH F
+                // op[op_len]==0x19 || // POP F
                 op[op_len]==0x0c || // INCF
                 op[op_len]==0x0d    // DECF
             ) { op_len++; break; }
@@ -221,6 +223,7 @@ bool cmp( UUT& uut, T900H& emu ) {
     if( uut.jt900h->u_regs->xiz != emu.xiz.q ) return false;
     if( uut.jt900h->u_regs->xsp != emu.xsp.q ) return false;
 
+    if( uut.jt900h->rfp != emu.rfp ) return false;
     if( uut.jt900h->flags != emu.flags ) return false;
     return true;
 }
@@ -371,6 +374,8 @@ int main(int argc, char *argv[]) {
             printf("\t%d MDEC1\n", cpu.stats.mdec1);
             printf("\t%d MDEC2\n", cpu.stats.mdec2);
             printf("\t%d MDEC4\n", cpu.stats.mdec4);
+            printf("\t%d PUSHF\n", cpu.stats.pushF);
+            printf("\t%d POPF\n", cpu.stats.popF);
         }
         tracer.flush();
     } catch( const char *error ) {

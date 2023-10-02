@@ -569,7 +569,7 @@ struct T900H {
 		Reg32 xwa,xbc,xde,xhl;
 	} rr[4];
 	struct {
-		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op, neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset, stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b, mula, minc1, minc2, minc4, mdec1, mdec2, mdec4;
+		int ld, add, ccf, decf, incf, rcf, scf, zcf, and_op, or_op, xor_op, adc, sub, sbc, cp, andcf, orcf, xorcf, bit_op, neg, extz, exts, paa, inc, dec, cpl, ex, rl_op, rr_op, rlc, rrc, sla, sra, sll, srl, res_op, set_op, chg, tset, stcf, ldcf, mul, muls, scc, mirr, bs1f, bs1b, mula, minc1, minc2, minc4, mdec1, mdec2, mdec4, pushF, popF;
 	} stats;
 	Bank *rf;
 	int rfp; // Register File Pointer
