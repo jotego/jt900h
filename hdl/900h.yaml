@@ -1,0 +1,33 @@
+ops:
+  # addressing decoding
+  - { name: RrzzB, op: 0xc8, opmask: 0xf8, ctl: { nxgr: 1, setw: b } }  # register in lower 3 bits
+  - { name: RrzzW, op: 0xd8, opmask: 0xf8, ctl: { nxgr: 1, setw: w } }
+  - { name: RrzzQ, op: 0xe8, opmask: 0xf8, ctl: { nxgr: 1, setw: q } }
+  - { name: xrzzB, op: 0xc0,               ctl: { nxgr: 1, setw: b } }  # register in next byte
+  - { name: xrzzW, op: 0xd0,               ctl: { nxgr: 1, setw: w } }
+  - { name: xrzzQ, op: 0xe0,               ctl: { nxgr: 1, setw: q } }
+
+  # group 0 instructions
+  - { name: RETD, op: 0x0f }
+  # group 1 instructions
+  - { name: ADC,   op: 0x90, ctl: { alu: ADD, carry: cin }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: ADD,   op: 0x80, ctl: { alu: ADD             }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: AND,   op: 0xc0, ctl: { alu: AND             }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: ANDCF, op: 0x40, ctl: { alu: AND, carry: cin }, cc:       c,               group: 1 }
+
+ucode:
+  - mnemo: [ RrzzB, RrzzW, RrzzW ]
+    seq:
+      - rdec3, op0_ld, inc_pc
+      - setw_${setw}
+      - op_fetch
+      - nxgr: ${nxgr}, ni
+  - mnemo: [ xrzzB, xrzzW, xrzzW ]
+    seq:
+      - inc_pc
+      - op_fetch
+      - rdec8, op0_ld, inc_pc
+      - setw_${setw}
+      - op_fetch
+      - nxgr: ${nxgr}, ni      
+  - mnemo: [ ADC, ADD, ]
