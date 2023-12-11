@@ -10,9 +10,10 @@ ops:
   # group 0 instructions
   - { name: RETD, op: 0x0f }
   # group 1 instructions
-  - { name: ADC,   op: 0x90, ctl: { alu: ADD, carry: cin }, cc: szhvn0c, opmask: 0xf8, group: 1 }
-  - { name: ADD,   op: 0x80, ctl: { alu: ADD             }, cc: szhvn0c, opmask: 0xf8, group: 1 }
-  - { name: AND,   op: 0xc0, ctl: { alu: AND             }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: ADC,   op: 0x90, ctl: { alu: ADD, carry: cin, dsta: reg }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: ADC,   op: 0xc8, ctl: { alu: ADD, carry: cin, dsta: imm }, cc: szhvn0c,               group: 1 }
+  - { name: ADD,   op: 0x80, ctl: { alu: ADD,             dsta: reg }, cc: szhvn0c, opmask: 0xf8, group: 1 }
+  - { name: AND,   op: 0xc0, ctl: { alu: AND,             dsta: reg }, cc: szhvn0c, opmask: 0xf8, group: 1 }
   - { name: ANDCF, op: 0x40, ctl: { alu: AND, carry: cin }, cc:       c,               group: 1 }
 
 ucode:
@@ -30,4 +31,21 @@ ucode:
       - setw_${setw}
       - op_fetch
       - nxgr: ${nxgr}, ni      
-  - mnemo: [ ADC, ADD, ]
+  - name: reg
+    seq:
+      - rdec3, op1_ld, setdst, ret_jsr
+  - name: imm
+    seq:
+      - fetch, inc_pc, retb_jsr             # conditonal return on byte size
+      - ?{wait1}
+      - fetch, inc_pc, md_shift, retw_jsr   # conditonal return on word size
+      - ?{wait1}
+      - fetch, inc_pc, md_shift
+      - ?{wait1}
+      - fetch, inc_pc, md_shift, ret_jsr
+# instructions
+  - mnemo: [ ADC, ADD, AND ]
+    seq:
+      - ${dsta}_jsr, inc_pc
+      - ${alu}_alu, dst_ld, ${cc}_cc
+      - ni
