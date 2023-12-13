@@ -1,245 +1,248 @@
 config:
+  entries: 1024
+  entry_len: 16
   per_chunk_cycles: true
+  groups: 4
 ops:
   # Group 1: destination is R, source is either r or memory
   # examples ADC R,r   CP R,(mem)
   # First byte contains either r or (mem). Second byte is OP and R. Same OP for both addressing modes
   # bit 3 set in OP makes (mem) the destination: OR (mem),R
   # R,r register in lower 3 bits  11zz'1rrr
-  - { name: rzzB,  op: 0xc8, opmask: 0xf8, ctl: { nxgr: 1, setw: b }, cycles: 1 }
-  - { name: rzzW,  op: 0xd8, opmask: 0xf8, ctl: { nxgr: 1, setw: w }, cycles: 1 }
-  - { name: rzzQ,  op: 0xe8, opmask: 0xf8, ctl: { nxgr: 1, setw: q }, cycles: 1 }
+  - { name: rzzB,  op: 0x0c8, opmask: 0x3f8, ctl: { nxgr: 1, setw: b }, cycles: 1 }
+  - { name: rzzW,  op: 0x0d8, opmask: 0x3f8, ctl: { nxgr: 1, setw: w }, cycles: 1 }
+  - { name: rzzQ,  op: 0x0e8, opmask: 0x3f8, ctl: { nxgr: 1, setw: q }, cycles: 1 }
   # R,r register in next byte
-  - { name: r2zzB, op: 0xc7,               ctl: { nxgr: 1, setw: b }, cycles: 1 }
-  - { name: r2zzW, op: 0xd7,               ctl: { nxgr: 1, setw: w }, cycles: 1 }
-  - { name: r2zzQ, op: 0xe7,               ctl: { nxgr: 1, setw: q }, cycles: 1 }
+  - { name: r2zzB, op: 0x0c7,               ctl: { nxgr: 1, setw: b }, cycles: 1 }
+  - { name: r2zzW, op: 0x0d7,               ctl: { nxgr: 1, setw: w }, cycles: 1 }
+  - { name: r2zzQ, op: 0x0e7,               ctl: { nxgr: 1, setw: q }, cycles: 1 }
 
   # Group 2 R,(mem) and (mem),R
   # R,(mem)
-  - { name: Rmem,  op: 0x80, opmask: 0xf8, ctl: { nxgr: 2, setw: b }, cycles: 3 }
-  - { name: Rmem,  op: 0x90, opmask: 0xf8, ctl: { nxgr: 2, setw: w }, cycles: 3 }
-  - { name: Rmem,  op: 0xa0, opmask: 0xf8, ctl: { nxgr: 2, setw: q }, cycles: 5 }
-  - { name: Rmem,  op: 0x88, opmask: 0xf8, ctl: { nxgr: 2, setw: b, d8: 1 }, cycles: 3 }
-  - { name: Rmem,  op: 0x98, opmask: 0xf8, ctl: { nxgr: 2, setw: w, d8: 1 }, cycles: 3 }
-  - { name: Rmem,  op: 0xa8, opmask: 0xf8, ctl: { nxgr: 2, setw: q, d8: 1 }, cycles: 5 }
+  - { name: Rmem,  op: 0x080, opmask: 0x3f8, ctl: { nxgr: 2, setw: b }, cycles: 3 }
+  - { name: Rmem,  op: 0x090, opmask: 0x3f8, ctl: { nxgr: 2, setw: w }, cycles: 3 }
+  - { name: Rmem,  op: 0x0a0, opmask: 0x3f8, ctl: { nxgr: 2, setw: q }, cycles: 5 }
+  - { name: Rmem,  op: 0x088, opmask: 0x3f8, ctl: { nxgr: 2, setw: b, d8: 1 }, cycles: 3 }
+  - { name: Rmem,  op: 0x098, opmask: 0x3f8, ctl: { nxgr: 2, setw: w, d8: 1 }, cycles: 3 }
+  - { name: Rmem,  op: 0x0a8, opmask: 0x3f8, ctl: { nxgr: 2, setw: q, d8: 1 }, cycles: 5 }
 
   # this three will need be split up and renamed for second half of memory addressing table
-  - { name: Rmem,  op: 0xc0, opmask: 0xf8, ctl: { nxgr: 1, setw: b } }
-  - { name: Rmem,  op: 0xd0, opmask: 0xf8, ctl: { nxgr: 1, setw: w } }
-  - { name: Rmem,  op: 0xe0, opmask: 0xf8, ctl: { nxgr: 1, setw: q } }
+  - { name: Rmem,  op: 0x0c0, opmask: 0x3f8, ctl: { nxgr: 1, setw: b } }
+  - { name: Rmem,  op: 0x0d0, opmask: 0x3f8, ctl: { nxgr: 1, setw: w } }
+  - { name: Rmem,  op: 0x0e0, opmask: 0x3f8, ctl: { nxgr: 1, setw: q } }
 
   # #3,(mem) 1m11'mmmm
-  - { name: Rmem,  op: 0xb0, opmask: 0xf0, ctl: { nxgr: 3, setw: w        } }
-  - { name: Rmem,  op: 0xf0, opmask: 0xf8, ctl: { nxgr: 3,                } }
+  - { name: Rmem,  op: 0x0b0, opmask: 0x3f0, ctl: { nxgr: 3, setw: w        } }
+  - { name: Rmem,  op: 0x0f0, opmask: 0x3f8, ctl: { nxgr: 3,                } }
 
   ########### instructions ###################
 
   # group 0 instructions
-  - { name: DECF,   op: 0x0d               }
-  - { name: EI,     op: 0x06               } # also serves as DI when operand is 7
-  - { name: EXFF,   op: 0x16               } # EX F,F'
-  - { name: HALT,   op: 0x05               }
-  - { name: INCF,   op: 0x0c               }
-  - { name: JR,     op: 0x1a               } # JP #16
-  - { name: JR,     op: 0x1b               } # JP #24
-  - { name: JR,     op: 0x60, opmask: 0xf0 } # JR [cc,]
-  - { name: JRL,    op: 0x70, opmask: 0xf0 } # JRL [cc,]
-  - { name: LD,     op: 0x08, opmask: 0xfd } # LD (#8),#
-  - { name: LD,     op: 0x00, opmask: 0x88 } # LD R,#
-  - { name: LDAR,   op: 0xf3 }
-  - { name: LDF,    op: 0x17 }
-  - { name: LDX,    op: 0xf7 }
-  - { name: CALL16, op: 0x1c }
-  - { name: CALL24, op: 0x1d }
-  - { name: CALR,   op: 0x1e }
-  - { name: CCF,    op: 0x12 }
-  - { name: MULA,   op: 0xd8, opmask: 0xf8 }
-  - { name: NOP,    op: 0x00 }
-  - { name: PUSHA,  op: 0x14 }
-  - { name: POPA,   op: 0x15 }
-  - { name: PUSHF,  op: 0x18 }
-  - { name: POPF,   op: 0x19 }
-  - { name: POP,    op: 0x48, { setw: w }, opmask: 0xf8 } # POP R
-  - { name: POP,    op: 0x58, { setw: q }, opmask: 0xf8 } # POP R
-  - { name: PUSH,   op: 0x28, { setw: w }, opmask: 0xf8 } # PUSH R
-  - { name: PUSH,   op: 0x38, { setw: q }, opmask: 0xf8 } # PUSH R
-  - { name: PUSH,   op: 0x09, { setw: b } }
-  - { name: PUSH,   op: 0x0b, { setw: w } }
-  - { name: PUSH,   op: 0x02, { setw: w } } # PUSH SR
-  - { name: POP,    op: 0x03, { setw: w } } # POP SR
-  - { name: RET,    op: 0x0e }
-  - { name: RETcc,  op: 0xb0 }
-  - { name: RETD,   op: 0x0f }
-  - { name: RETI,   op: 0x07 }
-  - { name: SCF,    op: 0x11 }
-  - { name: SWI,    op: 0xf8, opmask: 0xf8 }
+  - { name: DECF,   op: 0x00d                }
+  - { name: EI,     op: 0x006                } # also serves as DI when operand is 7
+  - { name: EXFF,   op: 0x016                } # EX F,F'
+  - { name: HALT,   op: 0x005                }
+  - { name: INCF,   op: 0x00c                }
+  - { name: JR,     op: 0x01a                } # JP #16
+  - { name: JR,     op: 0x01b                } # JP #24
+  - { name: JR,     op: 0x060, opmask: 0x3f0 } # JR [cc,]
+  - { name: JRL,    op: 0x070, opmask: 0x3f0 } # JRL [cc,]
+  - { name: LD,     op: 0x008, opmask: 0x3fd } # LD (#8),#
+  - { name: LD,     op: 0x000, opmask: 0x388 } # LD R,#
+  - { name: LDAR,   op: 0x0f3 }
+  - { name: LDF,    op: 0x017 }
+  - { name: LDX,    op: 0x0f7 }
+  - { name: CALL16, op: 0x01c }
+  - { name: CALL24, op: 0x01d }
+  - { name: CALR,   op: 0x01e }
+  - { name: CCF,    op: 0x012 }
+  - { name: MULA,   op: 0x0d8, opmask: 0x3f8 }
+  - { name: NOP,    op: 0x000 }
+  - { name: PUSHA,  op: 0x014 }
+  - { name: POPA,   op: 0x015 }
+  - { name: PUSHF,  op: 0x018 }
+  - { name: POPF,   op: 0x019 }
+  - { name: POP,    op: 0x048, { setw: w }, opmask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x058, { setw: q }, opmask: 0x3f8 } # POP R
+  - { name: PUSH,   op: 0x028, { setw: w }, opmask: 0x3f8 } # PUSH R
+  - { name: PUSH,   op: 0x038, { setw: q }, opmask: 0x3f8 } # PUSH R
+  - { name: PUSH,   op: 0x009, { setw: b } }
+  - { name: PUSH,   op: 0x00b, { setw: w } }
+  - { name: PUSH,   op: 0x002, { setw: w } } # PUSH SR
+  - { name: POP,    op: 0x003, { setw: w } } # POP SR
+  - { name: RET,    op: 0x00e }
+  - { name: RETcc,  op: 0x0b0 }
+  - { name: RETD,   op: 0x00f }
+  - { name: RETI,   op: 0x007 }
+  - { name: SCF,    op: 0x011 }
+  - { name: SWI,    op: 0x0f8, opmask: 0x3f8 }
 
   # group 1 instructions, R,r
-  - { name: ADC,   op: 0x90,                                                         opmask: 0xf8, group: 1, cycles: 1 }
-  - { name: ADD,   op: 0x80,                                                         opmask: 0xf8, group: 1, cycles: 1 }
-  - { name: AND,   op: 0xc0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, opmask: 0xf8, group: 1 }
-  - { name: CP,    op: 0xf0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, opmask: 0xf8, group: 1 }
-  - { name: DIV,   op: 0x50,                                                         opmask: 0xf8, group: 1 } # only byte/word
-  - { name: DIVS,  op: 0x58,                                                         opmask: 0xf8, group: 1 } # only byte/word
-  - { name: EX,    op: 0xb8, opmask: 0xf8, group: 1 } # EX R,r
-  - { name: LD,    op: 0x88, opmask: 0xf8, group: 1 } # LD R,r
-  - { name: LDrev, op: 0x98, opmask: 0xf8, group: 1 } # LD r,R
-  - { name: MUL,   op: 0x40,                                                         opmask: 0xf8, group: 1 } # only byte/word
-  - { name: MULS,  op: 0x48,                                                         opmask: 0xf8, group: 1 } # only byte/word
-  - { name: OR,    op: 0xe0,                                                         opmask: 0xf8, group: 1 }
-  - { name: SBC,   op: 0xb0,                                                         opmask: 0xf8, group: 1, cycles: 1 }
-  - { name: SUB,   op: 0xa0,                                                         opmask: 0xf8, group: 1, cycles: 1 }
-  - { name: XOR,   op: 0xd0,                                                         opmask: 0xf8, group: 1, cycles: 1 }
+  - { name: ADC,   op: 0x190,                                                         opmask: 0x3f8, cycles: 1 }
+  - { name: ADD,   op: 0x180,                                                         opmask: 0x3f8, cycles: 1 }
+  - { name: AND,   op: 0x1c0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, opmask: 0x3f8 }
+  - { name: CP,    op: 0x1f0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, opmask: 0x3f8 }
+  - { name: DIV,   op: 0x150,                                                         opmask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x158,                                                         opmask: 0x3f8 } # only byte/word
+  - { name: EX,    op: 0x1b8, opmask: 0x3f8 } # EX R,r
+  - { name: LD,    op: 0x188, opmask: 0x3f8 } # LD R,r
+  - { name: LDrev, op: 0x198, opmask: 0x3f8 } # LD r,R
+  - { name: MUL,   op: 0x140,                                                         opmask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x148,                                                         opmask: 0x3f8 } # only byte/word
+  - { name: OR,    op: 0x1e0,                                                         opmask: 0x3f8 }
+  - { name: SBC,   op: 0x1b0,                                                         opmask: 0x3f8, cycles: 1 }
+  - { name: SUB,   op: 0x1a0,                                                         opmask: 0x3f8, cycles: 1 }
+  - { name: XOR,   op: 0x1d0,                                                         opmask: 0x3f8, cycles: 1 }
   # group 1 - r
-  - { name: ANDCF,  op: 0x28, group: 1 }
-  - { name: BS1B,   op: 0x0f, group: 1 }
-  - { name: BS1F,   op: 0x0e, group: 1 }
-  - { name: DAA,    op: 0x10, group: 1 }
-  - { name: DEC,    op: 0x68, opmask: 0xf8, group: 1 } # DEC #3,r
-  - { name: DJNZ,   op: 0x1c, group: 1 }
-  - { name: EXTS,   op: 0x13, group: 1 }
-  - { name: EXTZ,   op: 0x12, group: 1 }
-  - { name: INC,    op: 0x60, opmask: 0xf8, group: 1 } # INC #3,r
-  - { name: LDC,    op: 0x2e, group: 1 } # LDC cr,r
-  - { name: LDC,    op: 0x2f, group: 1 } # LDC r,cr
-  - { name: PAA,    op: 0x14, group: 1 } # PAA r
-  - { name: PUSHr2, op: 0x04, group: 1 } # PUSH r
-  - { name: POPr2,  op: 0x05, group: 1 } # POP r
+  - { name: ANDCF,  op: 0x128 }
+  - { name: BS1B,   op: 0x10f }
+  - { name: BS1F,   op: 0x10e }
+  - { name: DAA,    op: 0x110 }
+  - { name: DEC,    op: 0x168, opmask: 0x3f8 } # DEC #3,r
+  - { name: DJNZ,   op: 0x11c }
+  - { name: EXTS,   op: 0x113 }
+  - { name: EXTZ,   op: 0x112 }
+  - { name: INC,    op: 0x160, opmask: 0x3f8 } # INC #3,r
+  - { name: LDC,    op: 0x12e } # LDC cr,r
+  - { name: LDC,    op: 0x12f } # LDC r,cr
+  - { name: PAA,    op: 0x114 } # PAA r
+  - { name: PUSHr2, op: 0x104 } # PUSH r
+  - { name: POPr2,  op: 0x105 } # POP r
   # group 2 - R,(mem) - (mem),R
-  - { name: ADC,   op: 0x90,                                                         opmask: 0xf0, group: 2, cycles: 1 }
-  - { name: ADD,   op: 0x80,                                                         opmask: 0xf0, group: 2, cycles: 1 }
-  - { name: AND,   op: 0xc0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, opmask: 0xf0, group: 2 }
-  - { name: CP,    op: 0xf0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, opmask: 0xf0, group: 2 }
-  - { name: EX,    op: 0x30, opmask: 0xf8, group: 2 }
-  - { name: OR,    op: 0xe0,                                                         opmask: 0xf0, group: 2 }
-  - { name: SBC,   op: 0xb0,                                                         opmask: 0xf0, group: 2, cycles: 1 }
-  - { name: SUB,   op: 0xa0,                                                         opmask: 0xf0, group: 2, cycles: 1 }
-  - { name: XOR,   op: 0xd0,                                                         opmask: 0xf0, group: 2, cycles: 1 }
+  - { name: ADC,   op: 0x290,                                                         opmask: 0x3f0, cycles: 1 }
+  - { name: ADD,   op: 0x280,                                                         opmask: 0x3f0, cycles: 1 }
+  - { name: AND,   op: 0x2c0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, opmask: 0x3f0 }
+  - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, opmask: 0x3f0 }
+  - { name: EX,    op: 0x230, opmask: 0x3f8 }
+  - { name: OR,    op: 0x2e0,                                                         opmask: 0x3f0 }
+  - { name: SBC,   op: 0x2b0,                                                         opmask: 0x3f0, cycles: 1 }
+  - { name: SUB,   op: 0x2a0,                                                         opmask: 0x3f0, cycles: 1 }
+  - { name: XOR,   op: 0x2d0,                                                         opmask: 0x3f0, cycles: 1 }
   # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
-  - { name: DIV,   op: 0x50, opmask: 0xf8, group: 2 } # only byte/word
-  - { name: DIVS,  op: 0x58, opmask: 0xf8, group: 2 } # only byte/word
-  - { name: LD,    op: 0x20, opmask: 0xf8, group: 2 }
-  - { name: MUL,   op: 0x40, opmask: 0xf8, group: 2 } # only byte/word
-  - { name: MULS,  op: 0x48, opmask: 0xf8, group: 2 } # only byte/word
+  - { name: DIV,   op: 0x250, opmask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x258, opmask: 0x3f8 } # only byte/word
+  - { name: LD,    op: 0x220, opmask: 0x3f8 }
+  - { name: MUL,   op: 0x240, opmask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, opmask: 0x3f8 } # only byte/word
   # group 2 - <W> (mem)
-  - { name: ADC,   op: 0x39, group: 2 }
-  - { name: ADD,   op: 0x38, group: 2 }
-  - { name: AND,   op: 0x3c, group: 2 }
-  - { name: CP,    op: 0x3f, group: 2 }
-  - { name: DECM,  op: 0x68, group: 2, opmask: 0xf8 } # inc<w> #3,(mem)
-  - { name: INCM,  op: 0x60, group: 2, opmask: 0xf8 } # inc<w> #3,(mem)
-  - { name: ORM,   op: 0x3e, ctl: { srca: imm }, group: 2 }
-  - { name: PUSHM, op: 0x04, group: 2 }
-  - { name: RLCM,  op: 0x78, group: 2 }
-  - { name: RLM,   op: 0x7b, group: 2 }
-  - { name: RRCM,  op: 0x79, group: 2 }
-  - { name: RRM,   op: 0x7b, group: 2 }
-  - { name: SBCM,  op: 0x3b, ctl: { srca: imm }, group: 2 }
-  - { name: SLAM,  op: 0x7c, group: 2 }
-  - { name: SLLM,  op: 0x7e, group: 2 }
-  - { name: SRAM,  op: 0x7d, group: 2 }
-  - { name: SRLM,  op: 0x7f, group: 2 }
-  - { name: SUBM,  op: 0x3a, ctl: { srca: imm }, group: 2 }
-  - { name: XORM,  op: 0x3d, ctl: { srca: imm }, group: 2 }
+  - { name: ADC,   op: 0x239 }
+  - { name: ADD,   op: 0x238 }
+  - { name: AND,   op: 0x23c }
+  - { name: CP,    op: 0x23f }
+  - { name: DECM,  op: 0x268, opmask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: INCM,  op: 0x260, opmask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: ORM,   op: 0x23e, ctl: { srca: imm } }
+  - { name: PUSHM, op: 0x204 }
+  - { name: RLCM,  op: 0x278 }
+  - { name: RLM,   op: 0x27b }
+  - { name: RRCM,  op: 0x279 }
+  - { name: RRM,   op: 0x27b }
+  - { name: SBCM,  op: 0x23b, ctl: { srca: imm } }
+  - { name: SLAM,  op: 0x27c }
+  - { name: SLLM,  op: 0x27e }
+  - { name: SRAM,  op: 0x27d }
+  - { name: SRLM,  op: 0x27f }
+  - { name: SUBM,  op: 0x23a, ctl: { srca: imm } }
+  - { name: XORM,  op: 0x23d, ctl: { srca: imm } }
   # Group 2 - string instructions
-  - { name: CPD,   op: 0x16 }
-  - { name: CPDR,  op: 0x17 }
-  - { name: CPI,   op: 0x14 }
-  - { name: CPIR,  op: 0x15 }
-  - { name: LDD,   op: 0x12 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDDR,  op: 0x13 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDI,   op: 0x10 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDIR,  op: 0x11 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: CPD,   op: 0x216 }
+  - { name: CPDR,  op: 0x217 }
+  - { name: CPI,   op: 0x214 }
+  - { name: CPIR,  op: 0x215 }
+  - { name: LDD,   op: 0x212 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDDR,  op: 0x213 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDI,   op: 0x210 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDIR,  op: 0x211 } # XDE,XHL or XIX,XIY is based on the first byte
   # Group 2 - take only EA
-  - { name: LDA,   op: 0x20, opmask: 0xe8, group: 2}
+  - { name: LDA,   op: 0x220, opmask: 0x3e8 }
 
   # group 1 with immediate data ADC r,#
-  - { name: ADC,   op: 0xc9, ctl: { srca: imm }, group: 1 }
-  - { name: ADD,   op: 0xc8, ctl: { srca: imm }, group: 1 }
-  - { name: AND,   op: 0xcc, ctl: { srca: imm }, group: 1 }
-  - { name: CP,    op: 0xcf, ctl: { srca: imm }, group: 1 }
-  - { name: CP,    op: 0xd8, opmask: 0xf8, group: 1 }
-  - { name: DIV,   op: 0x0a, group: 1 }
-  - { name: DIVS,  op: 0x0b, group: 1 }
-  - { name: LD,    op: 0x03, opmask: 0xf8, group: 1 } # LD r,#
-  - { name: LD,    op: 0xa8, opmask: 0xf8, group: 1 } # LD r,#3
-  - { name: MUL,   op: 0x08, group: 1 }
-  - { name: MULS,  op: 0x09, group: 1 }
-  - { name: OR,    op: 0xce, ctl: { srca: imm }, group: 1 }
-  - { name: SBC,   op: 0xcb, ctl: { srca: imm }, group: 1 }
-  - { name: SUB,   op: 0xca, ctl: { srca: imm }, group: 1 }
-  - { name: XOR,   op: 0xcd, ctl: { srca: imm }, group: 1 }
+  - { name: ADC,   op: 0x1c9, ctl: { srca: imm } }
+  - { name: ADD,   op: 0x1c8, ctl: { srca: imm } }
+  - { name: AND,   op: 0x1cc, ctl: { srca: imm } }
+  - { name: CP,    op: 0x1cf, ctl: { srca: imm } }
+  - { name: CP,    op: 0x1d8, opmask: 0x3f8 }
+  - { name: DIV,   op: 0x10a }
+  - { name: DIVS,  op: 0x10b }
+  - { name: LD,    op: 0x103, opmask: 0x3f8 } # LD r,#
+  - { name: LD,    op: 0x1a8, opmask: 0x3f8 } # LD r,#3
+  - { name: MUL,   op: 0x108 }
+  - { name: MULS,  op: 0x109 }
+  - { name: OR,    op: 0x1ce, ctl: { srca: imm } }
+  - { name: SBC,   op: 0x1cb, ctl: { srca: imm } }
+  - { name: SUB,   op: 0x1ca, ctl: { srca: imm } }
+  - { name: XOR,   op: 0x1cd, ctl: { srca: imm } }
   # group 1 but limited valid addressing
-  - { name: CPL,   op: 0x06,               group: 1 } # only byte/word
-  - { name: LDCFA, op: 0x2b,               group: 1 } # register A always used
-  - { name: LINK,  op: 0x0c,               group: 1 } # only long word
-  - { name: MDEC1, op: 0x3c,               group: 1 } # only word
-  - { name: MDEC2, op: 0x3d,               group: 1 } # only word
-  - { name: MDEC4, op: 0x3e,               group: 1 } # only word
-  - { name: MINC1, op: 0x38,               group: 1 } # only word
-  - { name: MINC2, op: 0x39,               group: 1 } # only word
-  - { name: MINC4, op: 0x3a,               group: 1 } # only word
-  - { name: MIRR,  op: 0x16,               group: 1 } # only byte
-  - { name: ORCFA, op: 0x29,               group: 1 } # register A always used
-  - { name: NEG,   op: 0x07,               group: 1 } # only byte/word
-  - { name: RLA,   op: 0xfa,               group: 1 } # register A always used RL  A,r
-  - { name: RRA,   op: 0xfb,               group: 1 } # register A always used RR  A,r
-  - { name: RLCA,  op: 0xf8,               group: 1 } # register A always used RRC A,r
-  - { name: RRCA,  op: 0xf9,               group: 1 } # register A always used RRC A,r
-  - { name: SCC,   op: 0x70, opmask: 0xf0, group: 1 } # SCC cc,r cc = #4
-  - { name: SLAA,  op: 0xfc,               group: 1 } # register A always used SLL A,r
-  - { name: SLLA,  op: 0xfe,               group: 1 } # register A always used SLL A,r
-  - { name: SRAA,  op: 0xfd,               group: 1 } # register A always used SRA A,r
-  - { name: SRLA,  op: 0xff,               group: 1 } # register A always used SRL A,r
-  - { name: STCFA, op: 0x2c,               group: 1 } # register A always used STCF A,r
-  - { name: UNLK,  op: 0x0d,               group: 1 } # first byte always 0xe8 & 0xf8
+  - { name: CPL,   op: 0x106                } # only byte/word
+  - { name: LDCFA, op: 0x12b                } # register A always used
+  - { name: LINK,  op: 0x10c                } # only long word
+  - { name: MDEC1, op: 0x13c                } # only word
+  - { name: MDEC2, op: 0x13d                } # only word
+  - { name: MDEC4, op: 0x13e                } # only word
+  - { name: MINC1, op: 0x138                } # only word
+  - { name: MINC2, op: 0x139                } # only word
+  - { name: MINC4, op: 0x13a                } # only word
+  - { name: MIRR,  op: 0x116                } # only byte
+  - { name: ORCFA, op: 0x129                } # register A always used
+  - { name: NEG,   op: 0x107                } # only byte/word
+  - { name: RLA,   op: 0x1fa                } # register A always used RL  A,r
+  - { name: RRA,   op: 0x1fb                } # register A always used RR  A,r
+  - { name: RLCA,  op: 0x1f8                } # register A always used RRC A,r
+  - { name: RRCA,  op: 0x1f9                } # register A always used RRC A,r
+  - { name: SCC,   op: 0x170, opmask: 0x3f0 } # SCC cc,r cc = #4
+  - { name: SLAA,  op: 0x1fc                } # register A always used SLL A,r
+  - { name: SLLA,  op: 0x1fe                } # register A always used SLL A,r
+  - { name: SRAA,  op: 0x1fd                } # register A always used SRA A,r
+  - { name: SRLA,  op: 0x1ff                } # register A always used SRL A,r
+  - { name: STCFA, op: 0x12c                } # register A always used STCF A,r
+  - { name: UNLK,  op: 0x10d                } # first byte always 0xe8 & 0xf8
   # #4,r
-  - { name: ANDCF, op: 0x20, group: 1 }
-  - { name: BIT,   op: 0x33, group: 1 }
-  - { name: CHG,   op: 0x32, group: 1 }
-  - { name: LDCF,  op: 0x23, group: 1 }
-  - { name: ORCF,  op: 0x21, group: 1 }
-  - { name: RCF,   op: 0x10, group: 1 }
-  - { name: RES,   op: 0x30, group: 1 }
-  - { name: RL,    op: 0xea, group: 1 }
-  - { name: RLC,   op: 0xe8, group: 1 }
-  - { name: RR,    op: 0xeb, group: 1 }
-  - { name: RRC,   op: 0xe9, group: 1 }
-  - { name: SET,   op: 0x31, group: 1 }
-  - { name: SLA,   op: 0xec, group: 1 }
-  - { name: SLL,   op: 0xee, group: 1 }
-  - { name: SRA,   op: 0xed, group: 1 }
-  - { name: SRL,   op: 0xef, group: 1 }
-  - { name: STCF,  op: 0x24, group: 1 }
-  - { name: TSET,  op: 0x32, group: 1 }
+  - { name: ANDCF, op: 0x120 }
+  - { name: BIT,   op: 0x133 }
+  - { name: CHG,   op: 0x132 }
+  - { name: LDCF,  op: 0x123 }
+  - { name: ORCF,  op: 0x121 }
+  - { name: RCF,   op: 0x110 }
+  - { name: RES,   op: 0x130 }
+  - { name: RL,    op: 0x1ea }
+  - { name: RLC,   op: 0x1e8 }
+  - { name: RR,    op: 0x1eb }
+  - { name: RRC,   op: 0x1e9 }
+  - { name: SET,   op: 0x131 }
+  - { name: SLA,   op: 0x1ec }
+  - { name: SLL,   op: 0x1ee }
+  - { name: SRA,   op: 0x1ed }
+  - { name: SRL,   op: 0x1ef }
+  - { name: STCF,  op: 0x124 }
+  - { name: TSET,  op: 0x132 }
 
   # group 3 1m11'mmmm
-  - { name: JP, op: 0xd0, opmask: 0xf0, group: 3 } # JP [cc,]mem
-  - { name: LD, op: 0x40, opmask: 0xc8, group: 3 } # (mem),R
-  - { name: LD, op: 0x00, opmask: 0xfd, group: 3 } # (mem),#
-  - { name: LD, op: 0x19,               group: 3 } # (#16),(mem)
-  - { name: LD, op: 0x14, opmask: 0xfd, group: 3 } # (mem),(#16)
+  - { name: JP, op: 0x3d0, opmask: 0x3f0 } # JP [cc,]mem
+  - { name: LD, op: 0x340, opmask: 0x3c8 } # (mem),R
+  - { name: LD, op: 0x300, opmask: 0x3fd } # (mem),#
+  - { name: LD, op: 0x319                } # (#16),(mem)
+  - { name: LD, op: 0x314, opmask: 0x3fd } # (mem),(#16)
   # group 3 1m11'mmmm #3,(mem)
-  - { name: ANDCF, op: 0x80,                                                         opmask: 0xf8, group: 3 }
-  - { name: BIT,   op: 0xc8, ctl: { alu: BIT,             srca: sub4 }, cc:  zh1n0 , opmask: 0xf8, group: 3 }
-  - { name: CALLcc,op: 0xe0,                                                         opmask: 0xf0, group: 3 }
-  - { name: CHG,   op: 0xc0,                                                         opmask: 0xf8, group: 3 }
-  - { name: LDCF,  op: 0x98,                                                         opmask: 0xf8, group: 3 }
-  - { name: ORCF,  op: 0x88,                                                         opmask: 0xf8, group: 3 }
-  - { name: POPM,  op: 0x04, ctl: { setw: b }, group: 3 }
-  - { name: POPM,  op: 0x06, ctl: { setw: w }, group: 3 }
-  - { name: RES,   op: 0xb0,                                                         opmask: 0xf8, group: 3 }
-  - { name: SET,   op: 0xb8,                                                         opmask: 0xf8, group: 3 }
-  - { name: STCF,  op: 0xa0,                                                         opmask: 0xf8, group: 3 }
-  - { name: TSET,  op: 0xa8,                                                         opmask: 0xf8, group: 3 }
+  - { name: ANDCF, op: 0x380,                                                         opmask: 0x3f8 }
+  - { name: BIT,   op: 0x3c8, ctl: { alu: BIT,             srca: sub4 }, cc:  zh1n0 , opmask: 0x3f8 }
+  - { name: CALLcc,op: 0x3e0,                                                         opmask: 0x3f0 }
+  - { name: CHG,   op: 0x3c0,                                                         opmask: 0x3f8 }
+  - { name: LDCF,  op: 0x398,                                                         opmask: 0x3f8 }
+  - { name: ORCF,  op: 0x388,                                                         opmask: 0x3f8 }
+  - { name: POPM,  op: 0x304, ctl: { setw: b } }
+  - { name: POPM,  op: 0x306, ctl: { setw: w } }
+  - { name: RES,   op: 0x3b0,                                                         opmask: 0x3f8 }
+  - { name: SET,   op: 0x3b8,                                                         opmask: 0x3f8 }
+  - { name: STCF,  op: 0x3a0,                                                         opmask: 0x3f8 }
+  - { name: TSET,  op: 0x3a8,                                                         opmask: 0x3f8 }
   # group 3 1m11'mmmm A,(mem)
-  - { name: ANDCF, op: 0x28,                                                                       group: 3 }
-  - { name: LDCF,  op: 0x2b,                                                                       group: 3 }
-  - { name: ORCF,  op: 0x29,                                                                       group: 3 }
-  - { name: STCF,  op: 0x2c,                                                                       group: 3 }
+  - { name: ANDCF, op: 0x328 }
+  - { name: LDCF,  op: 0x32b }
+  - { name: ORCF,  op: 0x329 }
+  - { name: STCF,  op: 0x32c }
   # group 3 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x06, group: 3 } # RRD [A,](mem)
-  - { name: RRD,   op: 0x07, group: 3 } # RRD [A,](mem)
+  - { name: RLD,   op: 0x306 } # RRD [A,](mem)
+  - { name: RRD,   op: 0x307 } # RRD [A,](mem)
 
 ucode:
   - name: reg
