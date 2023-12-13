@@ -62,14 +62,14 @@ ops:
   - { name: POPA,   op: 0x015 }
   - { name: PUSHF,  op: 0x018 }
   - { name: POPF,   op: 0x019 }
-  - { name: POP,    op: 0x048, { setw: w }, opmask: 0x3f8 } # POP R
-  - { name: POP,    op: 0x058, { setw: q }, opmask: 0x3f8 } # POP R
-  - { name: PUSH,   op: 0x028, { setw: w }, opmask: 0x3f8 } # PUSH R
-  - { name: PUSH,   op: 0x038, { setw: q }, opmask: 0x3f8 } # PUSH R
-  - { name: PUSH,   op: 0x009, { setw: b } }
-  - { name: PUSH,   op: 0x00b, { setw: w } }
-  - { name: PUSH,   op: 0x002, { setw: w } } # PUSH SR
-  - { name: POP,    op: 0x003, { setw: w } } # POP SR
+  - { name: POP,    op: 0x048, ctl: { setw: w }, opmask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x058, ctl: { setw: q }, opmask: 0x3f8 } # POP R
+  - { name: PUSH,   op: 0x028, ctl: { setw: w }, opmask: 0x3f8 } # PUSH R
+  - { name: PUSH,   op: 0x038, ctl: { setw: q }, opmask: 0x3f8 } # PUSH R
+  - { name: PUSH,   op: 0x009, ctl: { setw: b } }
+  - { name: PUSH,   op: 0x00b, ctl: { setw: w } }
+  - { name: PUSH,   op: 0x002, ctl: { setw: w } } # PUSH SR
+  - { name: POP,    op: 0x003, ctl: { setw: w } } # POP SR
   - { name: RET,    op: 0x00e }
   - { name: RETcc,  op: 0x0b0 }
   - { name: RETD,   op: 0x00f }
@@ -263,7 +263,7 @@ ucode:
       - rdec3, op0_ld, inc_pc
       - setw_${setw}
       - op_fetch
-      - nxgr: ${nxgr}, ni
+      - ${nxgr}_nxgr, ni
   - mnemo: [ xrzzB, xrzzW, xrzzW ]
     seq:
       - inc_pc
@@ -271,7 +271,7 @@ ucode:
       - rdec8, op0_ld, inc_pc
       - setw_${setw}
       - op_fetch
-      - nxgr: ${nxgr}, ni      
+      - ${nxgr}_nxgr, ni
 # instructions
   - mnemo: [ ADC, ADD, AND ]
     seq:
