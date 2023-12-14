@@ -82,6 +82,7 @@ ops:
   - { name: PUSH,   op: 0x00b, ctl: { setw: w } }
   - { name: PUSH,   op: 0x002, ctl: { setw: w } } # PUSH SR
   - { name: POP,    op: 0x003, ctl: { setw: w } } # POP SR
+  - { name: RCF,    op: 0x010 }
   - { name: RET,    op: 0x00e }
   - { name: RETD,   op: 0x00f }
   - { name: RETI,   op: 0x007 }
@@ -212,7 +213,6 @@ ops:
   - { name: CHG,   op: 0x132 }
   - { name: LDCF,  op: 0x123 }
   - { name: ORCF,  op: 0x121 }
-  - { name: RCF,   op: 0x110 }
   - { name: RES,   op: 0x130 }
   - { name: RL,    op: 0x1ea }
   - { name: RLC,   op: 0x1e8 }
@@ -224,7 +224,7 @@ ops:
   - { name: SRA,   op: 0x1ed }
   - { name: SRL,   op: 0x1ef }
   - { name: STCF,  op: 0x124 }
-  - { name: TSET,  op: 0x132 }
+  - { name: TSET,  op: 0x134 }
 
   # group 3 1m11'mmmm
   - { name: RETcc, op: 0x3f0, mask: 0x3f0 }
