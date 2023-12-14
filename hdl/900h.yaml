@@ -121,52 +121,6 @@ ops:
   - { name: PAA,    op: 0x114 } # PAA r
   - { name: PUSHr2, op: 0x104 } # PUSH r
   - { name: POPr2,  op: 0x105 } # POP r
-  # group 2 - R,(mem) - (mem),R
-  - { name: ADC,   op: 0x290,                                                         mask: 0x3f0, cycles: 1 }
-  - { name: ADD,   op: 0x280,                                                         mask: 0x3f0, cycles: 1 }
-  - { name: AND,   op: 0x2c0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, mask: 0x3f0 }
-  - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, mask: 0x3f0 }
-  - { name: EX,    op: 0x230, mask: 0x3f8 }
-  - { name: OR,    op: 0x2e0,                                                         mask: 0x3f0 }
-  - { name: SBC,   op: 0x2b0,                                                         mask: 0x3f0, cycles: 1 }
-  - { name: SUB,   op: 0x2a0,                                                         mask: 0x3f0, cycles: 1 }
-  - { name: XOR,   op: 0x2d0,                                                         mask: 0x3f0, cycles: 1 }
-  # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
-  - { name: DIV,   op: 0x250, mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x258, mask: 0x3f8 } # only byte/word
-  - { name: LD,    op: 0x220, mask: 0x3f8 } # LD R,(mem)
-  - { name: MUL,   op: 0x240, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, mask: 0x3f8 } # only byte/word
-  # group 2 - <W> (mem)
-  - { name: ADC,   op: 0x239 }
-  - { name: ADD,   op: 0x238 }
-  - { name: AND,   op: 0x23c }
-  - { name: CP,    op: 0x23f }
-  - { name: DECM,  op: 0x268, mask: 0x3f8 } # inc<w> #3,(mem)
-  - { name: INCM,  op: 0x260, mask: 0x3f8 } # inc<w> #3,(mem)
-  - { name: ORM,   op: 0x23e, ctl: { srca: imm } }
-  - { name: PUSHM, op: 0x204 }
-  - { name: RLCM,  op: 0x278 }
-  - { name: RLM,   op: 0x27a }
-  - { name: RRCM,  op: 0x279 }
-  - { name: RRM,   op: 0x27b }
-  - { name: SBCM,  op: 0x23b, ctl: { srca: imm } }
-  - { name: SLAM,  op: 0x27c }
-  - { name: SLLM,  op: 0x27e }
-  - { name: SRAM,  op: 0x27d }
-  - { name: SRLM,  op: 0x27f }
-  - { name: SUBM,  op: 0x23a, ctl: { srca: imm } }
-  - { name: XORM,  op: 0x23d, ctl: { srca: imm } }
-  # Group 2 - string instructions
-  - { name: CPD,   op: 0x216 }
-  - { name: CPDR,  op: 0x217 }
-  - { name: CPI,   op: 0x214 }
-  - { name: CPIR,  op: 0x215 }
-  - { name: LDD,   op: 0x212 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDDR,  op: 0x213 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDI,   op: 0x210 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDIR,  op: 0x211 } # XDE,XHL or XIX,XIY is based on the first byte
-
   # group 1 with immediate data ADC r,#
   - { name: ADC,   op: 0x1c9, ctl: { srca: imm } }
   - { name: ADD,   op: 0x1c8, ctl: { srca: imm } }
@@ -226,6 +180,55 @@ ops:
   - { name: STCF,  op: 0x124 }
   - { name: TSET,  op: 0x134 }
 
+  # group 2 - R,(mem) - (mem),R
+  - { name: ADC,   op: 0x290,                                                         mask: 0x3f0, cycles: 1 }
+  - { name: ADD,   op: 0x280,                                                         mask: 0x3f0, cycles: 1 }
+  - { name: AND,   op: 0x2c0, ctl: { alu: AND,             srca: reg  }, cc: szhvn0c, mask: 0x3f0 }
+  - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: reg  }, cc: szhvn1c, mask: 0x3f0 }
+  - { name: EX,    op: 0x230, mask: 0x3f8 }
+  - { name: OR,    op: 0x2e0,                                                         mask: 0x3f0 }
+  - { name: SBC,   op: 0x2b0,                                                         mask: 0x3f0, cycles: 1 }
+  - { name: SUB,   op: 0x2a0,                                                         mask: 0x3f0, cycles: 1 }
+  - { name: XOR,   op: 0x2d0,                                                         mask: 0x3f0, cycles: 1 }
+  # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
+  - { name: DIV,   op: 0x250, mask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x258, mask: 0x3f8 } # only byte/word
+  - { name: LD,    op: 0x220, mask: 0x3f8 } # LD R,(mem)
+  - { name: MUL,   op: 0x240, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, mask: 0x3f8 } # only byte/word
+  # group 2 - <W> (mem)
+  - { name: ADC,   op: 0x239 }
+  - { name: ADD,   op: 0x238 }
+  - { name: AND,   op: 0x23c }
+  - { name: CP,    op: 0x23f }
+  - { name: DECM,  op: 0x268, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: INCM,  op: 0x260, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: ORM,   op: 0x23e, ctl: { srca: imm } }
+  - { name: PUSHM, op: 0x204 }
+  - { name: RLCM,  op: 0x278 }
+  - { name: RLM,   op: 0x27a }
+  - { name: RRCM,  op: 0x279 }
+  - { name: RRM,   op: 0x27b }
+  - { name: SBCM,  op: 0x23b, ctl: { srca: imm } }
+  - { name: SLAM,  op: 0x27c }
+  - { name: SLLM,  op: 0x27e }
+  - { name: SRAM,  op: 0x27d }
+  - { name: SRLM,  op: 0x27f }
+  - { name: SUBM,  op: 0x23a, ctl: { srca: imm } }
+  - { name: XORM,  op: 0x23d, ctl: { srca: imm } }
+  # Group 2 - string instructions
+  - { name: CPD,   op: 0x216 }
+  - { name: CPDR,  op: 0x217 }
+  - { name: CPI,   op: 0x214 }
+  - { name: CPIR,  op: 0x215 }
+  - { name: LDD,   op: 0x212 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDDR,  op: 0x213 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDI,   op: 0x210 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDIR,  op: 0x211 } # XDE,XHL or XIX,XIY is based on the first byte
+  # group 2 1m00'mmmm limited byte size
+  - { name: RLD,   op: 0x206 } # RRD [A,](mem)
+  - { name: RRD,   op: 0x207 } # RRD [A,](mem)
+
   # group 3 1m11'mmmm
   - { name: RETcc, op: 0x3f0, mask: 0x3f0 }
   - { name: LDAR,  op: 0x313 } # special case for Rmem 0x0f0 addressing
@@ -253,9 +256,6 @@ ops:
   - { name: LDCF,  op: 0x32b }
   - { name: ORCF,  op: 0x329 }
   - { name: STCF,  op: 0x32c }
-  # group 3 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x306 } # RRD [A,](mem)
-  - { name: RRD,   op: 0x307 } # RRD [A,](mem)
 
 ucode:
   - name: reg
