@@ -24,8 +24,9 @@ module jt900h_alu(
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
     input             cin,
-    input      [ 2:0] w;
+    input      [ 2:0] w,
 
+    input             nin, hin, cin, zin,
     output            n,z,
     output reg [31:0] rslt
 );
@@ -33,18 +34,40 @@ module jt900h_alu(
 reg  cx,
      z8, z16, z32,
      n8, n16, n32;
+wire bsel;
+reg  [ 7:0] daa;
+wire        daa_carry;
 
 assign z = w[0] ? z8 : w[1] ? z16 : z32;
 assign n = w[0] ? n8 : w[1] ? n16 : n32;
+assign bsel = op0[{1'b0,op1[3:0]}];
+
+// daa is the value to add during the DAA instruction
+always @* begin
+    daa = 0;
+    if( nin ) begin
+        if( !cin && hin && op0[7:4]<9 && op0[3:0]>=6 ) daa=8'hfa;
+        if(  cin && ( op0[7:4]>=7 && !hin && op0[3:0]<10 )) daa=8'ha0;
+        if(  cin && ( op0[7:4]>=6 &&  hin && op0[3:0]>=6 )) daa=8'h9a;
+    end else begin
+        if ((cin || op0[7:4] > 9) || (op0[7:4] > 8) && op0[3:0] > 9) daa[7:4] =  4'd6;
+        if  (hin || op0[3:0] > 9) daa[3:0] = 6;
+    end
+end
 
 always @* begin
     case( carry_sel )
-        CIN_CARRY: cx = cin;
+        CIN_CARRY: cx =  cin;
+        COM_CARRY: cx = ~cin;
         B0_CARRY:  cx = op0[0]; // PAA instruction
+        HI_CARRY:  cx = 1;
+        ZF_CARRY:  cx = zin;
         default:   cx = 0;
     endcase
 
     v=0;
+    cc={2'd0,cx};
+    rslt = op0;
     case(alu_sel)
         ADD_ALU: begin
             { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx  };
@@ -60,9 +83,14 @@ always @* begin
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op1[31:16]}+{16'b0,cc[1]};
             // update v
         end
-        OR_ALU:  rslt = op0^op1;
-        XOR_ALU: rslt = op0^op1;
-        AND_ALU: rslt = op0^op1;
+        DAA_ALU: rslt[7:0] = daa;
+        BAND_ALU: { cc[0]=bsel & cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
+        BOR_ALU:  { cc[0]=bsel | cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
+        BXOR_ALU: { cc[0]=bsel ^ cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
+        OR_ALU:   rslt = op0^op1;
+        XOR_ALU:  rslt = op0^op1;
+        AND_ALU:  rslt = op0^op1;
+        CPL_ALU:  rslt[15:0] = ~op0[15:0];
         BS1F_ALU: casez(op0[15:0])
             16'b????_????_????_???1: rslt[7:0] = 0;
             16'b????_????_????_??10: rslt[7:0] = 1;
@@ -101,7 +129,7 @@ always @* begin
             16'b0000_0000_0000_0001: rslt[7:0] = 0;
             default: begin rslt[7:0]=0; v=1; end
         endcase
-        default: rslt = op1;
+        default:;
     endcase
     z8  = rslt[ 7: 0]==0;
     z16 = rslt[15: 8]==0;

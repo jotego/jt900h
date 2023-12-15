@@ -41,18 +41,20 @@ module jt900h_regs(
 
 `include "jt900h_param.vh"
 
-localparam [3:0] XSP=6;
+localparam [3:0] XSP=6,
+                  BC=4;
 
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 reg  [ 7:0] subsel, fsel;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_,   // flags (alt)
+reg  [ 2:0] imask;              // IFF
 wire [15:0] sr;             // status register. lower byte contains the flags
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
-assign sr[7:0] = flags;
+assign sr      = {1'b1,imask,1'b1,rfp,flags};
 
 always @* begin
     subsel = bs ? {md[2:1],1'b0,~md[0]} :     // byte register
@@ -69,6 +71,7 @@ always @* begin
     sdsh  = bs ? {sdmux[1:0],3'd0} : ws ? {sdmux[1],4'd0} : 5'd0; // shift to select byte/word part as data
     case( rmux_sel )
         A_RMUX:   rmux = {16'd0, ws ? accs[{rfp,2'd1}]:8'd0, accs[{rfp,2'd0}][7:0]};
+        BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
         RFP_RMUX: rmux[1:0] = rfp;
         N3_RMUX:  rmux = {29'd0,md[2:0]};
@@ -86,12 +89,13 @@ end
 
 always @(posedge clk, posedge rst) begin
     if(rst) begin
-        src <= 0;
-        dst <= 0;
-        op0 <= 0;
-        op1 <= 0;
-        rfp <= 0;
-        md  <= 0;
+        src   <= 0;
+        dst   <= 0;
+        op0   <= 0;
+        op1   <= 0;
+        rfp   <= 0;
+        md    <= 0;
+        imask <= 7;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
@@ -109,7 +113,7 @@ always @(posedge clk, posedge rst) begin
             SZHVN1_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     };
             SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b1, pi,1'b0,1'b0};
             SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,1'b0};
-            ZH1N0_CC:       {  z,h,  n  } <= {   zi,1'b1,    1'b0     };
+            ZCH1N0_CC:      {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
             ZHN_CC:         {  z,h,  n  } <= {   zi,hi,      ni       };
             N0C_CC:         {        n,c} <= {               1'b0,ci  };
             H0N0C0_CC:      {    h,  n,c} <= {      1'b0,    1'b0,1'b0};
@@ -118,8 +122,9 @@ always @(posedge clk, posedge rst) begin
             V_CC:           {      v    } <= {          vi            };
             C_CC:           {          c} <= {               ci       };
             Z2V_CC:         {      v    } <= {               zi       };
+            Z3V_CC:         {      v    } <= {              ~zi       };
             SZV_CC:         {s,z,  v    } <= {si,zi,    vi            };
-            SZHVC_CC:       {s,z,h,v,  c} <= {si,zi,hi, vi,       ci  };
+            SZHVCR_CC:      {s,z,h,v,  c} <= {si,zi,hi, vi,     c|ci  };
             H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
             default:;
         endcase
@@ -129,13 +134,14 @@ always @(posedge clk, posedge rst) begin
             default:;
         endcase
         case( ral_sel ) // Register Address Latch
-            SRC_RAL: src <= full ? fsel : subsel;
-            DST_RAL: dst <= subsel;
+            SRC_RAL: src <= subsel;
+            DST_RAL: dst <= full ? fsel : subsel;
             default:;
         endcase
         case( opnd_sel )
             LD0_OPND: op0 <= rmux;
             LD1_OPND: op1 <= rmux;
+            SWP_OPND: {op0,op1} <= {op1,op0};
             default:;
         endcase
         case( ld_sel )
@@ -173,8 +179,10 @@ always @(posedge clk, posedge rst) begin
                 accs[{rfp,2'd0}][7:0] <= rslt[7:0];
                 if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];
             end
+            BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
+            IFF_LD: imask <= rslt[2:0];
             default:;
         endcase
     end
