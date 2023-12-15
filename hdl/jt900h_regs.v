@@ -21,6 +21,19 @@ module jt900h_regs(
     input             clk,
     input             cen,
     input      [31:0] cr,       // control register
+    input      [31:0] din,      // data from memory controller
+    // ALU
+    input      [31:0] rslt,
+    input             su,       // flag updates
+    input             zu,
+    input             hu,
+    input             vu,
+    input             nu,
+    input             cu,
+    // control
+    input             bs,
+    input             ws,
+    input             qs,
 
     output     [31:0] op0,
     output     [31:0] op1,
@@ -71,8 +84,23 @@ end
 
 always @(posedge clk, posedge rst) begin
     if(rst) begin
-
+        src <= 0;
+        dst <= 0;
+        op0 <= 0;
+        op1 <= 0;
+        rfp <= 0;
+        md  <= 0;
+        accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
+        accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
+        accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
+        accs[12] <= 0; accs[13] <= 0; accs[14] <= 0; accs[15] <= 0;
+        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
     end else begin
+        case( fetch_sel )
+            Q_FETCH:  md <= din;
+            S8_FETCH: md <= md>>8;
+            default:;
+        endcase
         case( ral_sel ) // Register Address Latch
             SRC_RAL: src <= full ? fsel : subsel;
             DST_RAL: dst <= subsel;
