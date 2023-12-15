@@ -39,6 +39,8 @@ module jt900h_regs(
     output     [31:0] op1,
 );
 
+`include "jt900h_param.vh"
+
 localparam [3:0] XSP=6;
 
 reg  [31:0] accs[0:15];
@@ -95,7 +97,32 @@ always @(posedge clk, posedge rst) begin
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
         accs[12] <= 0; accs[13] <= 0; accs[14] <= 0; accs[15] <= 0;
         ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
+        {s, z, h, v, n, c } <= 0;
+        {s_,z_,h_,v_,n_,c_} <= 0;
     end else begin
+        case( cc_sel )
+            SZHVN0C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
+            SZHVN1C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b1,ci  };
+            SZH0VN0C_CC:    {s,z,h,v,n,c} <= {si,zi,1'b0, vi,1'b0,ci  };
+            SZH0VN0_CC:     {s,z,h,v,n  } <= {si,zi,1'b0, vi,1'b0     };
+            SZHVN0_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     };
+            SZHVN1_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     };
+            SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b1, pi,1'b0,1'b0};
+            SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,1'b0};
+            ZH1N0_CC:       {  z,h,  n  } <= {   zi,1'b1,    1'b0     };
+            ZHN_CC:         {  z,h,  n  } <= {   zi,hi,      ni       };
+            N0C_CC:         {        n,c} <= {               1'b0,ci  };
+            H0N0C0_CC:      {    h,  n,c} <= {      1'b0,    1'b0,1'b0};
+            H0N0C_CC:       {    h,  n,c} <= {      1'b0,    1'b0,ci  };
+            H1N1_CC:        {    h,  n  } <= {      1'b1,    1'b1     };
+            V_CC:           {      v    } <= {          vi            };
+            C_CC:           {          c} <= {               ci       };
+            Z2V_CC:         {      v    } <= {               zi       };
+            SZV_CC:         {s,z,  v    } <= {si,zi,    vi            };
+            SZHVC_CC:       {s,z,h,v,  c} <= {si,zi,hi, vi,       ci  };
+            H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            default:;
+        endcase
         case( fetch_sel )
             Q_FETCH:  md <= din;
             S8_FETCH: md <= md>>8;

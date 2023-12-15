@@ -4,12 +4,12 @@ config:
   per_chunk_cycles: true
   groups: 4
 const:
-  ADD_CC: szhvn0c      # ADD,ADC
-  SUB_CC: szhvn1c      # CP, NEG, SBC, SUB
-  SH_CC: szh0vn0c      # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
-  INC_CC: szhvn0       # INC
-  DEC_CC: szhvn1       # CPD,CPDR,CPI,CPIR,DEC
-  AND_CC: szh1pn0c0   # AND,
+  ADD_CC:  szhvn0c     # ADD,ADC
+  SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
+  SH_CC:   szh0vn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
+  INC_CC:  szhvn0      # INC
+  DEC_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
+  AND_CC:  szh1pn0c0   # AND,
   OR_CC:   szh0pn0c0   # OR,XOR
   BIT_CC:  zh1n0       # BIT
   TSET_CC: zhn         # TSET
@@ -234,9 +234,9 @@ ops:
   - { name: CPDR,  op: 0x217, cc: "${DEC_CC}" }
   - { name: CPI,   op: 0x214, cc: "${DEC_CC}" }
   - { name: CPIR,  op: 0x215, cc: "${DEC_CC}" }
-  - { name: LDD,   op: 0x212, cc: h0n0v3 } # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
+  - { name: LDD,   op: 0x212, cc: h0v3n0 } # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
   - { name: LDDR,  op: 0x213, cc: h0n0v0 } # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDI,   op: 0x210, cc: h0n0v3 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDI,   op: 0x210, cc: h0v3n0 } # XDE,XHL or XIX,XIY is based on the first byte
   - { name: LDIR,  op: 0x211, cc: h0n0v0 } # XDE,XHL or XIX,XIY is based on the first byte
   # group 2 1m00'mmmm limited byte size
   - { name: RLD,   op: 0x206, cc: szh0vn0 } # RRD [A,](mem)
