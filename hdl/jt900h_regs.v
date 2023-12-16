@@ -21,6 +21,8 @@ module jt900h_regs(
     input             clk,
     input             cen,
     input      [31:0] cr,       // control register
+    // memory unit
+    input      [23:0] ea,
     input      [31:0] din,      // data from memory controller
     // ALU
     input      [31:0] rslt,
@@ -34,7 +36,8 @@ module jt900h_regs(
     input             bs,
     input             ws,
     input             qs,
-
+    // register outputs
+    output reg [23:0] pc,
     output     [31:0] op0,
     output     [31:0] op1,
 );
@@ -80,11 +83,15 @@ always @* begin
         F_RMUX:   rmux = alt ? flags_ : flags;
         XSP_RMUX: rmux = ptrs[XSP];
         ZERO_RMUX:rmux = 0;
-        default:  rmux = md;
+        PC_RMUX:  rmux = {8'd0,pc};
+        EA_RMUX:  rmux = {8'd0,ea};
+        default:  rmux = {qs?md[31:16]:16'd0,ws?md[15:8]:8'd0,md[7:0]};
     endcase
     // extend the sign
-    if( bs & sex ) rmux[31: 8] = {24{rmux[ 7]}};
-    if( ws & sex ) rmux[31:16] = {16{rmux[15]}};
+    if( ws & sex ) rmux[31: 8] = {24{rmux[ 7]}};
+    if( qs & sex ) rmux[31:16] = {16{rmux[15]}};
+    if( ws & zex ) rmux[31: 8] = 0;
+    if( qs & zex ) rmux[31:16] = 0;
 end
 
 always @(posedge clk, posedge rst) begin
@@ -95,6 +102,7 @@ always @(posedge clk, posedge rst) begin
         op1   <= 0;
         rfp   <= 0;
         md    <= 0;
+        pc    <= 0;
         imask <= 7;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
@@ -103,7 +111,8 @@ always @(posedge clk, posedge rst) begin
         ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
         {s, z, h, v, n, c } <= 0;
         {s_,z_,h_,v_,n_,c_} <= 0;
-    end else begin
+    end else if(cen) begin
+        if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         case( cc_sel )
             SZHVN0C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
             SZHVN1C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b1,ci  };
@@ -136,6 +145,7 @@ always @(posedge clk, posedge rst) begin
         case( ral_sel ) // Register Address Latch
             SRC_RAL: src <= subsel;
             DST_RAL: dst <= full ? fsel : subsel;
+            SWP_RAL: {src,dst}<={dst,src};
             default:;
         endcase
         case( opnd_sel )
