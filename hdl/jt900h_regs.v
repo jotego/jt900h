@@ -38,6 +38,7 @@ module jt900h_regs(
     input             qs,
     // register outputs
     output reg [23:0] pc,
+    output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
     output     [31:0] op0,
     output     [31:0] op1,
 );
@@ -193,6 +194,7 @@ always @(posedge clk, posedge rst) begin
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: imask <= rslt[2:0];
+            DA_LD:  da <= rslt[23:0];
             default:;
         endcase
     end

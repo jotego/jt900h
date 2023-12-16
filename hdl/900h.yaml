@@ -69,10 +69,11 @@ ops:
   - { name: JP,     op: 0x01b, ctl: { srca: imm24, setw: q } } # JP #24
   - { name: JR,     op: 0x060, mask: 0x3f0 } # JR [cc,]
   - { name: JRL,    op: 0x070, mask: 0x3f0 } # JRL [cc,]
-  - { name: LD,     op: 0x008, mask: 0x3fd } # LD (#8),#
-  - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { setw: b } } # LD R,# zzz encoding
-  - { name: LD,     op: 0x030, mask: 0x3f8, ctl: { setw: w } } # LD R,# zzz encoding
-  - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { setw: q } } # LD R,# zzz encoding
+  - { name: LD8,    op: 0x008, ctl: { setw: b } } # LD<B> (#8),#
+  - { name: LD8,    op: 0x008, ctl: { setw: w } } # LD<W> (#8),#
+  - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { srca: imm, setw: b } } # LD R,# zzz encoding
+  - { name: LD,     op: 0x030, mask: 0x3f8, ctl: { srca: imm, setw: w } } # LD R,# zzz encoding
+  - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm, setw: q } } # LD R,# zzz encoding
   - { name: LDF,    op: 0x017 }
   - { name: LDX,    op: 0x0f7 }
   - { name: CALL16, op: 0x01c, ctl: { srca: imm,   setw: w } }
@@ -108,14 +109,14 @@ ops:
   - { name: DIV,   op: 0x150, cc: v,                                                  mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x158, cc: v,                                                  mask: 0x3f8 } # only byte/word
   - { name: EX,    op: 0x1b8, mask: 0x3f8 } # EX R,r
-  - { name: LD,    op: 0x188, mask: 0x3f8 } # LD R,r
-  - { name: LDrev, op: 0x198, mask: 0x3f8 } # LD r,R
+  - { name: LD,    op: 0x188, ctl: { srca: reg,         ld: dst }, mask: 0x3f8 } # LD R,r
+  - { name: LD,    op: 0x198, ctl: { srca: reg, swp: 1, ld: dst }, mask: 0x3f8 } # LD r,R
   - { name: MULA,  op: 0x119, cc: szv     }
   - { name: MUL,   op: 0x140,                                                         mask: 0x3f8 } # only byte/word
   - { name: MULS,  op: 0x148,                                                         mask: 0x3f8 } # only byte/word
   - { name: OR,    op: 0x1e0,                                                         mask: 0x3f8 }
-  - { name: SBC,   op: 0x1b0, cc: "${SUB_CC}",                                          mask: 0x3f8, cycles: 1 }
-  - { name: SUB,   op: 0x1a0, cc: "${SUB_CC}",                                          mask: 0x3f8, cycles: 1 }
+  - { name: SBC,   op: 0x1b0, cc: "${SUB_CC}",                                        mask: 0x3f8, cycles: 1 }
+  - { name: SUB,   op: 0x1a0, cc: "${SUB_CC}",                                        mask: 0x3f8, cycles: 1 }
   - { name: XOR,   op: 0x1d0,                                                         mask: 0x3f8, cycles: 1 }
   # group 1 - r
   - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, srca: acc, carry: cin }, cc: c }
@@ -126,7 +127,7 @@ ops:
   - { name: DJNZ,   op: 0x11c }
   - { name: EXTS,   op: 0x113, ctl: { ext: sex } }
   - { name: EXTZ,   op: 0x112, ctl: { ext: zex } }
-  - { name: INC,    op: 0x160, ctl: { alu: ADD, srca: num3 } mask: 0x3f8, cc: "${INC_CC}" } # INC #3,r
+  - { name: INC,    op: 0x160, ctl: { alu: ADD, srca: num3 }, mask: 0x3f8, cc: "${INC_CC}" } # INC #3,r
   - { name: LDC,    op: 0x12e } # LDC cr,r
   - { name: LDC,    op: 0x12f } # LDC r,cr
   - { name: PAA,    op: 0x114 } # PAA r
@@ -140,8 +141,8 @@ ops:
   - { name: CP,    op: 0x1d8, ctl: { alu: SUB, srca: num3 }, cc: "${SUB_CC}", mask: 0x3f8 }
   - { name: DIV,   op: 0x10a, cc: v }
   - { name: DIVS,  op: 0x10b, cc: v }
-  - { name: LD,    op: 0x103 } # LD r,#
-  - { name: LD,    op: 0x1a8, mask: 0x3f8 } # LD r,#3
+  - { name: LD,    op: 0x103, ctl: { srca: imm,  ld: dst } } # LD r,#
+  - { name: LD,    op: 0x1a8, ctl: { srca: num3, ld: dst }, mask: 0x3f8 } # LD r,#3
   - { name: MUL,   op: 0x108 }
   - { name: MULS,  op: 0x109 }
   - { name: OR,    op: 0x1ce, ctl: { srca: imm }, cc: "${OR_CC}"  }
@@ -210,7 +211,7 @@ ops:
   # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
   - { name: DIV,   op: 0x250, mask: 0x3f8, cc: v } # only byte/word
   - { name: DIVS,  op: 0x258, mask: 0x3f8, cc: v } # only byte/word
-  - { name: LD,    op: 0x220, mask: 0x3f8 } # LD R,(mem)
+  - { name: LD,    op: 0x220, ctl: { srca: rmem, ld: dst }, mask: 0x3f8 } # LD R,(mem)
   - { name: MUL,   op: 0x240, mask: 0x3f8 } # only byte/word
   - { name: MULS,  op: 0x248, mask: 0x3f8 } # only byte/word
   # group 2 - <W> (mem)
@@ -251,10 +252,12 @@ ops:
   - { name: LDAR,  op: 0x313 } # special case for Rmem 0x0f0 addressing
   - { name: JPM,   op: 0x3d0, mask: 0x3f0 } # JP [cc,]mem
   - { name: LD,    op: 0x340, mask: 0x3c8 } # (mem),R
-  - { name: LD,    op: 0x300, mask: 0x3fd } # (mem),#
-  - { name: LD,    op: 0x319                } # (#16),(mem)
-  - { name: LD,    op: 0x314, mask: 0x3fd } # (mem),(#16)
-  - { name: LDA,   op: 0x320, mask: 0x3e8 }
+  - { name: LDM,   op: 0x300, ctl: { srca: imm, setw: b } } # (mem),#
+  - { name: LDM,   op: 0x302, ctl: { srca: imm, setw: w } } # (mem),#
+  - { name: LDM2DA,op: 0x319 } # (#16),(mem)
+  - { name: LDDA2M,op: 0x314, mask: 0x3fd } # (mem),(#16)
+  - { name: LDA,   op: 0x320, ctl: { setw: w }, mask: 0x3f8 }
+  - { name: LDA,   op: 0x330, ctl: { setw: q }, mask: 0x3f8 }
   # group 3 1m11'mmmm #3,(mem)
   - { name: ANDCF, op: 0x380, ctl: { alu: BAND, carry: cin, srca: acc  }, cc: c,       mask: 0x3f8 }
   - { name: BIT,   op: 0x3c8, ctl: { alu: BXOR, carry: hi,  srca: num3 }, cc: "${BIT_CC}", mask: 0x3f8 }
@@ -270,7 +273,7 @@ ops:
   - { name: STCF,  op: 0x3a0,                                                         mask: 0x3f8 }
   - { name: TSET,  op: 0x3a8, "${TSET_CC}",                                           mask: 0x3f8 }
   # group 3 1m11'mmmm A,(mem)
-  - { name: ANDCF, op: 0x328, ctl: { alu: BAND, carry: cin srca: acc } cc: c }
+  - { name: ANDCF, op: 0x328, ctl: { alu: BAND, carry: cin, srca: acc }, cc: c }
   - { name: LDCF,  op: 0x32b, cc: c }
   - { name: ORCF,  op: 0x329, ctl: { alu: BOR,  srca: acc, carry: cin }, cc: c }
   - { name: XORCF, op: 0x32a, ctl: { alu: BXOR, srca: acc, carry: cin }, cc: c }
@@ -339,15 +342,16 @@ ucode:
       - full, dst_ral, s8_fetch, inc_pc
       - ${nxgr}_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
-  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CPL, DAA, DEC, INC, MIRR ]
+  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CPL, DAA, DEC, INC, MIRR, LD ]
     seq:
       - ${srca}_jsr
+      - ?${swp}, swp_opnd, swp_ral
       - ${alu}_alu, ${carry}_carry, ${ld}_ld, ${cc}_cc, inc_pc
       -
       - waitmem, q_fetch
       - ni
   # save to memory
-  - mnemo: [ ADCM, ADDM, ANDM, INCM ]
+  - mnemo: [ ADCM, ADDM, ANDM, INCM, LDM ]
     seq:
       - ${srca}_jsr
       - ${alu}_alu, ${carry}_carry, md_ld, ${cc}_cc
@@ -454,5 +458,45 @@ ucode:
       - ncc_jsr
       - ea_rmux, ld0_opnd
       - pc_ld
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ LD8 ]  # LD<W> (#8),#
+    seq:
+      - s8_fetch, inc_pc      # load direct address from 8-bit immediate value
+      - b_setw, ld0_opnd
+      - da_ld
+      - ${setw}_setw, imm_jsr
+      - da_ea, wr
+      - da_ea, waitmem
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ LDM2DA ] # LD<W> (#16),(mem)
+    seq:
+      - swp_opnd              # moves MD from op0 to op1
+      - s8_fetch, inc_pc      # load direct address from 16-bit immediate value
+      - w_setw, ld0_opnd, inc_pc
+      - da_ld
+      - swp_opnd              # restores MD
+      - da_ea, wr
+      - da_ea, waitmem
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ LDDA2M ] # LD<W> (mem),(#16)
+    seq:
+      - s8_fetch, inc_pc, swp_setw      # load direct address from 16-bit immediate value
+      - w_setw, ld0_opnd, inc_pc
+      - da_ld, swp_setw
+      - da_ea
+      - da_ea, waitmem, q_fetch
+      - m_ea, wr
+      - m_ea, waitmem
+      -
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ LDA ]
+    seq:
+      - ${setw}_setw, s8_fetch, inc_pc
+      - ea_rmux, ld0_opnd, dst_ral
+      - dst_ld
       - waitmem, q_fetch
       - ni
