@@ -24,9 +24,19 @@ module jt900h_ctrl(
     input       [7:0] flags
 );
 
-localparam FS=7, FZ=6, FH=4, FV=2, FN=1, FC=0; // Flag bits
+`include "900h_param.vh"
+`include "900h.vh"
 
-reg jp_ok;
+localparam FS=7, FZ=6, FH=4, FV=2, FN=1, FC=0; // Flag bits
+localparam IVRD   = 14'h0000,       // to be udpated
+           INTSRV = 14'h0c70;
+
+wire [4:0] jsr_sel;
+reg  [2:0] iv_sel;
+wire       halt, swi, ni, still;
+reg        nmi_l;
+wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
+reg        stack_bsy, jp_ok;
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -47,6 +57,27 @@ always @* begin
         14: jp_ok = ~flags[FZ];
         15: jp_ok = ~flags[FC];
     endcase
+end
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        uaddr   <= IVRD;
+        jsr_ret <= 0;
+        iv      <= 4'o17; // reset vector
+        ba      <= 0;
+        stack_bsy <= 1;
+    end else if(cen) begin
+        uaddr[3:0] <= nx_ualo;
+        if( ni ) begin
+            uaddr <= { 2'd0, md[7:0], 4'd0 };
+            stack_bsy <= 0;
+        end
+        if( jsr_en && (jsr_sel!=NCC_JSR || !jp_ok) ) begin
+            jsr_ret      <= uaddr;
+            jsr_ret[3:0] <= nx_ualo;
+            uaddr        <= jsr_ua;
+        end
+    end
 end
 
 endmodule

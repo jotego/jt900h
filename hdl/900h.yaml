@@ -19,16 +19,15 @@ ops:
   # First byte contains either r or (mem). Second byte is OP and R. Same OP for both addressing modes
   # bit 3 set in OP makes (mem) the destination: OR (mem),R
   # R,r register in lower 3 bits  11zz'1rrr
-  - { name: rzzB,  op: 0x0c8, mask: 0x3f8, ctl: { nxgr: 1, setw: b }, cycles: 1 }
-  - { name: rzzW,  op: 0x0d8, mask: 0x3f8, ctl: { nxgr: 1, setw: w }, cycles: 1 }
-  - { name: rzzQ,  op: 0x0e8, mask: 0x3f8, ctl: { nxgr: 1, setw: q }, cycles: 1 }
+  - { name: rzzB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
+  - { name: rzzW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
+  - { name: rzzQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
   # R,r register in next byte
-  - { name: frzzB, op: 0x0c7,               ctl: { nxgr: 1, setw: b }, cycles: 1 }
-  - { name: frzzW, op: 0x0d7,               ctl: { nxgr: 1, setw: w }, cycles: 1 }
-  - { name: frzzQ, op: 0x0e7,               ctl: { nxgr: 1, setw: q }, cycles: 1 }
+  - { name: frzzB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
+  - { name: frzzW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
+  - { name: frzzQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
 
   # Group 2 R,(mem) and (mem),R
-  # All these have 2_nxgr hard coded in a common procedure: cannot use ctl:{nxgr: 2} !!
   # R,(mem). Page 43 of 900H CPU Book
   - { name: mem_reg,  op: 0x080, mask: 0x3f8, ctl: { setw: b }, cycles: 3 }
   - { name: mem_reg,  op: 0x090, mask: 0x3f8, ctl: { setw: w }, cycles: 3 }
@@ -46,20 +45,20 @@ ops:
   - { name: mem_da24, op: 0x0c2, ctl: { setw: b } }  # -1--'0010 (#24)
   - { name: mem_da24, op: 0x0d2, ctl: { setw: w } }  # -1--'0010 (#24)
   - { name: mem_da24, op: 0x0e2, ctl: { setw: q } }  # -1--'0010 (#24)
-  - { name: mem, op: 0x0c3, mask: 0x3ff, ctl: { nxgr: 2, setw: b } }  # -1--'0011 (r32)
-  - { name: mem, op: 0x0d3, mask: 0x3ff, ctl: { nxgr: 2, setw: w } }
-  - { name: mem, op: 0x0e3, mask: 0x3ff, ctl: { nxgr: 2, setw: q } }
-  - { name: mem, op: 0x0c4, mask: 0x3ff, ctl: { nxgr: 2, setw: b } }  # -1--'0100 (-r32)
-  - { name: mem, op: 0x0d4, mask: 0x3ff, ctl: { nxgr: 2, setw: w } }
-  - { name: mem, op: 0x0e4, mask: 0x3ff, ctl: { nxgr: 2, setw: q } }
-  - { name: mem, op: 0x0c5, mask: 0x3ff, ctl: { nxgr: 2, setw: b } }  # -1--'0100 (r32+)
-  - { name: mem, op: 0x0d5, mask: 0x3ff, ctl: { nxgr: 2, setw: w } }
-  - { name: mem, op: 0x0e5, mask: 0x3ff, ctl: { nxgr: 2, setw: q } }
+  - { name: mem, op: 0x0c3, mask: 0x3ff, ctl: { setw: b } }  # -1--'0011 (r32)
+  - { name: mem, op: 0x0d3, mask: 0x3ff, ctl: { setw: w } }
+  - { name: mem, op: 0x0e3, mask: 0x3ff, ctl: { setw: q } }
+  - { name: mem, op: 0x0c4, mask: 0x3ff, ctl: { setw: b } }  # -1--'0100 (-r32)
+  - { name: mem, op: 0x0d4, mask: 0x3ff, ctl: { setw: w } }
+  - { name: mem, op: 0x0e4, mask: 0x3ff, ctl: { setw: q } }
+  - { name: mem, op: 0x0c5, mask: 0x3ff, ctl: { setw: b } }  # -1--'0100 (r32+)
+  - { name: mem, op: 0x0d5, mask: 0x3ff, ctl: { setw: w } }
+  - { name: mem, op: 0x0e5, mask: 0x3ff, ctl: { setw: q } }
 
-  # #3,(mem) 1m11'mmmm
-  - { name: mem,  op: 0x0b0, mask: 0x3f0, ctl: { nxgr: 3, setw: w        } }
-  - { name: mem,  op: 0x0f0, mask: 0x3fc, ctl: { nxgr: 3,                } } # f0~f3
-  - { name: mem,  op: 0x0f4, mask: 0x3fe, ctl: { nxgr: 3,                } } # f4~f5
+  # Group 3 #3,(mem) 1m11'mmmm
+  - { name: mem,  op: 0x0b0, mask: 0x3f0, ctl: { setw: w        } }
+  - { name: mem,  op: 0x0f0, mask: 0x3fc, ctl: {                } } # f0~f3
+  - { name: mem,  op: 0x0f4, mask: 0x3fe, ctl: {                } } # f4~f5
 
   ########### instructions ###################
 
@@ -80,8 +79,8 @@ ops:
   - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm, setw: q } } # LD R,# zzz encoding
   - { name: LDF,    op: 0x017 }
   - { name: LDX,    op: 0x0f7 }
-  - { name: CALL16, op: 0x01c, ctl: { srca: imm,   setw: w } }
-  - { name: CALL24, op: 0x01d, ctl: { srca: imm24, setw: q } } # only 24 bits read
+  - { name: CALL16, op: 0x01c, ctl: { setw: w } }
+  - { name: CALL24, op: 0x01d, ctl: { setw: q, call24: 1 } } # only 24 bits read
   - { name: CALR,   op: 0x01e }
   - { name: CCF,    op: 0x012, ctl: { carry: com, cc: n0c } }
   - { name: NOP,    op: 0x000 }
@@ -118,10 +117,10 @@ ops:
   - { name: MULA,  op: 0x119, ctl: { cc: szv } }
   - { name: MUL,   op: 0x140,                                                         mask: 0x3f8 } # only byte/word
   - { name: MULS,  op: 0x148,                                                         mask: 0x3f8 } # only byte/word
-  - { name: OR,    op: 0x1e0,                                                         mask: 0x3f8 }
+  - { name: OR,    op: 0x1e0, ctl: { alu: OR, cc: "${OR_CC}" },                       mask: 0x3f8 }
   - { name: SBC,   op: 0x1b0, ctl: { cc: "${SUB_CC}" },                               mask: 0x3f8, cycles: 1 }
   - { name: SUB,   op: 0x1a0, ctl: { cc: "${SUB_CC}" },                               mask: 0x3f8, cycles: 1 }
-  - { name: XOR,   op: 0x1d0,                                                         mask: 0x3f8, cycles: 1 }
+  - { name: XOR,   op: 0x1d0, ctl: { alu: XOR, cc: "${OR_CC}" },                      mask: 0x3f8, cycles: 1 }
   # group 1 - r
   - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, srca: acc, carry: cin, cc: c } }
   - { name: BS1B,   op: 0x10f, ctl: {             cc: z2v } }
@@ -134,9 +133,11 @@ ops:
   - { name: INC,    op: 0x160, ctl: { alu: ADD, srca: num3, cc: "${INC_CC}" }, mask: 0x3f8 } # INC #3,r
   - { name: LDC,    op: 0x12e } # LDC cr,r
   - { name: LDC,    op: 0x12f } # LDC r,cr
+  - { name: ORCF,   op: 0x129, ctl: { alu: BOR, srca: acc, carry: cin, cc: c }} # register A always used
   - { name: PAA,    op: 0x114 } # PAA r
-  - { name: PUSHr2, op: 0x104 } # PUSH r
   - { name: POPr2,  op: 0x105 } # POP r
+  - { name: PUSHr2, op: 0x104 } # PUSH r
+  - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, srca: acc, carry: cin, cc: c }} # register A always used
   # group 1 with immediate data ADC r,#
   - { name: ADC,   op: 0x1c9, ctl: { alu: ADD, carry: cin, srca: imm, ld: dst, cc: "${ADD_CC}" } }
   - { name: ADD,   op: 0x1c8, ctl: { alu: ADD,             srca: imm, ld: dst, cc: "${ADD_CC}" } }
@@ -149,23 +150,21 @@ ops:
   - { name: LD,    op: 0x1a8, ctl: { srca: num3, ld: dst }, mask: 0x3f8 } # LD r,#3
   - { name: MUL,   op: 0x108 }
   - { name: MULS,  op: 0x109 }
-  - { name: OR,    op: 0x1ce, ctl: { srca: imm, cc: "${OR_CC}"  } }
-  - { name: SBC,   op: 0x1cb, ctl: { srca: imm, cc: "${SUB_CC}" } }
-  - { name: SUB,   op: 0x1ca, ctl: { srca: imm, cc: "${SUB_CC}" } }
-  - { name: XOR,   op: 0x1cd, ctl: { srca: imm, cc: "${OR_CC}"  } }
+  - { name: OR,    op: 0x1ce, ctl: { alu: OR,  srca: imm, cc: "${OR_CC}"  } }
+  - { name: SBC,   op: 0x1cb, ctl: { alu: SUB, srca: imm, cc: "${SUB_CC}" } }
+  - { name: SUB,   op: 0x1ca, ctl: { alu: SUB, srca: imm, cc: "${SUB_CC}" } }
+  - { name: XOR,   op: 0x1cd, ctl: { alu: XOR, srca: imm, cc: "${OR_CC}"  } }
   # group 1 but limited valid addressing
   - { name: CPL,   op: 0x106, ctl: { alu: CPL, ld: dst, cc: h1n1 } } # only byte/word
   - { name: LDCFA, op: 0x12b, ctl: { cc: c }} # register A always used
   - { name: LINK,  op: 0x10c                } # only long word
-  - { name: MDEC1, op: 0x13c                } # only word
-  - { name: MDEC2, op: 0x13d                } # only word
-  - { name: MDEC4, op: 0x13e                } # only word
-  - { name: MINC1, op: 0x138                } # only word
-  - { name: MINC2, op: 0x139                } # only word
-  - { name: MINC4, op: 0x13a                } # only word
+  - { name: MDEC1, op: 0x13c, ctl: { rmux: one,  alu: sub }} # only word
+  - { name: MDEC2, op: 0x13d, ctl: { rmux: two,  alu: sub }} # only word
+  - { name: MDEC4, op: 0x13e, ctl: { rmux: four, alu: sub }} # only word
+  - { name: MINC1, op: 0x138, ctl: { rmux: one,  alu: add }} # only word
+  - { name: MINC2, op: 0x139, ctl: { rmux: two,  alu: add }} # only word
+  - { name: MINC4, op: 0x13a, ctl: { rmux: four, alu: add }} # only word
   - { name: MIRR,  op: 0x116, ctl: { alu: MIRR, ld: dst } } # only byte
-  - { name: ORCFA, op: 0x129, ctl: { srca: acc, carry: cin, cc: c }} # register A always used
-  - { name: XORCFA,op: 0x12A, ctl: { srca: acc, carry: cin, cc: c }} # register A always used
   - { name: NEG,   op: 0x107, ctl: { cc: "${SUB_CC}" }} # only byte/word
   - { name: RLA,   op: 0x1fa, ctl: { cc: "${SH_CC}"  }} # register A always used RL  A,r
   - { name: RRA,   op: 0x1fb, ctl: { cc: "${SH_CC}"  }} # register A always used RR  A,r
@@ -208,10 +207,10 @@ ops:
   - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: rmem,          cc: szhvn1c     }, mask: 0x3f8 }
   - { name: CPM,   op: 0x2f8, ctl: { alu: SUB,             srca: memr,          cc: szhvn1c     }, mask: 0x3f8 }
   - { name: EXM,   op: 0x230, mask: 0x3f8 }
-  - { name: OR,    op: 0x2e0, ctl: { cc: "${OR_CC}"  }, mask: 0x3f0 }
-  - { name: SBC,   op: 0x2b0, ctl: { cc: "${SUB_CC}" }, mask: 0x3f0, cycles: 1 }
-  - { name: SUB,   op: 0x2a0, ctl: { cc: "${SUB_CC}" }, mask: 0x3f0, cycles: 1 }
-  - { name: XOR,   op: 0x2d0, ctl: { cc: "${OR_CC}"  }, mask: 0x3f0, cycles: 1 }
+  - { name: OR,    op: 0x2e0, ctl: { alu: OR,  cc: "${OR_CC}"  }, mask: 0x3f0 }
+  - { name: SBC,   op: 0x2b0, ctl: { alu: SUB, cc: "${SUB_CC}", carry: cin }, mask: 0x3f0, cycles: 1 }
+  - { name: SUB,   op: 0x2a0, ctl: { alu: SUB, cc: "${SUB_CC}"             }, mask: 0x3f0, cycles: 1 }
+  - { name: XOR,   op: 0x2d0, ctl: { alu: XOR, cc: "${OR_CC}"  }, mask: 0x3f0, cycles: 1 }
   # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
   - { name: DIV,   op: 0x250, ctl: { cc: v }, mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x258, ctl: { cc: v }, mask: 0x3f8 } # only byte/word
@@ -231,13 +230,13 @@ ops:
   - { name: RLM,   op: 0x27a }
   - { name: RRCM,  op: 0x279 }
   - { name: RRM,   op: 0x27b }
-  - { name: SBCM,  op: 0x23b, ctl: { srca: imm, cc: "${SUB_CC}" }}
+  - { name: SBCM,  op: 0x23b, ctl: { alu: SUB, srca: imm, carry: cin, cc: "${SUB_CC}" }}
   - { name: SLAM,  op: 0x27c }
   - { name: SLLM,  op: 0x27e }
   - { name: SRAM,  op: 0x27d }
   - { name: SRLM,  op: 0x27f }
-  - { name: SUBM,  op: 0x23a, ctl: { srca: imm, cc: "${SUB_CC}" }}
-  - { name: XORM,  op: 0x23d, ctl: { srca: imm, cc: "${OR_CC}"  }}
+  - { name: SUBM,  op: 0x23a, ctl: { alu: SUB, srca: imm, cc: "${SUB_CC}" }}
+  - { name: XORM,  op: 0x23d, ctl: { alu: XOR, srca: imm, cc: "${OR_CC}"  }}
   # Group 2 - string instructions
   - { name: CPD,   op: 0x216, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
   - { name: CPDR,  op: 0x217, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
@@ -252,7 +251,7 @@ ops:
   - { name: RRD,   op: 0x207, ctl: { cc: szh0vn0 }} # RRD [A,](mem)
 
   # group 3 1m11'mmmm
-  - { name: RETcc, op: 0x3f0, mask: 0x3f0 } # B0-Fcc
+  - { name: RETcc, op: 0x3f0, ctl: { ncc: ncc }, mask: 0x3f0 } # B0-Fcc
   - { name: LDAR,  op: 0x313 }              # F3-13-#16-4R
   - { name: JPM,   op: 0x3d0, mask: 0x3f0 } # 1m11mmmm (possibly F3)-Dcc JP [cc,]mem
   - { name: LD,    op: 0x340, mask: 0x3c8 } # 1m11mmmm (possibly F3)-4R (mem),R
@@ -292,7 +291,7 @@ ucode:
       - m_ea, q_fetch, waitmem # loads data in md
       - ld1_opnd # operand data in md
       - md_ld, swp_opnd # restores md to have op code, operand data in op0
-      - 2_nxgr, ni
+      - g2_nxgr, ni
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing
     seq:
       - q_setw, dst_ral
@@ -330,8 +329,8 @@ ucode:
     auto: true
     seq:
       - inc_pc, s8_fetch
-      - retb_jsr, ld1_opnd # conditional return on byte size
-      - inc_pc, retw_jsr           # conditional return on word size
+      - retb, ld1_opnd # conditional return on byte size
+      - inc_pc, retw   # conditional return on word size
       - inc_pc
       - inc_pc, ret_jsr
   - name: imm24
@@ -373,7 +372,7 @@ ucode:
       -
       - waitmem, q_fetch
       - ni
-  - name: ncc_jsr
+  - name: ncc
     auto: true
     seq:
       - inc_pc
@@ -384,14 +383,15 @@ ucode:
   - mnemo: [ rzzB, rzzW, rzzQ ]
     seq:
       - ${setw}_setw, dst_ral, s8_fetch, inc_pc
-      - ${nxgr}_nxgr, ni, dst_rmux, ld0_opnd
+      - g1_nxgr, ni, dst_rmux, ld0_opnd
   - mnemo: [ frzzB, frzzW, frzzQ ]
     seq:
       - ${setw}_setw, s8_fetch, inc_pc
       - full, dst_ral, s8_fetch, inc_pc
-      - ${nxgr}_nxgr, ni, dst_rmux, ld0_opnd
+      - g1_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
-  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CPL, DAA, DEC, INC, MIRR, LD ]
+  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CPL, DEC, INC,
+            MIRR, LD, OR, ORCF, RCF, SUB, SBC, SCF, XOR, XORCF, ZCF ]
     seq:
       - ${srca}_jsr
       - ?${swp}, swp_opnd, swp_ral
@@ -400,7 +400,7 @@ ucode:
       - waitmem, q_fetch
       - ni
   # save to memory
-  - mnemo: [ ADCM, ADDM, ANDM, INCM, LDM ]
+  - mnemo: [ ADCM, ADDM, ANDM, DECM, INCM, ORM, SUBM, SBCM, XORM, LDM ]
     seq:
       - ${srca}_jsr
       - ${alu}_alu, ${carry}_carry, md_ld, ${cc}_cc
@@ -504,7 +504,7 @@ ucode:
   - mnemo: [ JPM ]
     seq:
       - s8_fetch, inc_pc
-      - ncc_jsr
+      - ncc_jsr             # finish if the cc condition is not met
       - ea_rmux, ld0_opnd
       - pc_ld
       - waitmem, q_fetch
@@ -548,4 +548,58 @@ ucode:
       - ea_rmux, ld0_opnd, dst_ral
       - dst_ld
       - waitmem, q_fetch
+      - ni
+  - mnemo: [ MINC1, MINC2, MINC4, MDEC1, MDEC2, MDEC4 ]
+    seq:
+      - w_setw, imm_jsr         # op0 holds the register value
+      - ${rmux}_rmux, ld1_opnd
+      - ${alu}_alu,ld2_opnd     # op2 holds the modified LSB
+      - md_rmux, ld1_opnd       # op1 holds the mask
+      - mod_alu, dst_ld
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ RET, RETD ]
+    seq:
+      - s8_fetch, inc_pc
+      - ${ncc}_jsr, q_setw
+      - xsp_rmux, ld0_opnd
+      - da_ld, four_rmux, ld1_opnd
+      - add_alu, xsp_ld
+      - da_ea, waitmem, q_fetch
+      - ld0_opnd
+      - pc_ld
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ CALL16, CALL24 ]
+    seq:
+      - s8_fetch, inc_pc, ${setw}_setw
+      - xsp_rmux, ld0_opnd
+      - four_rmux, ld1_opnd
+      - sub_alu, xsp_ld       # XSP = XSP-4
+      - zex, ld0_opnd, inc_pc
+      - ?${call24}, inc_pc
+      - md_ld, inc_pc       # zex-applied MD
+      - md_rmux, ld1_opnd   # store it in op1
+      - pc_rmux, ld0_opnd   # move PC to MD
+      - md_ld, swp_opnd
+      - sp_ea, wr           # push PC
+      - sp_ea, waitmem
+      - pc_ld               # PC gets the jump address
+      - waitmem, q_fetch    # jump
+      - ni
+  - mnemo: [ CALR ]
+    seq:
+      - s8_fetch, inc_pc, q_setw
+      - xsp_rmux, ld0_opnd
+      - four_rmux, ld1_opnd
+      - sub_alu, xsp_ld, w_setw # XSP = XSP-4
+      - sex, ld0_opnd, inc_pc
+      - md_ld, inc_pc       # sex-applied MD
+      - md_rmux, ld1_opnd   # store it in op1
+      - pc_rmux, ld0_opnd   # move PC to MD
+      - md_ld
+      - sp_ea, wr           # push PC
+      - sp_ea, waitmem
+      - add_alu, pc_ld      # jump address
+      - waitmem, q_fetch    # jump
       - ni

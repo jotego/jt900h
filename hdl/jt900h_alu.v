@@ -23,6 +23,7 @@ module jt900h_alu(
 
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
+    input      [31:0] op2,      // extra operand
     input             cin,
     input      [ 2:0] w,
 
@@ -113,6 +114,7 @@ always @* begin
             16'b0000_0000_0000_0001: rslt[7:0] = 0;
             default: begin rslt[7:0]=0; v=1; end
         endcase
+        MOD_ALU: rslt[15:0] = (op0[15:0]&~op1[15:0])|(op2[15:0]&op1[15:0]);
         default:;
     endcase
     z8  = rslt[ 7: 0]==0;

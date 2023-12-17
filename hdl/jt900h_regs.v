@@ -43,7 +43,7 @@ module jt900h_regs(
     output     [31:0] op1,
 );
 
-`include "jt900h_param.vh"
+`include "900h_param.vh"
 
 localparam [3:0] XSP=6,
                   BC=4;
@@ -78,15 +78,21 @@ always @* begin
     case( rmux_sel )
         A_RMUX:   rmux = {16'd0, ws ? accs[{rfp,2'd1}]:8'd0, accs[{rfp,2'd0}][7:0]};
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
-        SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
-        RFP_RMUX: rmux[1:0] = rfp;
-        N3_RMUX:  rmux = {29'd0,md[2:0]};
-        N4_RMUX:  rmux = {28'd0,md[3:0]};
         CR_RMUX:  rmux = cr;
         F_RMUX:   rmux = alt ? flags_ : flags;
-        XSP_RMUX: rmux = ptrs[XSP];
-        ZERO_RMUX:rmux = 0;
         PC_RMUX:  rmux = {8'd0,pc};
+        RFP_RMUX: rmux[1:0] = rfp;
+        XSP_RMUX: rmux = ptrs[XSP];
+
+        SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
+        N3_RMUX:  rmux = {29'd0,md[2:0]};
+        N4_RMUX:  rmux = {28'd0,md[3:0]};
+
+        ZERO_RMUX:rmux = 0;
+        ONE_RMUX: rmux = 1;
+        TWO_RMUX: rmux = 2;
+        FOUR_RMUX:rmux = 4;
+
         EA_RMUX:  rmux = {8'd0,ea};
         default:  rmux = {qs?md[31:16]:16'd0,ws?md[15:8]:8'd0,md[7:0]};
     endcase
