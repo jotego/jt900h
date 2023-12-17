@@ -2,7 +2,7 @@ config:
   entries: 1024
   entry_len: 16
   #  per_chunk_cycles: true
-  auto: { base: 0x300, mask: 0xff }
+  auto: { min: 0x300, max: 0x3ff }
 constants:
   ADD_CC:  szhvn0c     # ADD,ADC
   SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
