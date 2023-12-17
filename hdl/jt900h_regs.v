@@ -50,19 +50,21 @@ localparam [3:0] XSP=6,
 
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
-reg  [ 7:0] subsel, fsel;
+reg  [ 7:0] r3sel, fsel, sdsel, src, dst;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_,   // flags (alt)
-reg  [ 2:0] imask;              // IFF
-wire [15:0] sr;             // status register. lower byte contains the flags
+reg  [ 2:0] imask;      // IFF
+reg  [ 1:0] rfp;        // Register File Pointer
+wire [15:0] sr;         // status register. lower byte contains the flags
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,1'b1,rfp,flags};
 
 always @* begin
-    subsel = bs ? {md[2:1],1'b0,~md[0]} :     // byte register
-                  {{4{md[2]}},md[1:0],2'b0};  // word register
+    // r3sel -> selects register from 3-bit R value in op
+    r3sel = bs ? {2'd0,rfp,md[2:1],1'b0,~md[0]} :               // byte register
+                 {mcode[2]?{4'hf:{2'd0,rfp},mcode[1:0],2'd0}} : // word/qword register
     casez( md[6:4] )
         3'b0??: fsel={2'd0,md[5:0]};
         3'b101: fsel={2'd0,rfp-2'd1,md[3:0]}; // previous bank
@@ -71,7 +73,7 @@ always @* begin
     endcase
     // Register multiplexer
     sdsel = rmux_sel==DST_RMUX ? dst : src;
-    sdmux = sdmux[7] ? ptrs[sdmux[5:2]] : accs[sdmux[3:2]]; // 32-bit registers
+    sdmux = sdsel[7] ? ptrs[sdsel[5:2]] : accs[sdsel[3:2]]; // 32-bit registers
     sdsh  = bs ? {sdmux[1:0],3'd0} : ws ? {sdmux[1],4'd0} : 5'd0; // shift to select byte/word part as data
     case( rmux_sel )
         A_RMUX:   rmux = {16'd0, ws ? accs[{rfp,2'd1}]:8'd0, accs[{rfp,2'd0}][7:0]};
@@ -144,8 +146,8 @@ always @(posedge clk, posedge rst) begin
             default:;
         endcase
         case( ral_sel ) // Register Address Latch
-            SRC_RAL: src <= subsel;
-            DST_RAL: dst <= full ? fsel : subsel;
+            SRC_RAL: src <= r3sel;
+            DST_RAL: dst <= full ? fsel : r3sel;
             SWP_RAL: {src,dst}<={dst,src};
             default:;
         endcase
