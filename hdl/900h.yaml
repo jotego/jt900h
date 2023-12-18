@@ -184,10 +184,10 @@ ops:
   - { name: ORCF,  op: 0x121, ctl: { alu: BOR,  srca: num4, carry: cin, cc: c }}
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, srca: num4, carry: cin, cc: c }}
   - { name: RES,   op: 0x130 }
-  - { name: RL,    op: 0x1ea }
-  - { name: RLC,   op: 0x1e8 }
-  - { name: RR,    op: 0x1eb }
-  - { name: RRC,   op: 0x1e9 }
+  - { name: RL,    op: 0x1ea, ctl: { cc: "${SH_CC}", srca: num4, cx: cin }}
+  - { name: RLC,   op: 0x1e8, ctl: { cc: "${SH_CC}", srca: num4, cx: sh  }}
+  - { name: RR,    op: 0x1eb, ctl: { cc: "${SH_CC}", srca: num4, cx: cin, right: 1 }}
+  - { name: RRC,   op: 0x1e9, ctl: { cc: "${SH_CC}", srca: num4, cx: sh,  right: 1 }}
   - { name: SET,   op: 0x131 }
   - { name: SLA,   op: 0x1ec, opmask: 0x3fd } # SLA=SLL
   - { name: SRA,   op: 0x1ed }
@@ -609,18 +609,18 @@ ucode:
       - add_alu, xsp_ld, ${carry}_carry
       - waitmem, q_fetch
       - ni
-  - mnemo: [ RLC, RRC ]
+  - mnemo: [ RLC, RRC, RL, RR ]
     seq:
       - op2_ld                  # what to shift in op2
       - ${srca}_jsr             # times to shift in op1
       - sh4_alu,  md_ld         # times to shift adjusted in MD
-      - ld1_opnd, ${setw}_setw  # times to shift adjusted in op1
+      - ld1_opnd,               # times to shift adjusted in op1
       - ?${right}, sixt_rmux, ld0_opnd
       - ?${right}, sub_alu, md_ld
       - ?${right}, ld1_opnd
       - one_rmux, ld0_opnd
-      - sh_alu,  sh_carry, ${dst}_ld, ${cc}_cc
-      - sh_alu,  sh_carry, op2_ld
+      - sh_alu,  ${cx}_carry, dst_ld, ${cc}_cc
+      - sh_alu,  ${cx}_carry, op2_ld
       - sub_alu, md_ld
       - sub_alu, ld1_opnd, zni_jsr # return if ALU's z is set
       - jb5                        # jumps back by 5
