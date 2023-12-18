@@ -166,10 +166,10 @@ ops:
   - { name: MINC4, op: 0x13a, ctl: { rmux: four, alu: add }} # only word
   - { name: MIRR,  op: 0x116, ctl: { alu: MIRR, ld: dst } } # only byte
   - { name: NEG,   op: 0x107, ctl: { cc: "${SUB_CC}" }} # only byte/word
-  - { name: RLA,   op: 0x1fa, ctl: { cc: "${SH_CC}"  }} # register A always used RL  A,r
-  - { name: RRA,   op: 0x1fb, ctl: { cc: "${SH_CC}"  }} # register A always used RR  A,r
-  - { name: RLCA,  op: 0x1f8, ctl: { cc: "${SH_CC}"  }} # register A always used RRC A,r
-  - { name: RRCA,  op: 0x1f9, ctl: { cc: "${SH_CC}"  }} # register A always used RRC A,r
+  - { name: RLA,   op: 0x1fa, ctl: { alu: SHL, srca: acc, cc: "${SH_CC}", cx: cin }} # register A always used RL  A,r
+  - { name: RRA,   op: 0x1fb, ctl: { alu: SHR, srca: acc, cc: "${SH_CC}", cx: cin }} # register A always used RR  A,r
+  - { name: RLCA,  op: 0x1f8, ctl: { alu: SHL, srca: acc, cc: "${SH_CC}", cx: sa  }} # register A always used RRC A,r
+  - { name: RRCA,  op: 0x1f9, ctl: { alu: SHR, srca: acc, cc: "${SH_CC}", cx: sh  }} # register A always used RRC A,r
   - { name: SCC,   op: 0x170, mask: 0x3f0 } # SCC cc,r cc = #4
   - { name: SLAA,  op: 0x1fc, ctl: { cc: "${SH_CC}"  }, opmask: 0x3fd } # register A always used SLL A,r SLA=SLL
   - { name: SRAA,  op: 0x1fd, ctl: { cc: "${SH_CC}"  }} # register A always used SRA A,r
@@ -184,14 +184,14 @@ ops:
   - { name: ORCF,  op: 0x121, ctl: { alu: BOR,  srca: num4, carry: cin, cc: c }}
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, srca: num4, carry: cin, cc: c }}
   - { name: RES,   op: 0x130 }
-  - { name: RL,    op: 0x1ea, ctl: { cc: "${SH_CC}", srca: num4, cx: cin }}
-  - { name: RLC,   op: 0x1e8, ctl: { cc: "${SH_CC}", srca: num4, cx: sh  }}
-  - { name: RR,    op: 0x1eb, ctl: { cc: "${SH_CC}", srca: num4, cx: cin, right: 1 }}
-  - { name: RRC,   op: 0x1e9, ctl: { cc: "${SH_CC}", srca: num4, cx: sh,  right: 1 }}
+  - { name: RL,    op: 0x1ea, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}", cx: cin }}
+  - { name: RLC,   op: 0x1e8, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}", cx: sa  }}
+  - { name: RR,    op: 0x1eb, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}", cx: cin }}
+  - { name: RRC,   op: 0x1e9, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}", cx: sh  }}
   - { name: SET,   op: 0x131 }
-  - { name: SLA,   op: 0x1ec, opmask: 0x3fd } # SLA=SLL
-  - { name: SRA,   op: 0x1ed }
-  - { name: SRL,   op: 0x1ef }
+  - { name: SLA,   op: 0x1ec, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}" }, opmask: 0x3fd } # SLA=SLL
+  - { name: SRA,   op: 0x1ed, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}",  cx: sa }}
+  - { name: SRL,   op: 0x1ef, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}"          }}
   - { name: STCF,  op: 0x124 }
   - { name: TSET,  op: 0x134, ctl: { cc: "${TSET_CC}" } }
 
@@ -224,10 +224,10 @@ ops:
   - { name: INCM,  op: 0x260, ctl: { alu: ADD, srca: num3, cc: "${INC_CC}" }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: ORM,   op: 0x23e, ctl: { srca: imm, cc: "${OR_CC}" }}
   - { name: PUSHM, op: 0x204 }
-  - { name: RLCM,  op: 0x278 }
-  - { name: RLM,   op: 0x27a }
-  - { name: RRCM,  op: 0x279 }
-  - { name: RRM,   op: 0x27b }
+  - { name: RLCM,  op: 0x278, ctl: { alu: SHL, cc: "${SH_CC}", cx: sa  }}
+  - { name: RRCM,  op: 0x279, ctl: { alu: SHR, cc: "${SH_CC}", cx: sh  }}
+  - { name: RLM,   op: 0x27a, ctl: { alu: SHL, cc: "${SH_CC}", cx: cin }}
+  - { name: RRM,   op: 0x27b, ctl: { alu: SHR, cc: "${SH_CC}", cx: cin }}
   - { name: SBCM,  op: 0x23b, ctl: { alu: SUB, srca: imm, carry: cin, cc: "${SUB_CC}" }}
   - { name: SLAM,  op: 0x27c, opmask: 0x3fd } # SLA=SLM
   - { name: SRAM,  op: 0x27d }
@@ -609,18 +609,23 @@ ucode:
       - add_alu, xsp_ld, ${carry}_carry
       - waitmem, q_fetch
       - ni
-  - mnemo: [ RLC, RRC, RL, RR ]
+  - mnemo: [ SRA, SRL, RLC, RRC, RL, RR ]
     seq:
       - op2_ld                  # what to shift in op2
       - ${srca}_jsr             # times to shift in op1
       - sh4_alu,  md_ld         # times to shift adjusted in MD
       - ld1_opnd,               # times to shift adjusted in op1
-      - ?${right}, sixt_rmux, ld0_opnd
-      - ?${right}, sub_alu, md_ld
-      - ?${right}, ld1_opnd
       - one_rmux, ld0_opnd
-      - sh_alu,  ${cx}_carry, dst_ld, ${cc}_cc
-      - sh_alu,  ${cx}_carry, op2_ld
+      - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc
+      - ${alu}_alu,  ${cx}_carry, op2_ld
       - sub_alu, md_ld
       - sub_alu, ld1_opnd, zni_jsr # return if ALU's z is set
       - jb5                        # jumps back by 5
+  - mnemo: [ RLCM, RRCM, RLM, RRM ]
+    seq:
+      - op2_ld, inc_pc
+      - ${alu}_alu, ${cx}_carry, md_ld, ${cc}_cc
+      - m_ea, wr
+      - waitmem
+      - waitmem, q_fetch
+      - ni

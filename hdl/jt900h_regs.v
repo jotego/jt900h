@@ -196,7 +196,7 @@ always @(posedge clk, posedge rst) begin
                     if( dst[7] )
                         ptrs[dst[3:2]] <= rslt;
                     else
-                        accs[dst[5:2]] <= rslt[15:0];
+                        accs[dst[5:2]] <= rslt;
                 end
             end
             RFP_LD: rfp <= rslt[1:0];

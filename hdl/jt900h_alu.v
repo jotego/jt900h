@@ -60,11 +60,12 @@ always @* begin
     case( carry_sel )
         CIN_CARRY: cx =  cin;
         COM_CARRY: cx = ~cin;
-        SG_CARRY:  cx = bs ? op0[7] : ws ? op0[15] : op0[31];
         B0_CARRY:  cx = op0[0]; // PAA instruction
-        SH_CARRY:  cx = op2[0]; // used for shifts
         HI_CARRY:  cx = 1;
         ZF_CARRY:  cx = zin;
+        // used for shifts
+        SA_CARRY:  cx = bs ? op2[7] : ws ? op2[15] : op2[31];   // shift arithmetic
+        SH_CARRY:  cx = op2[0];
         default:   cx = 0;
     endcase
 
@@ -94,12 +95,16 @@ always @* begin
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
-        SH_ALU: begin // only shift to the right
-            rslt = op2 >> 1;
+        SHL_ALU: begin // shift one bit left
+            {cc[2],rslt} = {op2,cx};
+            cc[0] = op2[ 7];
+            cc[1] = op2[15];
+        end
+        SHR_ALU: begin // shift one bit right
+            {rslt,cc[0]} = {cx,op2};
             if( bs ) rslt[ 7] = cx;
             if( ws ) rslt[15] = cx;
-            if( qs ) rslt[31] = cx;
-            cc = {3{op2[0]}};
+            cc[2:1] = {2{op2[0]}};
         end
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
