@@ -85,8 +85,8 @@ ops:
   - { name: CCF,    op: 0x012, ctl: { carry: com, cc: n0c } }
   - { name: NOP,    op: 0x000 }
   - { name: PUSHA,  op: 0x014 }
-  - { name: POPA,   op: 0x015 }
-  - { name: PUSHF,  op: 0x018 }
+  - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b }}
+  - { name: PUSHF,  op: 0x018, ctl: { dst: f  , setw: b }}
   - { name: POPF,   op: 0x019 }
   - { name: POP,    op: 0x048, ctl: { setw: w }, mask: 0x3f8 } # POP R
   - { name: POP,    op: 0x058, ctl: { setw: q }, mask: 0x3f8 } # POP R
@@ -95,7 +95,7 @@ ops:
   - { name: PUSH,   op: 0x009, ctl: { setw: b } }
   - { name: PUSH,   op: 0x00b, ctl: { setw: w } }
   - { name: PUSH,   op: 0x002, ctl: { setw: w } } # PUSH SR
-  - { name: POP,    op: 0x003, ctl: { setw: w } } # POP SR
+  - { name: POPSR,  op: 0x003, ctl: { dst: sr, setw: w, carry: hi } } # POP SR
   - { name: RCF,    op: 0x010, ctl: { cc: h0n0c0 } }
   - { name: RET,    op: 0x00e }
   - { name: RETD,   op: 0x00f }
@@ -133,6 +133,7 @@ ops:
   - { name: INC,    op: 0x160, ctl: { alu: ADD, srca: num3, cc: "${INC_CC}" }, mask: 0x3f8 } # INC #3,r
   - { name: LDC,    op: 0x12e } # LDC cr,r
   - { name: LDC,    op: 0x12f } # LDC r,cr
+  - { name: LDCF,   op: 0x12b, ctl: { alu: BOR, srca: acc,             cc: c }} # register A always used
   - { name: ORCF,   op: 0x129, ctl: { alu: BOR, srca: acc, carry: cin, cc: c }} # register A always used
   - { name: PAA,    op: 0x114 } # PAA r
   - { name: POPr2,  op: 0x105 } # POP r
@@ -156,7 +157,6 @@ ops:
   - { name: XOR,   op: 0x1cd, ctl: { alu: XOR, srca: imm, cc: "${OR_CC}"  } }
   # group 1 but limited valid addressing
   - { name: CPL,   op: 0x106, ctl: { alu: CPL, ld: dst, cc: h1n1 } } # only byte/word
-  - { name: LDCFA, op: 0x12b, ctl: { cc: c }} # register A always used
   - { name: LINK,  op: 0x10c                } # only long word
   - { name: MDEC1, op: 0x13c, ctl: { rmux: one,  alu: sub }} # only word
   - { name: MDEC2, op: 0x13d, ctl: { rmux: two,  alu: sub }} # only word
@@ -181,7 +181,7 @@ ops:
   - { name: ANDCF, op: 0x120, ctl: { alu: BAND, srca: num4, carry: cin, cc: c }}
   - { name: BIT,   op: 0x133, ctl: { alu: BXOR, srca: num4, carry: hi, cc: "${BIT_CC}" }}
   - { name: CHG,   op: 0x132, ctl: { alu: BXOR, srca: num4, carry: hi } }
-  - { name: LDCF,  op: 0x123, ctl: { cc: c }}
+  - { name: LDCF,  op: 0x123, ctl: { alu: BOR,  srca: num4,             cc: c }}
   - { name: ORCF,  op: 0x121, ctl: { alu: BOR,  srca: num4, carry: cin, cc: c }}
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, srca: num4, carry: cin, cc: c }}
   - { name: RES,   op: 0x130 }
@@ -204,8 +204,8 @@ ops:
   - { name: ADDM,  op: 0x288, ctl: { alu: ADD,             srca: rmem,          cc: "${ADD_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: AND,   op: 0x2c0, ctl: { alu: AND,             srca: rmem, ld: dst, cc: "${AND_CC}" }, mask: 0x3f8 }
   - { name: ANDM,  op: 0x2c8, ctl: { alu: AND,             srca: memr,          cc: "${AND_CC}" }, mask: 0x3f8 }
-  - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: rmem,          cc: szhvn1c     }, mask: 0x3f8 }
-  - { name: CPM,   op: 0x2f8, ctl: { alu: SUB,             srca: memr,          cc: szhvn1c     }, mask: 0x3f8 }
+  - { name: CP,    op: 0x2f0, ctl: { alu: SUB,             srca: rmem,          cc: "${SUB_CC}" }, mask: 0x3f8 }
+  - { name: CPM,   op: 0x2f8, ctl: { alu: SUB,             srca: memr,          cc: "${SUB_CC}" }, mask: 0x3f8 }
   - { name: EXM,   op: 0x230, mask: 0x3f8 }
   - { name: OR,    op: 0x2e0, ctl: { alu: OR,  cc: "${OR_CC}"  }, mask: 0x3f0 }
   - { name: SBC,   op: 0x2b0, ctl: { alu: SUB, cc: "${SUB_CC}", carry: cin }, mask: 0x3f0, cycles: 1 }
@@ -221,7 +221,7 @@ ops:
   - { name: ADCM,  op: 0x239, ctl: { alu: ADD, carry: cin, srca: imm, cc: "${ADD_CC}" }}
   - { name: ADDM,  op: 0x238, ctl: { alu: ADD,             srca: imm, cc: "${ADD_CC}" }}
   - { name: ANDM,  op: 0x23c, ctl: { alu: AND,             srca: imm, cc: "${AND_CC}" }}
-  - { name: CP,    op: 0x23f, ctl: { alu: SUB,             srca: imm, cc: "${SUB_CC}" }}
+  - { name: CPM,   op: 0x23f, ctl: { alu: SUB,             srca: imm, cc: "${SUB_CC}" }}
   - { name: DECM,  op: 0x268, ctl: { alu: SUB, srca: num3, cc: "${DEC_CC}" }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: INCM,  op: 0x260, ctl: { alu: ADD, srca: num3, cc: "${INC_CC}" }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: ORM,   op: 0x23e, ctl: { srca: imm, cc: "${OR_CC}" }}
@@ -264,20 +264,20 @@ ops:
   # group 3 1m11'mmmm #3,(mem)
   - { name: ANDCF, op: 0x380, ctl: { alu: BAND, carry: cin, srca: acc,  cc: c          }, mask: 0x3f8 }
   - { name: BIT,   op: 0x3c8, ctl: { alu: BXOR, carry: hi,  srca: num3, cc: "${BIT_CC}"}, mask: 0x3f8 }
-  - { name: CALLcc,op: 0x3e0,                                                         mask: 0x3f0 }
-  - { name: CHG,   op: 0x3c0, ctl: { alu: BXOR, srca: num3, carry: hi },              mask: 0x3f8 }
-  - { name: LDCF,  op: 0x398, ctl: {                                     cc: c },     mask: 0x3f8 }
-  - { name: ORCF,  op: 0x388, ctl: { alu: BOR,  srca: num3, carry: cin,  cc: c },     mask: 0x3f8 }
-  - { name: XORCF, op: 0x390, ctl: { alu: BXOR,  srca: num3, carry: cin, cc: c },     mask: 0x3f8 }
+  - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0 }
+  - { name: CHG,   op: 0x3c0, ctl: { alu: BXOR, srca: num3, carry: hi },         mask: 0x3f8 }
+  - { name: LDCF,  op: 0x398, ctl: { alu: BOR,  srca: num3,             cc: c }, mask: 0x3f8 }
+  - { name: ORCF,  op: 0x388, ctl: { alu: BOR,  srca: num3, carry: cin, cc: c }, mask: 0x3f8 }
+  - { name: XORCF, op: 0x390, ctl: { alu: BXOR, srca: num3, carry: cin, cc: c }, mask: 0x3f8 }
   - { name: POPM,  op: 0x304, ctl: { setw: b } }
   - { name: POPM,  op: 0x306, ctl: { setw: w } }
-  - { name: RES,   op: 0x3b0,                                                         mask: 0x3f8 }
-  - { name: SET,   op: 0x3b8,                                                         mask: 0x3f8 }
-  - { name: STCF,  op: 0x3a0,                                                         mask: 0x3f8 }
-  - { name: TSET,  op: 0x3a8, ctl: { cc: "${TSET_CC}" },                              mask: 0x3f8 }
+  - { name: RES,   op: 0x3b0,                                                    mask: 0x3f8 }
+  - { name: SET,   op: 0x3b8,                                                    mask: 0x3f8 }
+  - { name: STCF,  op: 0x3a0,                                                    mask: 0x3f8 }
+  - { name: TSET,  op: 0x3a8, ctl: { cc: "${TSET_CC}" },                         mask: 0x3f8 }
   # group 3 1m11'mmmm A,(mem)
   - { name: ANDCF, op: 0x328, ctl: { alu: BAND, carry: cin, srca: acc, cc: c }}
-  - { name: LDCF,  op: 0x32b, ctl: { cc: c }}
+  - { name: LDCF,  op: 0x32b, ctl: { alu: BOR,  srca: acc, cc: c }}
   - { name: ORCF,  op: 0x329, ctl: { alu: BOR,  srca: acc, carry: cin, cc: c }}
   - { name: XORCF, op: 0x32a, ctl: { alu: BXOR, srca: acc, carry: cin, cc: c }}
   - { name: STCF,  op: 0x32c }
@@ -390,8 +390,8 @@ ucode:
       - full, dst_ral, s8_fetch, inc_pc
       - g1_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
-  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CPL, DEC, INC,
-            MIRR, LD, OR, ORCF, RCF, SUB, SBC, SCF, XOR, XORCF, ZCF ]
+  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CP, CPL, DEC, INC,
+            MIRR, LD, LDCF, OR, ORCF, RCF, SUB, SBC, SCF, XOR, XORCF, ZCF ]
     seq:
       - ${srca}_jsr
       - ?${swp}, swp_opnd, swp_ral
@@ -400,7 +400,7 @@ ucode:
       - waitmem, q_fetch
       - ni
   # save to memory
-  - mnemo: [ ADCM, ADDM, ANDM, DECM, INCM, ORM, SUBM, SBCM, XORM, LDM ]
+  - mnemo: [ ADCM, ADDM, ANDM, CPM, DECM, INCM, ORM, SUBM, SBCM, XORM, LDM ]
     seq:
       - ${srca}_jsr
       - ${alu}_alu, ${carry}_carry, md_ld, ${cc}_cc
@@ -602,4 +602,13 @@ ucode:
       - sp_ea, waitmem
       - add_alu, pc_ld      # jump address
       - waitmem, q_fetch    # jump
+      - ni
+  - mnemo: [ POPF, POPA, POPSR ]
+    seq:
+      - inc_pc, ${setw}_setw, one_rmux, ld1_opnd
+      - sp_ea, waitmem, ${setw}_fetch
+      - ld0_opnd
+      - ${dst}_ld, xsp_rmux, ld0_opnd
+      - add_alu, xsp_ld, ${carry}_carry
+      - waitmem, q_fetch
       - ni

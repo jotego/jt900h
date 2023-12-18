@@ -51,6 +51,7 @@ localparam [3:0] XSP=6,
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 reg  [ 7:0] r3sel, fsel, sdsel, src, dst;
+wire [ 7:0] flags, flags_;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_,   // flags (alt)
 reg  [ 2:0] imask;      // IFF
@@ -59,7 +60,7 @@ wire [15:0] sr;         // status register. lower byte contains the flags
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
-assign sr      = {1'b1,imask,1'b1,rfp,flags};
+assign sr      = {1'b1,imask,2'b10,rfp,flags};
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
@@ -199,6 +200,8 @@ always @(posedge clk, posedge rst) begin
                 if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];
             end
             BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
+            F_LD:   {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
+            SR_LD:  {imask,rfp,s,z,h,v,n,c} <= {rslt[14:12],rslt[9:8],rslt[7:6],rslt[4],rslt[2:0]};
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: imask <= rslt[2:0];
