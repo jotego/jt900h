@@ -25,6 +25,7 @@ module jt900h_ctrl(
     output reg        bs,
     output reg        ws,
     output reg        qs,
+    output reg        cc,       // condition code
 );
 
 `include "900h_param.vh"
@@ -39,26 +40,26 @@ reg  [2:0] iv_sel;
 wire       halt, swi, ni, still;
 reg        nmi_l;
 wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
-reg        stack_bsy, jp_ok;
+reg        stack_bsy, cc;
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
-        0:  jp_ok = 0;          // false
-        1:  jp_ok = flags[FS]^flags[FV];               // signed <
-        2:  jp_ok = flags[FZ] | (flags[FS]^flags[FV]); // signed <=
-        3:  jp_ok = flags[FZ] | flags[FC];             // <=
-        4:  jp_ok = flags[FV];  // overflow
-        5:  jp_ok = flags[FS];  // minux
-        6:  jp_ok = flags[FZ];  // =
-        7:  jp_ok = flags[FC];  // carry
-        8:  jp_ok = 1;          // true
-        9:  jp_ok = ~(flags[FS]^flags[FV]); // >=
-        10: jp_ok = ~(flags[FZ]|(flags[FS]^flags[FV])); // signed >
-        11: jp_ok = ~(flags[FZ]|flags[FC]); // >
-        12: jp_ok = ~flags[FV];
-        13: jp_ok = ~flags[FS];
-        14: jp_ok = ~flags[FZ];
-        15: jp_ok = ~flags[FC];
+        0:  cc = 0;          // false
+        1:  cc = flags[FS]^flags[FV];               // signed <
+        2:  cc = flags[FZ] | (flags[FS]^flags[FV]); // signed <=
+        3:  cc = flags[FZ] | flags[FC];             // <=
+        4:  cc = flags[FV];  // overflow
+        5:  cc = flags[FS];  // minux
+        6:  cc = flags[FZ];  // =
+        7:  cc = flags[FC];  // carry
+        8:  cc = 1;          // true
+        9:  cc = ~(flags[FS]^flags[FV]); // >=
+        10: cc = ~(flags[FZ]|(flags[FS]^flags[FV])); // signed >
+        11: cc = ~(flags[FZ]|flags[FC]); // >
+        12: cc = ~flags[FV];
+        13: cc = ~flags[FS];
+        14: cc = ~flags[FZ];
+        15: cc = ~flags[FC];
     endcase
 end
 
@@ -77,7 +78,7 @@ always @(posedge clk, posedge rst) begin
             stack_bsy  <= 0;
             {bs,ws,qs} <= 0;
         end
-        if( jsr_en && (jsr_sel!=NCC_JSR || !jp_ok) ) begin
+        if( jsr_en && (jsr_sel!=NCC_JSR || !cc) ) begin
             jsr_ret      <= uaddr;
             jsr_ret[3:0] <= nx_ualo;
             uaddr        <= jsr_ua;

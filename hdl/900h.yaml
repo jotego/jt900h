@@ -90,10 +90,10 @@ ops:
   - { name: POPF,   op: 0x019 }
   - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, carry: hi }, mask: 0x3f8 } # POP R
   - { name: POPQ,   op: 0x058, mask: 0x3f8 } # POP R
-  - { name: PUSHr,  op: 0x028, ctl: { setw: w }, mask: 0x3f8 } # PUSH R
-  - { name: PUSHr,  op: 0x038, ctl: { setw: q }, mask: 0x3f8 } # PUSH R
-  - { name: PUSH,   op: 0x009, ctl: { setw: b }}
-  - { name: PUSH,   op: 0x00b, ctl: { setw: w }}
+  - { name: PUSHR,  op: 0x028, ctl: { setw: w }, mask: 0x3f8 } # PUSH R
+  - { name: PUSHR,  op: 0x038, ctl: { setw: q }, mask: 0x3f8 } # PUSH R
+  - { name: PUSHW,  op: 0x009, ctl: { setw: b }}
+  - { name: PUSHW,  op: 0x00b, ctl: { setw: w }}
   - { name: PUSHSR, op: 0x002, ctl: { rmux: f, setw: w }} # PUSH SR
   - { name: POPSR,  op: 0x003, ctl: { dst: sr, setw: w, carry: hi }} # POP SR
   - { name: RCF,    op: 0x010, ctl: { cc: h0n0c0 }}
@@ -131,13 +131,13 @@ ops:
   - { name: EXTS,   op: 0x113, ctl: { ext: sex }}
   - { name: EXTZ,   op: 0x112, ctl: { ext: zex }}
   - { name: INC,    op: 0x160, ctl: { alu: ADD, srca: num3, cc: "${INC_CC}" }, mask: 0x3f8 } # INC #3,r
-  - { name: LDC,    op: 0x12e } # LDC cr,r
-  - { name: LDC,    op: 0x12f } # LDC r,cr
+  - { name: LDC,    op: 0x12e, ctl: { srca: cr1, ld: cr  }} # LDC cr,r
+  - { name: LDC,    op: 0x12f, ctl: { srca: cr0, ld: dst }} # LDC r,cr
   - { name: LDCF,   op: 0x12b, ctl: { alu: BOR, srca: acc,             cc: c }} # register A always used
   - { name: ORCF,   op: 0x129, ctl: { alu: BOR, srca: acc, carry: cin, cc: c }} # register A always used
   - { name: PAA,    op: 0x114, ctl: { alu: ADD, carry: b0, srca: zero }} # PAA r
   - { name: POPr,   op: 0x105 } # POP r
-  - { name: PUSHr2, op: 0x104 } # PUSH r
+  - { name: PUSHR,  op: 0x104 } # PUSH r
   - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, srca: acc, carry: cin, cc: c }} # register A always used
   # group 1 with immediate data ADC r,#
   - { name: ADC,   op: 0x1c9, ctl: { alu: ADD, carry: cin, srca: imm, ld: dst, cc: "${ADD_CC}" }}
@@ -174,7 +174,7 @@ ops:
   - { name: SLAA,  op: 0x1fc, ctl: { alu: SHL, srca: acc,         cc: "${SH_CC}"  }, opmask: 0x3fd } # register A always used SLL A,r SLA=SLL
   - { name: SRAA,  op: 0x1fd, ctl: { alu: SHR, srca: acc, cx: sa, cc: "${SH_CC}"  }} # register A always used SRA A,r
   - { name: SRLA,  op: 0x1ff, ctl: { alu: SHR, srca: acc,         cc: "${SH_CC}"  }} # register A always used SRL A,r
-  - { name: STCFA, op: 0x12c                } # register A always used STCF A,r
+  - { name: STCFM, op: 0x12c, ctl: {           srca: acc, cx: cin }}
   - { name: UNLK,  op: 0x10d                } # first byte always 0xe8 & 0xf8
   # #4,r
   - { name: ANDCF, op: 0x120, ctl: { alu: BAND, srca: num4, carry: cin, cc: c }}
@@ -183,16 +183,16 @@ ops:
   - { name: LDCF,  op: 0x123, ctl: { alu: BOR,  srca: num4,             cc: c }}
   - { name: ORCF,  op: 0x121, ctl: { alu: BOR,  srca: num4, carry: cin, cc: c }}
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, srca: num4, carry: cin, cc: c }}
-  - { name: RES,   op: 0x130 }
-  - { name: RL,    op: 0x1ea, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}", cx: cin }}
-  - { name: RLC,   op: 0x1e8, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}", cx: sa  }}
-  - { name: RR,    op: 0x1eb, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}", cx: cin }}
-  - { name: RRC,   op: 0x1e9, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}", cx: sh  }}
-  - { name: SET,   op: 0x131 }
-  - { name: SLA,   op: 0x1ec, ctl: { alu: SHL, srca: num4, cc: "${SH_CC}" }, opmask: 0x3fd } # SLA=SLL
-  - { name: SRA,   op: 0x1ed, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}",  cx: sa }}
-  - { name: SRL,   op: 0x1ef, ctl: { alu: SHR, srca: num4, cc: "${SH_CC}"          }}
-  - { name: STCF,  op: 0x124 }
+  - { name: RES,   op: 0x130, ctl: {            srca: num4 }}
+  - { name: RL,    op: 0x1ea, ctl: { alu: SHL,  srca: num4, cc: "${SH_CC}", cx: cin }}
+  - { name: RLC,   op: 0x1e8, ctl: { alu: SHL,  srca: num4, cc: "${SH_CC}", cx: sa  }}
+  - { name: RR,    op: 0x1eb, ctl: { alu: SHR,  srca: num4, cc: "${SH_CC}", cx: cin }}
+  - { name: RRC,   op: 0x1e9, ctl: { alu: SHR,  srca: num4, cc: "${SH_CC}", cx: sh  }}
+  - { name: SET,   op: 0x131, ctl: {            srca: num4, cx: hi }}
+  - { name: SLA,   op: 0x1ec, ctl: { alu: SHL,  srca: num4, cc: "${SH_CC}" }, opmask: 0x3fd } # SLA=SLL
+  - { name: SRA,   op: 0x1ed, ctl: { alu: SHR,  srca: num4, cc: "${SH_CC}",  cx: sa }}
+  - { name: SRL,   op: 0x1ef, ctl: { alu: SHR,  srca: num4, cc: "${SH_CC}"          }}
+  - { name: STCF,  op: 0x124, ctl: {            srca: num4, cx: cin }}
   - { name: TSET,  op: 0x134, ctl: { cc: "${TSET_CC}" }}
 
   # group 2 - R,(mem) - (mem),R
@@ -268,10 +268,10 @@ ops:
   - { name: XORCF, op: 0x390, ctl: { alu: BXOR, srca: num3, carry: cin, cc: c }, mask: 0x3f8 }
   - { name: POPM,  op: 0x304, ctl: { setw: b }}
   - { name: POPM,  op: 0x306, ctl: { setw: w }}
-  - { name: RES,   op: 0x3b0,                                                    mask: 0x3f8 }
-  - { name: SET,   op: 0x3b8,                                                    mask: 0x3f8 }
-  - { name: STCF,  op: 0x3a0,                                                    mask: 0x3f8 }
-  - { name: TSET,  op: 0x3a8, ctl: { cc: "${TSET_CC}" },                         mask: 0x3f8 }
+  - { name: RESM,  op: 0x3b0, ctl: { srca: num3          },          mask: 0x3f8 }
+  - { name: SETM,  op: 0x3b8, ctl: { srca: num3, cx: hi  },          mask: 0x3f8 }
+  - { name: STCFM, op: 0x3a0, ctl: { srca: num3, cx: cin },          mask: 0x3f8 }
+  - { name: TSET,  op: 0x3a8, ctl: { srca: num3, cc: "${TSET_CC}" }, mask: 0x3f8 }
   # group 3 1m11'mmmm A,(mem)
   - { name: ANDCF, op: 0x328, ctl: { alu: BAND, carry: cin, srca: acc, cc: c }}
   - { name: LDCF,  op: 0x32b, ctl: { alu: BOR,  srca: acc, cc: c }}
@@ -322,6 +322,17 @@ ucode:
       - s8_fetch, inc_pc
       - src_ral
       - ret_jsr, src_rmux, ld1_opnd
+  - name: cr0
+    auto: true
+    seq:
+      - inc_pc, s8_fetch
+      - cr_rd
+      - cr_rmux, ld0_opnd, ret_jsr  # loaded into op0 because it is used for a transfer only
+  - name: cr1
+    auto: true
+    seq:
+      - inc_pc, s8_fetch
+      - ret_jsr  # loaded into md
   - name: zero
     auto: true
     seq:
@@ -392,7 +403,8 @@ ucode:
       - g1_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
   - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CP, CPL, DEC, INC,
-            LD, LDCF, MIRR, NOP, OR, ORCF, PAA, RCF, SUB, SBC, SCF, XOR, XORCF, ZCF ]
+            LD, LDC, LDCF, MIRR, NOP, OR, ORCF, PAA, RCF,
+            SUB, SBC, SCF, XOR, XORCF, ZCF ]
     seq:
       - ${srca}_jsr
       - ?${swp}, swp_opnd, swp_ral
@@ -623,6 +635,38 @@ ucode:
       - waitmem
       - waitmem, q_fetch
       - ni
+  - mnemo: [ PUSHR ]
+    seq:
+      - inc_pc, ${setw}_setw
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd, src_ral
+      - sub_alu, xsp_ld, src_rmux, ld0_opnd
+      - md_ld
+      - sp_ea, wr
+      - waitmem
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ PUSHW ]
+    seq:
+      - inc_pc, ${setw}_setw, s8_fetch
+      - ?${setw}=w, inc_pc
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd
+      - sub_alu, xsp_ld
+      - sp_ea, wr
+      - waitmem
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ PUSHM ]
+    seq:
+      - inc_pc, ${setw}_setw
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd
+      - sub_alu, xsp_ld
+      - sp_ea, wr
+      - waitmem
+      - waitmem, q_fetch
+      - ni
   - mnemo: [ POP, POPF, POPA, POPSR ]
     seq:
       - inc_pc, ${setw}_setw
@@ -660,6 +704,13 @@ ucode:
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
+  - mnemo: [ SCC ]
+    seq:
+      - inc_pc, s8_fetch
+      - cc_rmux, ld0_opnd
+      - dst_ld
+      - waitmem, q_fetch
+      - ni
   - mnemo: [ SLA, SLAA, SRAA, SRLA, SRA, SRL, RLC, RRC, RL, RLA, RLCA, RR, RRA, RRCA ]
     seq:
       - op2_ld                  # what to shift in op2
@@ -687,6 +738,20 @@ ucode:
       - ${alu}_alu, md_ld
       - s8_fetch  # shifts MD by 8 bits
       - m_ea, wr
+      - waitmem
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ RES, SET, STCF ]
+    seq:
+      - ${srca}_jsr
+      - bset_alu, dst_ld, inc_pc, ${cx}_carry
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ RESM, SETM, STCFM ]
+    seq:
+      - ${srca}_jsr
+      - bset_alu, md_ld, ${cx}_carry
+      - m_ea, write
       - waitmem
       - waitmem, q_fetch
       - ni

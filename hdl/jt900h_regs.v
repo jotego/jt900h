@@ -20,7 +20,6 @@ module jt900h_regs(
     input             rst,
     input             clk,
     input             cen,
-    input      [31:0] cr,       // control register
     // memory unit
     input      [23:0] ea,
     input      [31:0] din,      // data from memory controller
@@ -39,6 +38,11 @@ module jt900h_regs(
     input             zex,
     input             sex,
     input             shex,
+    // "Control Registers" (MCU MMR)
+    output reg [ 7:0] cra,
+    output     [31:0] crin,
+    input      [31:0] cr,
+    output reg        cr_we,    // cr_rd goes directly from control unit
     // register outputs
     output reg [23:0] pc,
     output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
@@ -52,6 +56,7 @@ module jt900h_regs(
 localparam [3:0] XSP=6,
                   BC=4;
 
+reg  [31:0] md;
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 reg  [ 7:0] r3sel, fsel, sdsel, src, dst;
@@ -65,6 +70,7 @@ wire [15:0] sr;         // status register. lower byte contains the flags
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,2'b10,rfp,flags};
+assign cra     = md[7:0];
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
@@ -88,6 +94,7 @@ always @* begin
         PC_RMUX:  rmux = {8'd0,pc};
         RFP_RMUX: rmux[1:0] = rfp;
         XSP_RMUX: rmux = ptrs[XSP];
+        CC_RMUX:  rmux = {31'd0,cc}
 
         SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
         N3_RMUX:  rmux = {29'd0,md[2:0]};
@@ -121,6 +128,7 @@ always @(posedge clk, posedge rst) begin
         md    <= 0;
         pc    <= 0;
         imask <= 7;
+        cr_we <= 0;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
@@ -129,6 +137,7 @@ always @(posedge clk, posedge rst) begin
         {s, z, h, v, n, c } <= 0;
         {s_,z_,h_,v_,n_,c_} <= 0;
     end else if(cen) begin
+        cr_we <= 0;
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         case( cc_sel )
             SZHVN0C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
@@ -214,6 +223,7 @@ always @(posedge clk, posedge rst) begin
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: imask <= rslt[2:0];
             DA_LD:  da <= rslt[23:0];
+            CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase
     end

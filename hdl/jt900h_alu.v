@@ -88,12 +88,13 @@ always @* begin
             // update v
         end
         DAA_ALU: rslt[7:0] = daa;
-        BAND_ALU: { cc[0]=bsel & cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
-        BOR_ALU:  { cc[0]=bsel | cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
-        BXOR_ALU: { cc[0]=bsel ^ cx; rslt[{1'b0,op1[3:0]}]=cc[0]; }
+        BAND_ALU: begin cc[0]=bsel & cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
+        BOR_ALU:  begin cc[0]=bsel | cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
+        BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
         OR_ALU:   rslt = op0^op1;
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
+        BSET_ALU: op0[{1'b0,ws&op1[3],op1[2:0]}]=cx;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         SHL_ALU: begin // shift one bit left
             {cc[2],rslt} = {op2,cx};
