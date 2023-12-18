@@ -25,7 +25,7 @@ module jt900h_alu(
     input      [31:0] op1,      // source
     input      [31:0] op2,      // extra operand
     input             cin,
-    input      [ 2:0] w,
+    input             bs,ws,
 
     input             nin, hin, cin, zin,
     output            n,z,
@@ -39,8 +39,8 @@ wire bsel;
 reg  [ 7:0] daa;
 wire        daa_carry;
 
-assign z = w[0] ? z8 : w[1] ? z16 : z32;
-assign n = w[0] ? n8 : w[1] ? n16 : n32;
+assign z = bs ? z8 : ws ? z16 : z32;
+assign n = bs ? n8 : ws ? n16 : n32;
 assign bsel = op0[{1'b0,op1[3:0]}];
 
 // daa is the value to add during the DAA instruction
@@ -60,6 +60,7 @@ always @* begin
     case( carry_sel )
         CIN_CARRY: cx =  cin;
         COM_CARRY: cx = ~cin;
+        SG_CARRY:  cx = bs ? op0[7] : ws ? op0[15] : op0[31];
         B0_CARRY:  cx = op0[0]; // PAA instruction
         HI_CARRY:  cx = 1;
         ZF_CARRY:  cx = zin;
@@ -92,6 +93,13 @@ always @* begin
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
+        SH_ALU: begin // only shift to the right
+            rslt = op0 >> 1;
+            if( bs ) rslt[ 7] = cx;
+            if( ws ) rslt[15] = cx;
+            if( qs ) rslt[31] = cx;
+            cc = {3{op0[0]}};
+        end
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15] };

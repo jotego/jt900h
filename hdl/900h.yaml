@@ -171,8 +171,7 @@ ops:
   - { name: RLCA,  op: 0x1f8, ctl: { cc: "${SH_CC}"  }} # register A always used RRC A,r
   - { name: RRCA,  op: 0x1f9, ctl: { cc: "${SH_CC}"  }} # register A always used RRC A,r
   - { name: SCC,   op: 0x170, mask: 0x3f0 } # SCC cc,r cc = #4
-  - { name: SLAA,  op: 0x1fc, ctl: { cc: "${SH_CC}"  }} # register A always used SLL A,r
-  - { name: SLLA,  op: 0x1fe, ctl: { cc: "${SH_CC}"  }} # register A always used SLL A,r
+  - { name: SLAA,  op: 0x1fc, ctl: { cc: "${SH_CC}"  }, opmask: 0x3fd } # register A always used SLL A,r SLA=SLL
   - { name: SRAA,  op: 0x1fd, ctl: { cc: "${SH_CC}"  }} # register A always used SRA A,r
   - { name: SRLA,  op: 0x1ff, ctl: { cc: "${SH_CC}"  }} # register A always used SRL A,r
   - { name: STCFA, op: 0x12c                } # register A always used STCF A,r
@@ -190,8 +189,7 @@ ops:
   - { name: RR,    op: 0x1eb }
   - { name: RRC,   op: 0x1e9 }
   - { name: SET,   op: 0x131 }
-  - { name: SLA,   op: 0x1ec }
-  - { name: SLL,   op: 0x1ee }
+  - { name: SLA,   op: 0x1ec, opmask: 0x3fd } # SLA=SLL
   - { name: SRA,   op: 0x1ed }
   - { name: SRL,   op: 0x1ef }
   - { name: STCF,  op: 0x124 }
@@ -231,8 +229,7 @@ ops:
   - { name: RRCM,  op: 0x279 }
   - { name: RRM,   op: 0x27b }
   - { name: SBCM,  op: 0x23b, ctl: { alu: SUB, srca: imm, carry: cin, cc: "${SUB_CC}" }}
-  - { name: SLAM,  op: 0x27c }
-  - { name: SLLM,  op: 0x27e }
+  - { name: SLAM,  op: 0x27c, opmask: 0x3fd } # SLA=SLM
   - { name: SRAM,  op: 0x27d }
   - { name: SRLM,  op: 0x27f }
   - { name: SUBM,  op: 0x23a, ctl: { alu: SUB, srca: imm, cc: "${SUB_CC}" }}
