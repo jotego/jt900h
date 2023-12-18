@@ -550,7 +550,7 @@ ucode:
     seq:
       - w_setw, imm_jsr         # op0 holds the register value
       - ${rmux}_rmux, ld1_opnd
-      - ${alu}_alu,ld2_opnd     # op2 holds the modified LSB
+      - ${alu}_alu, op2_ld      # op2 holds the modified LSB
       - md_rmux, ld1_opnd       # op1 holds the mask
       - mod_alu, dst_ld
       - waitmem, q_fetch
@@ -609,3 +609,18 @@ ucode:
       - add_alu, xsp_ld, ${carry}_carry
       - waitmem, q_fetch
       - ni
+  - mnemo: [ RLC, RRC ]
+    seq:
+      - op2_ld                  # what to shift in op2
+      - ${srca}_jsr             # times to shift in op1
+      - sh4_alu,  md_ld         # times to shift adjusted in MD
+      - ld1_opnd, ${setw}_setw  # times to shift adjusted in op1
+      - ?${right}, sixt_rmux, ld0_opnd
+      - ?${right}, sub_alu, md_ld
+      - ?${right}, ld1_opnd
+      - one_rmux, ld0_opnd
+      - sh_alu,  sh_carry, ${dst}_ld, ${cc}_cc
+      - sh_alu,  sh_carry, op2_ld
+      - sub_alu, md_ld
+      - sub_alu, ld1_opnd, zni_jsr # return if ALU's z is set
+      - jb5                        # jumps back by 5

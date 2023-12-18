@@ -36,11 +36,15 @@ module jt900h_regs(
     input             bs,
     input             ws,
     input             qs,
+    input             zex,
+    input             sex,
+    input             shex,
     // register outputs
     output reg [23:0] pc,
     output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
     output     [31:0] op0,
     output     [31:0] op1,
+    output     [15:0] op2,
 );
 
 `include "900h_param.vh"
@@ -87,17 +91,19 @@ always @* begin
 
         SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
         N3_RMUX:  rmux = {29'd0,md[2:0]};
-        N4_RMUX:  rmux = {28'd0,md[3:0]};
+        N4_RMUX:  rmux = {28'd0, md[3:0]};
 
         ZERO_RMUX:rmux = 0;
         ONE_RMUX: rmux = 1;
         TWO_RMUX: rmux = 2;
         FOUR_RMUX:rmux = 4;
+        SIXT_RMUX:rmux = 16;
 
         EA_RMUX:  rmux = {8'd0,ea};
         default:  rmux = {qs?md[31:16]:16'd0,ws?md[15:8]:8'd0,md[7:0]};
     endcase
     // extend the sign
+    if(   shex   ) rmux[4] = rmux[3:0]==0; // adjust it so a 4'd0 shifts by 16
     if( ws & sex ) rmux[31: 8] = {24{rmux[ 7]}};
     if( qs & sex ) rmux[31:16] = {16{rmux[15]}};
     if( ws & zex ) rmux[31: 8] = 0;
@@ -201,6 +207,7 @@ always @(posedge clk, posedge rst) begin
             end
             BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
             F_LD:   {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
+            OP2_LD: op2 <= rslt[15:0];
             SR_LD:  {imask,rfp,s,z,h,v,n,c} <= {rslt[14:12],rslt[9:8],rslt[7:6],rslt[4],rslt[2:0]};
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
