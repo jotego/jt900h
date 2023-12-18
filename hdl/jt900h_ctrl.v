@@ -21,7 +21,10 @@ module jt900h_ctrl(
     input             clk,
     input             cen,
     input       [7:0] md,
-    input       [7:0] flags
+    input       [7:0] flags,
+    output reg        bs,
+    output reg        ws,
+    output reg        qs,
 );
 
 `include "900h_param.vh"
@@ -61,16 +64,18 @@ end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        uaddr   <= IVRD;
-        jsr_ret <= 0;
-        iv      <= 4'o17; // reset vector
-        ba      <= 0;
-        stack_bsy <= 1;
+        uaddr      <= IVRD;
+        jsr_ret    <= 0;
+        iv         <= 4'o17; // reset vector
+        ba         <= 0;
+        stack_bsy  <= 1;
+        {bs,ws,qs} <= 0;
     end else if(cen) begin
         uaddr[3:0] <= nx_ualo;
         if( ni ) begin
             uaddr <= { 2'd0, md[7:0], 4'd0 };
-            stack_bsy <= 0;
+            stack_bsy  <= 0;
+            {bs,ws,qs} <= 0;
         end
         if( jsr_en && (jsr_sel!=NCC_JSR || !jp_ok) ) begin
             jsr_ret      <= uaddr;

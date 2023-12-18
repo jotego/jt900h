@@ -84,7 +84,7 @@ always @* begin
         A_RMUX:   rmux = {16'd0, ws ? accs[{rfp,2'd1}]:8'd0, accs[{rfp,2'd0}][7:0]};
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
-        F_RMUX:   rmux = alt ? flags_ : flags;
+        F_RMUX:   rmux = { 16'd0, sr[15:8], alt ? flags_ : flags};
         PC_RMUX:  rmux = {8'd0,pc};
         RFP_RMUX: rmux[1:0] = rfp;
         XSP_RMUX: rmux = ptrs[XSP];
@@ -97,6 +97,7 @@ always @* begin
         ONE_RMUX: rmux = 1;
         TWO_RMUX: rmux = 2;
         FOUR_RMUX:rmux = 4;
+        SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
         SIXT_RMUX:rmux = 16;
 
         EA_RMUX:  rmux = {8'd0,ea};
