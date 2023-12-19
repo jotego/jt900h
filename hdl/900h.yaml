@@ -45,9 +45,10 @@ ops:
   - { name: mem_da24, op: 0x0c2, ctl: { setw: b }}  # -1--'0010 (#24)
   - { name: mem_da24, op: 0x0d2, ctl: { setw: w }}  # -1--'0010 (#24)
   - { name: mem_da24, op: 0x0e2, ctl: { setw: q }}  # -1--'0010 (#24)
-  - { name: mem, op: 0x0c3, mask: 0x3ff, ctl: { setw: b }}  # -1--'0011 (r32)
-  - { name: mem, op: 0x0d3, mask: 0x3ff, ctl: { setw: w }}
-  - { name: mem, op: 0x0e3, mask: 0x3ff, ctl: { setw: q }}
+  - { name: mem_r32,  op: 0x0c3, mask: 0x3ff, ctl: { setw: b }}  # -1--'0011 (r32)
+  - { name: mem_r32,  op: 0x0d3, mask: 0x3ff, ctl: { setw: w }}
+  - { name: mem_r32,  op: 0x0e3, mask: 0x3ff, ctl: { setw: q }}
+
   - { name: mem, op: 0x0c4, mask: 0x3ff, ctl: { setw: b }}  # -1--'0100 (-r32)
   - { name: mem, op: 0x0d4, mask: 0x3ff, ctl: { setw: w }}
   - { name: mem, op: 0x0e4, mask: 0x3ff, ctl: { setw: q }}
@@ -289,6 +290,52 @@ ucode:
       - ld1_opnd # operand data in md
       - md_ld, swp_opnd # restores md to have op code, operand data in op0
       - g2_nxgr, ni
+  - name: r32com
+    auto: true
+      - da2ea, swpss
+      - m_ea, q_fetch, waitmem
+      - ld0_opnd
+      - waitmem, q_fetch
+      - g3_nxgr, ni
+  - name: r32_00
+    auto: true
+    seq:
+      - swpss
+      - full, dst_ral, inc_pc, q_setw
+      - dst_rmux, ld0_opnd
+      - da_ld
+      - r32com_jsr
+  - name: r32_01
+    auto: true
+    seq:
+      - swpss
+      - full, dst_ral, inc_pc, q_setw, s8_fetch
+      - dst_rmux, ld0_opnd, w_setw, inc_pc
+      - sex, md_rmux, ld1_opnd, q_setw, inc_pc
+      - add_alu, da_ld
+      - r32com_jsr
+  - name: r32_8
+    auto: true
+    seq:
+      - swpss
+      - inc_pc, s8_fetch, q_setw
+      - inc_pc, s8_fetch, full, dst_ral
+      - dst_rmux, ld0_opnd, b_setw
+      - full, dst_ral
+      - dst_rmux, ld1_opnd
+      - add_alu, da_ld
+      - r32com_jsr
+  - name: r32_16
+    auto: true
+    seq:
+      - swpss
+      - inc_pc, s8_fetch, q_setw
+      - inc_pc, s8_fetch, full, dst_ral
+      - dst_rmux, ld0_opnd, w_setw
+      - full, dst_ral
+      - dst_rmux, ld1_opnd
+      - add_alu, da_ld
+      - r32com_jsr
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing
     seq:
       - q_setw, dst_ral
@@ -589,7 +636,7 @@ ucode:
       - ni
   - mnemo: [ LDA ]
     seq:
-      - ${setw}_setw, s8_fetch, inc_pc
+      - ${setw}_setw, inc_pc
       - ea_rmux, ld0_opnd, dst_ral
       - dst_ld
       - waitmem, q_fetch
@@ -882,3 +929,20 @@ ucode:
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
+  - mnemo: [ LDAR ]
+    seq: # loads EA register and jumps to NI within group 3
+      - inc_pc, s8_fetch
+      - inc_pc, s8_fetch
+      - inc_pc, ld0_opnd
+      - inc_pc
+      - pc_rmux, ld1_opnd
+      - add_alu, da_ea
+      - da2ea, g3_nxgr, ni
+  - mnemo: [ mem_r32 ]
+    seq: # covers r32', r32'+d16, r32+r8, r32+r16
+      - ${setw}_setw, inc_pc, s8_fetch
+      - r32jmp   # this jump is based on lower 2 bits
+  # To do:
+  - mnemo: [ MULA, SWI, RETI ]
+    seq:
+      - halt
