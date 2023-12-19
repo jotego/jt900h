@@ -838,3 +838,21 @@ ucode:
       - ${alu}_alu, dst_ld # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
+  - mnemo: [ LDF ]
+    seq:
+      - inc_pc, s8_fetch
+      - n3_rmux, ld0_opnd, inc_pc
+      - rfp_rmux
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ LDX ]
+    seq:
+      - inc_pc, s8_fetch
+      - inc_pc, s8_fetch
+      - inc_pc, ld0_opnd
+      - inc_pc, da_ld
+      - waitmem, q_fetch
+      - da_ea, wr, inc_pc
+      - inc_pc
+      - waitmem, q_fetch
+      - ni
