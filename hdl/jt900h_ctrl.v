@@ -88,7 +88,7 @@ always @(posedge clk, posedge rst) begin
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;
         if( ni ) begin
-            uaddr <= { 2'd0, md[7:0], 4'd0 };
+            uaddr <= { nxgr_sel, md[7:0], 4'd0 };
             stack_bsy  <= 0;
             {bs,ws,qs} <= 0;
         end
