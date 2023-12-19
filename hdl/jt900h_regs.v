@@ -164,14 +164,15 @@ always @(posedge clk, posedge rst) begin
             default:;
         endcase
         case( fetch_sel )
-            Q_FETCH:  md <= din;
+            VS_FETCH, Q_FETCH:  md <= din;
             S8_FETCH: md <= md>>8;
             default:;
         endcase
         case( ral_sel ) // Register Address Latch
-            SRC_RAL: src <= r3sel;
-            DST_RAL: dst <= full ? fsel : r3sel;
-            SWP_RAL: {src,dst}<={dst,src};
+            SRC_RAL:  src <= r3sel;
+            DST_RAL:  dst <= full ? fsel : r3sel;
+            XSRC_RAL: src <= dst | 8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
+            SWP_RAL:  {src,dst}<={dst,src};
             default:;
         endcase
         case( opnd_sel )

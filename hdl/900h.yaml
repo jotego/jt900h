@@ -13,6 +13,7 @@ constants:
   OR_CC:   szh0pn0c0   # OR,XOR
   BIT_CC:  zch1n0      # BIT
   TSET_CC: zhn         # TSET
+  LD_CC:   h0v3n0      # LDD, LDDR, LDI, LDIR
 ops:
   # Group 1: destination is R, source is either r or memory
   # examples ADC R,r   CP R,(mem)
@@ -70,8 +71,8 @@ ops:
   - { name: INCF,   op: 0x00c, ctl: { alu: SUB }}
   - { name: JP,     op: 0x01a, ctl: { srca: imm,   setw: w }} # JP #16
   - { name: JP,     op: 0x01b, ctl: { srca: imm24, setw: q }} # JP #24
-  - { name: JR,     op: 0x060, mask: 0x3f0 } # JR [cc,]
-  - { name: JRL,    op: 0x070, mask: 0x3f0 } # JRL [cc,]
+  - { name: JR,     op: 0x060, ctl: { setw: b          }, mask: 0x3f0 } # JR [cc,]
+  - { name: JR,     op: 0x070, ctl: { setw: w, jr16: 1 }, mask: 0x3f0 } # JRL [cc,]
   - { name: LD8,    op: 0x008, ctl: { setw: b }} # LD<B> (#8),#
   - { name: LD8,    op: 0x00a, ctl: { setw: w }} # LD<W> (#8),#
   - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { srca: imm, setw: b }} # LD R,# zzz encoding
@@ -235,14 +236,14 @@ ops:
   - { name: SUBM,  op: 0x23a, ctl: { alu: SUB, srca: imm, cc: "${SUB_CC}" }}
   - { name: XORM,  op: 0x23d, ctl: { alu: XOR, srca: imm, cc: "${OR_CC}"  }}
   # Group 2 - string instructions
-  - { name: CPD,   op: 0x216, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
-  - { name: CPDR,  op: 0x217, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
-  - { name: CPI,   op: 0x214, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
-  - { name: CPIR,  op: 0x215, ctl: { loop: znvloop, cc: "${DEC_CC}" }}
-  - { name: LDD,   op: 0x212, ctl: { cc: h0v3n0 }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
-  - { name: LDDR,  op: 0x213, ctl: { cc: h0n0v0 }} # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDI,   op: 0x210, ctl: { cc: h0v3n0 }} # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDIR,  op: 0x211, ctl: { cc: h0n0v0 }} # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${DEC_CC}" }}
+  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${DEC_CC}" }}
+  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${DEC_CC}" }}
+  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${DEC_CC}" }}
+  - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}"  }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
+  - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}"  }} # v3, becomes v0 at the end of the instruction
+  - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}"  }} # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}"  }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
   - { name: RLD,   op: 0x206, ctl: { cc: szh0vn0 }} # RLD [A,](mem)
   - { name: RRD,   op: 0x207, ctl: { cc: szh0vn0 }} # RRD [A,](mem)
@@ -384,13 +385,18 @@ ucode:
       -
       - waitmem, q_fetch
       - ni
-  - name: ncc
+  - name: ncc     # used to finish an instruction if cc is not met
     auto: true
     seq:
       - inc_pc
       -
       - waitmem, q_fetch
       - ni
+  - name: znvloop # repeats the current instruction, reloading indexed data
+    auto: true
+    seq:
+      -
+  ########################################################
   # Load op0 operand (destination)
   - mnemo: [ rzzB, rzzW, rzzQ ]
     seq:
@@ -402,7 +408,7 @@ ucode:
       - full, dst_ral, s8_fetch, inc_pc
       - g1_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
-  - mnemo: [ ADC, ADD, AND, ANDCF, CCF, CP, CPL, DEC, INC,
+  - mnemo: [ ADC, ADD, AND, ANDCF, BIT, CCF, CP, CPL, DEC, INC,
             LD, LDC, LDCF, MIRR, NOP, OR, ORCF, PAA, RCF,
             SUB, SBC, SCF, XOR, XORCF, ZCF ]
     seq:
@@ -425,12 +431,32 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - acc_jsr
-      - sub_alu, ${cc}_cc, inc_pc
-      - bc_rmux, ld0_opnd
+      - dst_rmux, ld0_opnd
+      - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
+      - ${step}_alu, dst_ld, da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - a_rmux,  ld0_opnd
+      - md_rmux, ld1_opnd
+      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
-      - ${alu}_alu, hi_carry, bc_ld, z3v_cc # v = ~z
-      - ${loop}  # loops while z!=1 && v!=0
+      - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
+      - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      - inc_pc
+      - waitmem, q_fetch
+      - ni
+  # copy data and count up/down BC
+  - mnemo: [ LDD, LDDR, LDI, LDIR ]
+    seq: # "src" used as destination and vice versa, because of how the instruction is encoded
+      - dst_rmux, ld0_opnd, xsrc_ral
+      - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
+      - ${step}_alu, dst_ld, da_ea  # variable-size fetch (byte or word)
+      - waitmem, vs_fetch, src_rmux, ld0_opnd
+      - da_ld, md_rmux,  ld0_opnd
+      - da_ea, wr, ${step}_alu, src_ld
+      - waitmem, zero_rmux, ld1_opnd
+      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
+      - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
+      - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      - inc_pc
       - waitmem, q_fetch
       - ni
   - mnemo: [ NEG ]
@@ -578,12 +604,12 @@ ucode:
       - mod_alu, dst_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ RET, RETD ]
+  - mnemo: [ RET, RETD, RETcc ]
     seq:
       - s8_fetch, inc_pc
       - ${ncc}_jsr, q_setw
       - xsp_rmux, ld0_opnd
-      - da_ld, four_rmux, ld1_opnd
+      - da_ld, spd_rmux, ld1_opnd
       - add_alu, xsp_ld
       - da_ea, waitmem, q_fetch
       - ld0_opnd
@@ -603,7 +629,7 @@ ucode:
       - pc_rmux, ld0_opnd   # move PC to MD
       - md_ld, swp_opnd
       - sp_ea, wr           # push PC
-      - sp_ea, waitmem
+      - waitmem
       - pc_ld               # PC gets the jump address
       - waitmem, q_fetch    # jump
       - ni
@@ -611,7 +637,7 @@ ucode:
     seq:
       - s8_fetch, inc_pc, q_setw
       - xsp_rmux, ld0_opnd
-      - four_rmux, ld1_opnd
+      - spd_rmux, ld1_opnd
       - sub_alu, xsp_ld, w_setw # XSP = XSP-4
       - sex, ld0_opnd, inc_pc
       - md_ld, inc_pc       # sex-applied MD
@@ -619,9 +645,32 @@ ucode:
       - pc_rmux, ld0_opnd   # move PC to MD
       - md_ld
       - sp_ea, wr           # push PC
-      - sp_ea, waitmem
+      - waitmem
       - add_alu, pc_ld      # jump address
       - waitmem, q_fetch    # jump
+      - ni
+  - mnemo: [ CALLcc ]
+    seq:
+      - inc_pc, q_setw
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd
+      - sub_alu, xsp_ld, w_setw # XSP = XSP-4
+      - pc_rmux, ld0_opnd       # move PC to MD
+      - md_ld, ea_rmux, ld0_opnd
+      - sp_ea, wr               # push PC
+      - waitmem
+      - pc_ld
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ JR ]
+    seq:
+      - ?${jr16}, inc_pc
+      - inc_pc, ncc_jsr
+      - s8_fetch, ${setw}_setw
+      - sex, ld0_opnd, inc_pc
+      - pc_rmux, ld1_opnd
+      - add_alu, pc_ld
+      - waitmem, q_fetch
       - ni
   - mnemo: [ PUSHA, PUSHF, PUSHSR ]
     seq:
