@@ -294,6 +294,7 @@ ucode:
       - g2_nxgr, ni
   - name: r32com
     auto: true
+    seq:
       - da2ea, swpss
       - m_ea, q_fetch, waitmem
       - ld0_opnd
