@@ -27,6 +27,10 @@ module jt900h_alu(
     input             cin,
     input             bs,ws,
 
+    // control
+    input             div,
+    output            div_busy,
+
     input             nin, hin, cin, zin,
     output            n,z,
     output reg [31:0] rslt
@@ -35,13 +39,29 @@ module jt900h_alu(
 reg  cx,
      z8, z16, z32,
      n8, n16, n32;
-wire bsel;
 reg  [ 7:0] daa;
-wire        daa_carry;
+wire        daa_carry, bsel,
+            div_sign, div_v;
 
 assign z = bs ? z8 : ws ? z16 : z32;
 assign n = bs ? n8 : ws ? n16 : n32;
-assign bsel = op0[{1'b0,op1[3:0]}];
+assign bsel = op0[{1'b0,ws&op1[3],op1[2:0]}];
+assign div_sign = alu_sel==DIVS_ALU;
+
+jt900h_div u_div (
+    .rst  ( rst         ),
+    .clk  ( clk         ),
+    .cen  ( cen         ),
+    .op0  ( op0         ),
+    .op1  ( op1[15:0]   ),
+    .len  ( ws          ),
+    .sign ( div_sign    ),
+    .start( div         ),
+    .quot ( div_quot    ),
+    .rem  ( div_rem     ),
+    .busy ( div_busy    ),
+    .v    ( div_v       )
+);
 
 function signed [31:0] smul( input signed [15:0] a,b );
     mul = a*b;
@@ -98,7 +118,7 @@ always @* begin
         OR_ALU:   rslt = op0^op1;
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
-        BSET_ALU: op0[{1'b0,ws&op1[3],op1[2:0]}]=cx;
+        BSET_ALU: begin op0[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         SHL_ALU: begin // shift one bit left
             {cc[2],rslt} = {op2,cx};
@@ -107,6 +127,13 @@ always @* begin
         end
         MUL_ALU:  rslt = op0[15:0]*op1[15:0];
         MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
+        DIV_ALU, DIVS_ALU: begin
+            if( bs )
+                rslt[15:0] = { div_rem[ 7:0], div_quot[ 7:0] };
+            else
+                rslt[31:0] = { div_rem[15:0], div_quot[15:0] };
+            v = div_v;
+        end
         SHR_ALU: begin // shift one bit right
             {rslt,cc[0]} = {cx,op2};
             if( bs ) rslt[ 7] = cx;

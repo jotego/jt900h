@@ -22,6 +22,7 @@ module jt900h_ctrl(
     input             cen,
     input       [7:0] md,
     input       [7:0] flags,
+    input             div_busy,
     output reg        bs,
     output reg        ws,
     output reg        qs,
@@ -41,6 +42,9 @@ wire       halt, swi, ni, still;
 reg        nmi_l;
 wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
 reg        stack_bsy, cc;
+wire       still;
+
+assign still = div_busy;
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -72,8 +76,8 @@ always @(posedge clk, posedge rst) begin
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
     end else if(cen) begin
-        if( widen ) {qs,ws} <= {ws,bs};
-        uaddr[3:0] <= nx_ualo;
+        if(  widen ) {qs,ws} <= {ws,bs};
+        if( !still ) uaddr[3:0] <= nx_ualo;
         if( ni ) begin
             uaddr <= { 2'd0, md[7:0], 4'd0 };
             stack_bsy  <= 0;

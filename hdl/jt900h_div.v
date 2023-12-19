@@ -50,12 +50,12 @@ always @* begin
     sign0     = len ? op0[31] : op0[15];
     sign1     = len ? op1[15] : op1[7];
     if( sign ) begin
-        if( sign0 ) op0_unsig = -op0;
-        if( sign1 ) op1_unsig = -op1;
+        if( sign0 ) op0_unsig = ~op0 + 32'd1;
+        if( sign1 ) op1_unsig = ~op1 + 16'd1;
     end
     // final remainder
     nx_rem = larger ? rslt[15:0] : sub[15:0];
-    if( rsi ) nx_rem = -nx_rem; // the sign of the remainder must match the sign of the dividend
+    if( rsi ) nx_rem = -nx_rem;
 end
 
 always @(posedge clk or posedge rst) begin
