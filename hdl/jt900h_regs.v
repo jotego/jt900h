@@ -33,6 +33,7 @@ module jt900h_regs(
     input             bs,
     input             exff,
     input             full,
+    input             inc_pc,
     input             mul,
     input             mulcheck,
     input             qs,
@@ -152,6 +153,7 @@ always @(posedge clk, posedge rst) begin
     end else if(cen) begin
         cr_we <= 0;
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
+        if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
             SZHVN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
             SZHVN1C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };

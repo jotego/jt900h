@@ -23,10 +23,34 @@ module jt900h_ctrl(
     input       [7:0] md,
     input       [7:0] flags,
     input             div_busy,
+    input             mem_busy,
     output reg        bs,
     output reg        ws,
     output reg        qs,
     output reg        cc,       // condition code
+    // signals from ucode
+    output            cr_rd,
+    output            da2ea,
+    output            div,
+    output            exff,
+    output            full,
+    output            inc_pc,
+    output            jb5,
+    output            mulcheck,
+    output            mulsel,
+    output            sex,
+    output            swpss,
+    output            wr,
+    output            zex,
+    output      [1:0] ea_sel,
+    output      [1:0] opnd_sel,
+    output      [2:0] carry_sel,
+    output      [2:0] fetch_sel,
+    output      [2:0] ral_sel,
+    output      [3:0] ld_sel,
+    output      [4:0] alu_sel,
+    output      [4:0] cc_sel,
+    output      [4:0] rmux_sel
 );
 
 `include "900h_param.vh"
@@ -39,13 +63,20 @@ localparam IVRD   = 14'h0000,       // to be udpated
 wire [4:0] jsr_sel;
 reg  [2:0] iv_sel;
 reg  [2:0] altss;
-wire       halt, swi, ni, still;
+wire       halt, swi, still;
 reg        nmi_l;
 wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
 reg        stack_bsy, cc;
 wire       still;
 
-assign still = div_busy;
+// signals from ucode
+wire  [1:0] nxgr_sel,
+      [2:0] setw_sel,
+      [4:0] jsr_sel;
+wire        ni, r32jmp, halt, jb5, retb, retw,
+            widen, waitmem;
+
+assign still = div_busy | (waitmem & mem_busy);
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -92,6 +123,8 @@ always @(posedge clk, posedge rst) begin
             stack_bsy  <= 0;
             {bs,ws,qs} <= 0;
         end
+        if( jb5 ) uaddr[4:0] <=  uaddr[4:0]-4'd5;
+        if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;
         if( jsr_en && (jsr_sel!=NCC_JSR || !cc) ) begin
             jsr_ret      <= uaddr;
             jsr_ret[3:0] <= nx_ualo;

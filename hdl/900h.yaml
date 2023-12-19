@@ -861,7 +861,7 @@ ucode:
     seq:
       - ${srca}_jsr
       - bset_alu, md_ld, ${cx}_carry, ${cc}_cc
-      - m_ea, write
+      - m_ea, wr
       - waitmem
       - waitmem, q_fetch
       - ni
