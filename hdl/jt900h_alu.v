@@ -24,27 +24,34 @@ module jt900h_alu(
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
     input      [31:0] op2,      // extra operand
-    input             cin,
     input             bs,ws,
 
     // control
     input             div,
     output            div_busy,
+    input       [4:0] alu_sel,
+    input       [2:0] carry_sel,
 
     input             nin, hin, cin, zin,
-    output            n,z,
+    output reg        n,h,z,v,c,p,
     output reg [31:0] rslt
 );
+
+`include "900h_param.vh"
 
 reg  cx,
      z8, z16, z32,
      n8, n16, n32;
 reg  [ 7:0] daa;
+reg  [ 2:0] cc;
+reg  [15:0] div_quot, div_rem;
 wire        daa_carry, bsel,
             div_sign, div_v;
 
-assign z = bs ? z8 : ws ? z16 : z32;
-assign n = bs ? n8 : ws ? n16 : n32;
+assign z = bs ? z8    : ws ? z16   : z32;
+assign n = bs ? n8    : ws ? n16   : n32;
+assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
+assign c = bs ? cc[0] : ws ? cc[1] : cc[2];
 assign bsel = op0[{1'b0,ws&op1[3],op1[2:0]}];
 assign div_sign = alu_sel==DIVS_ALU;
 
@@ -64,7 +71,7 @@ jt900h_div u_div (
 );
 
 function signed [31:0] smul( input signed [15:0] a,b );
-    mul = a*b;
+    smul = a*b;
 endfunction
 
 // daa is the value to add during the DAA instruction
@@ -98,15 +105,15 @@ always @* begin
     rslt = op0;
     case(alu_sel)
         ADD_ALU: begin
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx  };
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op1[ 7: 4]}+{ 4'b0,nx_h};
+            { h    , rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx   };
+            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op1[ 7: 4]}+{ 4'b0,h    };
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op1[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op1[31:16]}+{16'b0,cc[1]};
             // update v
         end
         SUB_ALU: begin
-            { nx_h,  rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}-{1'b0,op1[ 3: 0]}+{ 4'd0,cx  };
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op1[ 7: 4]}+{ 4'b0,nx_h};
+            { h    , rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}-{1'b0,op1[ 3: 0]}+{ 4'd0,cx   };
+            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op1[ 7: 4]}+{ 4'b0,h    };
             { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op1[15: 8]}+{ 8'b0,cc[0]};
             { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op1[31:16]}+{16'b0,cc[1]};
             // update v
@@ -118,7 +125,7 @@ always @* begin
         OR_ALU:   rslt = op0^op1;
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
-        BSET_ALU: begin op0[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
+        BSET_ALU: begin rslt[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         SHL_ALU: begin // shift one bit left
             {cc[2],rslt} = {op2,cx};

@@ -25,26 +25,27 @@ module jt900h_regs(
     input      [31:0] din,      // data from memory controller
     // ALU
     input      [31:0] rslt,
-    input             si,zi,hi,vi,ni,ci,pi, // flag updates
+    input             zi,hi,vi,ni,ci,pi, // flag updates
+    output            no,ho,co,zo,
     // control (from module logic)
     input             cc,
     // control (from ucode)
+    input             bs,
     input             exff,
     input             full,
     input             mul,
-    input             bs,
-    input             ws,
+    input             mulcheck,
     input             qs,
-    input             zex,
     input             sex,
     input             shex,
-    input             mulcheck,
+    input             ws,
+    input             zex,
     input       [1:0] opnd_sel,
-    input       [4:0] rmux_sel,
-    input       [4:0] cc_sel,
-    input       [3:0] ld_sel,
     input       [2:0] fetch_sel,
     input       [2:0] ral_sel,
+    input       [3:0] ld_sel,
+    input       [4:0] cc_sel,
+    input       [4:0] rmux_sel,
     // "Control Registers" (MCU MMR)
     output reg [ 7:0] cra,
     output reg [31:0] crin,
@@ -79,6 +80,7 @@ reg         is_mul;
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,2'b10,rfp,flags};
+assign {no,ho,co,zo} = {n,h,c,z}
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
@@ -151,14 +153,14 @@ always @(posedge clk, posedge rst) begin
         cr_we <= 0;
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         case( cc_sel )
-            SZHVN0C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
-            SZHVN1C_CC:     {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b1,ci  };
-            SZH0VN0C_CC:    {s,z,h,v,n,c} <= {si,zi,1'b0, vi,1'b0,ci  };
-            SZH0VN0_CC:     {s,z,h,v,n  } <= {si,zi,1'b0, vi,1'b0     };
-            SZHVN0_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     };
-            SZHVN1_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     };
-            SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b1, pi,1'b0,1'b0};
-            SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,1'b0};
+            SZHVN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
+            SZHVN1C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
+            SZH0VN0C_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, vi,1'b0,ci  };
+            SZH0VN0_CC:     {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
+            SZHVN0_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     };
+            SZHVN1_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     };
+            SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
+            SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
             ZCH1N0_CC:      {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
             // ZHN_CC:         {  z,h,  n  } <= {   zi,hi,      ni       };
             N0C_CC:         {        n,c} <= {               1'b0,ci  };
@@ -170,7 +172,7 @@ always @(posedge clk, posedge rst) begin
             // Z2V_CC:         {      v    } <= {               zi       };
             Z3V_CC:         {      v    } <= {              ~zi       };
             // SZV_CC:         {s,z,  v    } <= {si,zi,    vi            };
-            SZHVCR_CC:      {s,z,h,v,  c} <= {si,zi,hi, vi,     c|ci  };
+            SZHVCR_CC:      {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
             H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
             default:;
         endcase

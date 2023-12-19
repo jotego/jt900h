@@ -37,13 +37,118 @@ module jt900h(
     input             inta_en,    // the external device sets the vector address
     input      [ 7:0] int_addr,
     // Register dump
-    output            buserror,
-    input      [ 7:0] dmp_addr,     // dump
-    output     [ 7:0] dmp_dout,
+    // output            buserror,
+    // input      [ 7:0] dmp_addr,     // dump
+    // output     [ 7:0] dmp_dout,
     // Debug
-    input      [ 7:0] st_addr,
-    output     [ 7:0] st_dout,
-    output            op_start      // high when OP's 1st byte is decoded
+    // input      [ 7:0] st_addr,
+    // output     [ 7:0] st_dout,
+    // output            op_start      // high when OP's 1st byte is decoded
+);
+
+wire [31:0] op0, op1, op2, rslt;
+wire        bs, exff, full, mul, mulcheck, qs, sex, shex, ws, zex;
+wire [ 1:0] opnd_sel;
+wire [ 2:0] fetch_sel;
+wire [ 2:0] ral_sel;
+wire [ 3:0] ld_sel;
+wire [ 4:0] cc_sel;
+wire [ 4:0] rmux_sel;
+// memory unit
+wire [23:0] ea, da, pc;
+wire [31:0] mdata;
+// "Control Registers" (MCU MMR)
+wire [ 7:0] cra;
+wire [31:0] crin;
+wire [31:0] cr;
+wire        cr_we;    // cr_rd goes directly from control unit
+
+// Flags
+wire zu,hu,vu,nu,ci,pu;
+wire n,h,c,z;
+
+jt900h_regs u_regs(
+    .rst        ( rst       ),
+    .clk        ( clk       ),
+    .cen        ( cen       ),
+    // memory unit
+    .ea         ( ea        ),
+    .din        ( mdata     ),
+    // ALU
+    .rslt       ( rslt      ),
+    .zi         ( zu        ),
+    .hi         ( hu        ),
+    .vi         ( vu        ),
+    .ni         ( nu        ),
+    .ci         ( cu        ),
+    .pi         ( pu        ),
+    .n          ( n         ),
+    .h          ( h         ),
+    .c          ( c         ),
+    .z          ( z         ),
+    // control (from module logic)
+    .cc         ( cc        ),
+    // control (from ucode)
+    .bs         ( bs        ),
+    .exff       ( exff      ),
+    .full       ( full      ),
+    .mul        ( mul       ),
+    .mulcheck   ( mulcheck  ),
+    .qs         ( qs        ),
+    .sex        ( sex       ),
+    .shex       ( shex      ),
+    .ws         ( ws        ),
+    .zex        ( zex       ),
+    .opnd_sel   ( opnd_sel  ),
+    .fetch_sel  ( fetch_sel ),
+    .ral_sel    ( ral_sel   ),
+    .ld_sel     ( ld_sel    ),
+    .cc_sel     ( cc_sel    ),
+    .rmux_sel   ( rmux_sel  ),
+    // "Control Registers" (MCU MMR)
+    .cra        ( cra       ),
+    .crin       ( crin      ),
+    .cr         ( cr        ),
+    .cr_we      ( cr_we     ),    // cr_rd goes directly from control unit
+    // register outputs
+    .pc         ( pc        ),
+    .da         ( da        ),  // direct memory address from OP, like #8 in LD<W> (#8),#
+    .op0        ( op0       ),
+    .op1        ( op1       ),
+    .op2        ( op2       )
+);
+
+jt900h_alu u_alu(
+    .rst        ( rst       ),
+    .clk        ( clk       ),
+    .cen        ( cen       ),
+
+
+    .op0        ( op0       ),
+    .op1        ( op1       ),
+    .op2        ( op2       ),
+    .bs         ( bs        ),
+    .ws         ( ws        ),
+
+    // control
+    .div        ( div       ),
+    .div_busy   ( div_busy  ),
+    .alu_sel    ( alu_sel   ),
+    .carry_sel  ( carry_sel ),
+
+    // input flags
+    .nin        ( n         ),
+    .hin        ( h         ),
+    .cin        ( c         ),
+    .zin        ( z         ),
+    // output flags
+    .z          ( zu        ),
+    .h          ( hu        ),
+    .v          ( vu        ),
+    .n          ( nu        ),
+    .c          ( cu        ),
+    .p          ( pu        ),
+    .rslt       ( rslt      )
 );
 
 endmodule
