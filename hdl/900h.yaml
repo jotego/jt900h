@@ -856,3 +856,29 @@ ucode:
       - inc_pc
       - waitmem, q_fetch
       - ni
+  - mnemo: [ LINK ]
+    seq:
+      - inc_pc, xsp_rmux, ld0_opnd, s8_fetch
+      - four_rmux, ld1_opnd, inc_pc
+      - sub_alu, xsp_ld, inc_pc
+      - dst_rmux, ld0_opnd
+      - md_rmux,  ld1_opnd
+      - md_ld
+      - sp_ea, wr
+      - xsp_rmux, ld0_opnd
+      - dst_ld
+      - add_alu, xsp_ld
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ UNLK ]
+    seq:
+      - inc_pc, xsp_ld
+      - sp_ea,
+      - sp_ea, q_fetch, waitmem
+      - ld0_opnd
+      - dst_ld
+      - xsp_rmux, ld0_opnd
+      - four_rmux, ld1_opnd
+      - add_alu, xsp_ld
+      - waitmem, q_fetch
+      - ni
