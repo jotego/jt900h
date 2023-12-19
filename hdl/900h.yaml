@@ -59,9 +59,9 @@ ops:
   - { name: mem_iter, op: 0x0e5, mask: 0x3ff, ctl: { alu: ADD, setw: q }}
 
   # Group 3 #3,(mem) 1m11'mmmm
-  - { name: mem,  op: 0x0b0, mask: 0x3f0, ctl: { setw: w        }}
-  - { name: mem,  op: 0x0f0, mask: 0x3fc, ctl: {                }} # f0~f3
-  - { name: mem,  op: 0x0f4, mask: 0x3fe, ctl: {                }} # f4~f5
+  # - { name: mem,  op: 0x0b0, mask: 0x3f0, ctl: { setw: w        }}
+  # - { name: mem,  op: 0x0f0, mask: 0x3fc, ctl: {                }} # f0~f3
+  # - { name: mem,  op: 0x0f4, mask: 0x3fe, ctl: {                }} # f4~f5
 
   ########### instructions ###################
 
@@ -90,7 +90,7 @@ ops:
   - { name: PUSHA,  op: 0x014, ctl: { rmux: a,  setw: b }}
   - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b }}
   - { name: PUSHF,  op: 0x018, ctl: { rmux: f,  setw: b }}
-  - { name: POPF,   op: 0x019 }
+  - { name: POPF,   op: 0x019, ctl: { dst:  f,  setw: b }}
   - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, carry: hi }, mask: 0x3f8 } # POP R
   - { name: POPQ,   op: 0x058, mask: 0x3f8 } # POP R
   - { name: PUSHR,  op: 0x028, ctl: { setw: w }, mask: 0x3f8 } # PUSH R
