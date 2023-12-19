@@ -43,6 +43,10 @@ assign z = bs ? z8 : ws ? z16 : z32;
 assign n = bs ? n8 : ws ? n16 : n32;
 assign bsel = op0[{1'b0,op1[3:0]}];
 
+function signed [31:0] smul( input signed [15:0] a,b );
+    mul = a*b;
+endfunction
+
 // daa is the value to add during the DAA instruction
 always @* begin
     daa = 0;
@@ -101,6 +105,8 @@ always @* begin
             cc[0] = op2[ 7];
             cc[1] = op2[15];
         end
+        MUL_ALU:  rslt = op0[15:0]*op1[15:0];
+        MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
         SHR_ALU: begin // shift one bit right
             {rslt,cc[0]} = {cx,op2};
             if( bs ) rslt[ 7] = cx;

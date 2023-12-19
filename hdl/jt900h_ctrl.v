@@ -72,6 +72,7 @@ always @(posedge clk, posedge rst) begin
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
     end else if(cen) begin
+        if( widen ) {qs,ws} <= {ws,bs};
         uaddr[3:0] <= nx_ualo;
         if( ni ) begin
             uaddr <= { 2'd0, md[7:0], 4'd0 };

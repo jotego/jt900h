@@ -66,6 +66,7 @@ reg         s, z, h, v, n, c,    // flags (main)
 reg  [ 2:0] imask;      // IFF
 reg  [ 1:0] rfp;        // Register File Pointer
 wire [15:0] sr;         // status register. lower byte contains the flags
+reg         is_mul;
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
@@ -76,6 +77,8 @@ always @* begin
     // r3sel -> selects register from 3-bit R value in op
     r3sel = bs ? {2'd0,rfp,md[2:1],1'b0,~md[0]} :               // byte register
                  {mcode[2]?{4'hf:{2'd0,rfp},mcode[1:0],2'd0}} : // word/qword register
+    mulsel = {2'd0,rfp,bs?md[2:1]:md[1:0],1'b0};
+    is_mul = mulcheck && md[15:10]==6'h2; // detects MUL/DIV(s) rr,#
     casez( md[6:4] )
         3'b0??: fsel={2'd0,md[5:0]};
         3'b101: fsel={2'd0,rfp-2'd1,md[3:0]}; // previous bank
@@ -170,7 +173,7 @@ always @(posedge clk, posedge rst) begin
         endcase
         case( ral_sel ) // Register Address Latch
             SRC_RAL:  src <= r3sel;
-            DST_RAL:  dst <= full ? fsel : r3sel;
+            DST_RAL:  dst <= full ? fsel : (mul|is_mul) ? mulsel : r3sel;
             XSRC_RAL: src <= dst | 8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
             SWP_RAL:  {src,dst}<={dst,src};
             default:;
