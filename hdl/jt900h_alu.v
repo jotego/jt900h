@@ -122,10 +122,10 @@ always @* begin
         BAND_ALU: begin cc[0]=bsel & cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
         BOR_ALU:  begin cc[0]=bsel | cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
         BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
+        BSET_ALU: begin rslt[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
         OR_ALU:   rslt = op0^op1;
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
-        BSET_ALU: begin rslt[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         SHL_ALU: begin // shift one bit left
             {cc[2],rslt} = {op2,cx};
@@ -147,8 +147,8 @@ always @* begin
             if( ws ) rslt[15] = cx;
             cc[2:1] = {2{op2[0]}};
         end
-        RRD_ALU: rslt[15:0]={op1[3:0],op0[7:4],op1[7:4],op0[3:0]}; // op0=mem, op1=A
-        RLD_ALU: rslt[15:0]={op0[3:0],op1[3:0],op1[7:4],op0[7:4]};
+        RRD_ALU: rslt[15:0]={op0[3:0],op1[7:4],op0[7:4],op1[3:0]}; // op1=mem, op0=A
+        RLD_ALU: rslt[15:0]={op1[3:0],op0[3:0],op0[7:4],op1[7:4]};
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15] };
