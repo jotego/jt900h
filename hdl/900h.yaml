@@ -82,10 +82,10 @@ ops:
   - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: q, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
   - { name: LDF,    op: 0x017, ctl: { alu: , cx: , srca: num30,ld: rfp, setw: b, wr: , swp: , cc: } }
   - { name: LDX,    op: 0x0f7 }
-  - { name: CALL16, op: 0x01c, ctl: { setw: w, call24:   }}
-  - { name: CALL24, op: 0x01d, ctl: { setw: q, call24: 1 }} # only 24 bits read
-  - { name: CALR,   op: 0x01e }
-  - { name: NOP,    op: 0x000, ctl: { alu: , cx: , srca: imm1, ld: , setw: , wr: , swp: , cc: }}
+  - { name: CALL16, op: 0x01c, ctl: { alu:    , ex: zex, setw: w, call24:   }}
+  - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }} # only 24 bits read
+  - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }}
+  - { name: NOP,    op: 0x000, ctl: { alu: , cx: , srca: zero, ld: , setw: , wr: , swp: , cc: }}
   - { name: PUSHA,  op: 0x014, ctl: { rmux: a,  setw: b }}
   - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b }}
   - { name: PUSHF,  op: 0x018, ctl: { rmux: f,  setw: b }}
@@ -645,36 +645,20 @@ ucode:
       - pc_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ CALL16, CALL24 ]
+  - mnemo: [ CALR, CALL16, CALL24 ]
     seq:
       - inc_pc, s8_fetch
       - xsp_rmux, ld0_opnd, q_setw
       - spd_rmux, ld1_opnd
       - sub_alu, xsp_ld, ${setw}_setw       # XSP = XSP-4
-      - inc_pc, zex, ld0_opnd
+      - inc_pc, ${ex}, ld0_opnd
       - ?${call24}, inc_pc
       - inc_pc, md_ld       # zex-applied MD
       - md_rmux, ld1_opnd   # store it in op1
-      - pc_rmux, ld0_opnd   # move PC to MD
-      - md_ld, swp_opnd, q_setw
+      - pc_rmux, ld0_opnd, q_setw   # move PC to MD
+      - md_ld, swp_opnd
       - sp_ea, wr           # push PC
-      - pc_ld               # PC gets the jump address
-      - waitmem, q_fetch    # jump
-      - ni
-  - mnemo: [ CALR ]
-    seq:
-      - inc_pc, s8_fetch, q_setw
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld, w_setw # XSP = XSP-4
-      - inc_pc, sex, ld0_opnd
-      - inc_pc, md_ld       # sex-applied MD
-      - md_rmux, ld1_opnd   # store it in op1
-      - pc_rmux, ld0_opnd   # move PC to MD
-      - md_ld
-      - sp_ea, wr           # push PC
-      - waitmem
-      - add_alu, pc_ld      # jump address
+      - ${alu}_alu, pc_ld               # PC gets the jump address
       - waitmem, q_fetch    # jump
       - ni
   - mnemo: [ CALLcc ]
