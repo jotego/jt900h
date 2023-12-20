@@ -86,20 +86,20 @@ ops:
   - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }} # only 24 bits read
   - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }}
   - { name: NOP,    op: 0x000, ctl: { alu: , cx: , srca: zero, ld: , setw: , wr: , swp: , cc: }}
+  - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b, wr: }}
+  - { name: POPF,   op: 0x019, ctl: { dst:  f,  setw: b, wr: }}
+  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: }, mask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: }, mask: 0x3f8 } # POP R
+  - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: }} # POP SR
   - { name: PUSHA,  op: 0x014, ctl: { rmux: a,  setw: b }}
-  - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b }}
   - { name: PUSHF,  op: 0x018, ctl: { rmux: f,  setw: b }}
-  - { name: POPF,   op: 0x019, ctl: { dst:  f,  setw: b }}
-  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w }, mask: 0x3f8 } # POP R
-  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q }, mask: 0x3f8 } # POP R
-  - { name: PUSHR,  op: 0x028, ctl: { setw: w }, mask: 0x3f8 } # PUSH R
-  - { name: PUSHR,  op: 0x038, ctl: { setw: q }, mask: 0x3f8 } # PUSH R
+  - { name: PUSHR,  op: 0x028, ctl: { rmux: dst, setw: w }, mask: 0x3f8 } # PUSH R
+  - { name: PUSHR,  op: 0x038, ctl: { rmux: dst, setw: q }, mask: 0x3f8 } # PUSH R
   - { name: PUSHW,  op: 0x009, ctl: { setw: b }}
   - { name: PUSHW,  op: 0x00b, ctl: { setw: w }}
-  - { name: PUSHSR, op: 0x002, ctl: { rmux: f, setw: w }} # PUSH SR
-  - { name: POPSR,  op: 0x003, ctl: { dst: sr, setw: w, cx: hi }} # POP SR
-  - { name: RET,    op: 0x00e, ctl: { ncc: }}
-  - { name: RETD,   op: 0x00f, ctl: { ncc: }}
+  - { name: PUSHSR, op: 0x002, ctl: { rmux: sr, setw: w }} # PUSH SR
+  - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }}
+  - { name: RETD,   op: 0x00f, ctl: { retd: 1, ncc: }}
   - { name: RETI,   op: 0x007, ctl: { ncc: }}
   - { name: RCF,    op: 0x010, ctl: { alu: , cx:    , srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c0 }}
   - { name: CCF,    op: 0x012, ctl: { alu: , cx: com, srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
@@ -140,7 +140,7 @@ ops:
   - { name: LDC,    op: 0x12e, ctl: { alu:    , cx: ,   srca: cr1,  ld: cr , setw: ,wr: 0, swp: 0, cc: }} # LDC cr,r
   - { name: LDC,    op: 0x12f, ctl: { alu:    , cx: ,   srca: cr0,  ld: dst, setw: ,wr: 0, swp: 0, cc: }} # LDC r,cr
   - { name: PAA,    op: 0x114, ctl: { alu: ADD, cx: b0, srca: zero, ld: dst, setw: ,wr: 0, swp: 0, cc: }} # PAA r
-  - { name: POPr,   op: 0x105 } # POP r
+  - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: }} # POP r
   - { name: PUSHR2, op: 0x104 } # PUSH r
   - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, cx: cin, srca: acc, ld: ,setw: ,swp: , wr: , cc: c }} # register A always used
   # group 1 with immediate data ADC r,#
@@ -257,7 +257,7 @@ ops:
   - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: szh0vn0 }} # RRD [A,](mem)
 
   # group 3 1m11'mmmm
-  - { name: RETcc, op: 0x3f0, ctl: { ncc: ncc }, mask: 0x3f0 } # B0-Fcc
+  - { name: RETcc, op: 0x3f0, ctl: { retd: 0, ncc: ncc }, mask: 0x3f0 } # B0-Fcc
   - { name: LDAR,  op: 0x313 }              # F3-13-#16-4R
   - { name: JPM,   op: 0x3d0, mask: 0x3f0 } # 1m11mmmm (possibly F3)-Dcc JP [cc,]mem
   - { name: LD,    op: 0x340, ctl: { alu: , cx: , srca: reg,  ld: md, setw: ,wr: 1, swp:  , setw: b, cc: }, mask: 0x3f8 } # 1m11mmmm (possibly F3)-4R (mem),R
@@ -271,8 +271,8 @@ ops:
   - { name: LDA,   op: 0x330, ctl: { setw: q }, mask: 0x3f8 }
   # group 3 1m11'mmmm #3,(mem)
   - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0 }
-  - { name: POPM,  op: 0x304, ctl: { setw: b }}
-  - { name: POPM,  op: 0x306, ctl: { setw: w }}
+  - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b }}
+  - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w }}
   - { name: ANDCF, op: 0x380, ctl: { alu: BAND, cx: cin,srca: acc,  ld:   , setw: ,wr:  , swp: , setw: b, cc: c }, mask: 0x3f8 }
   - { name: BIT,   op: 0x3c8, ctl: { alu: BXOR, cx: hi, srca: num3, ld:   , setw: ,wr:  , swp: , setw: b, cc: "${BIT_CC}"}, mask: 0x3f8 }
   - { name: LDCF,  op: 0x398, ctl: { alu: BOR,  cx:    ,srca: num3, ld:   , setw: ,wr:  , swp: , setw: b, cc: c }, mask: 0x3f8 }
@@ -373,14 +373,14 @@ ucode:
       - r32com_jsr
   - name: reg
     seq: # Load op1 operand (source)
-      - s8_fetch, inc_pc
+      - inc_pc, s8_fetch
       - src_ral
-      - ret_jsr, src_rmux, ld1_opnd
+      - src_rmux, ld1_opnd, ret_jsr
   - name: rmem
     seq: # Load op0 operand (destination)
-      - dst_ral, inc_pc
+      - inc_pc,   dst_ral
       - dst_rmux, ld0_opnd
-      - ret_jsr, swp_opnd
+      - swp_opnd, ret_jsr
   - name: cr0
     seq:
       - inc_pc, s8_fetch
@@ -446,24 +446,21 @@ ucode:
   - name: zni
     seq:
       - inc_pc
-      -
       - waitmem, q_fetch
       - ni
   - name: ncc     # used to finish an instruction if cc is not met
     seq:
       - inc_pc
-      -
       - waitmem, q_fetch
       - ni
   - name: znvloop # repeats the current instruction, reloading indexed data
     seq:
       -
-  - name: pshdst
-    seq:
+  - name: psh
+    seq: # pushes MD contents. b/w/qs must already be set
       - xsp_rmux, ld0_opnd
       - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld, dst_rmux, ld0_opnd
-      - md_ld
+      - sub_alu, xsp_ld
       - sp_ea, wr
       - waitmem, q_fetch
       - ni
@@ -642,16 +639,20 @@ ucode:
       - dst_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ RET, RETD, RETcc ]
+  - mnemo: [ RET, RETcc, RETD ]
     seq:
-      - s8_fetch, inc_pc
-      - ${ncc}_jsr, q_setw
+      - inc_pc, s8_fetch, w_setw, ${ncc}_jsr
+      - ?${retd}=1, inc_pc, zex, ld1_opnd, q_setw # imm at op1
+      - ?${retd}=0, q_setw
       - xsp_rmux, ld0_opnd
-      - da_ld, spd_rmux, ld1_opnd
-      - add_alu, xsp_ld
+      - da_ld
       - da_ea, waitmem, q_fetch
       - ld0_opnd
       - pc_ld
+      - ?${retd}, inc_pc, add_alu, xsp_ld       # adds the deallocate portion
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd    # regular +4
+      - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ CALR, CALL16, CALL24 ]
@@ -693,68 +694,30 @@ ucode:
       - add_alu, pc_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ PUSHA, PUSHF, PUSHSR ]
+  - mnemo: [ PUSHR, PUSHA, PUSHF, PUSHSR ]
     seq:
-      - inc_pc, ${setw}_setw
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld, ${rmux}_rmux, ld0_opnd
-      - md_ld
-      - sp_ea, wr
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ PUSHR ]
-    seq:
-      - inc_pc, ${setw}_setw, dst_ral
-      - pshdst_jsr
+      - inc_pc, ${setw}_setw, dst_ral # dst_ral needed by PUSHR only
+      - ${rmux}_rmux, ld0_opnd
+      - md_ld, psh_jsr
   - mnemo: [ PUSHR2 ]
     seq:
-      - inc_pc, pshdst_jsr
+      - inc_pc, dst_rmux, ld0_opnd
+      - md_ld, psh_jsr
   - mnemo: [ PUSHW ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
       - ?${setw}=w, inc_pc
-      - inc_pc, xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld
-      - sp_ea, wr
-      - waitmem, q_fetch
-      - ni
+      - inc_pc, psh_jsr
   - mnemo: [ PUSHM ]
     seq:
-      - inc_pc
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld
-      - sp_ea, wr
-      - waitmem
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ POP, POPF, POPA, POPSR ]
+      - inc_pc, psh_jsr
+  - mnemo: [ POP, POPM, POPF, POPA, POPSR ]
     seq:
       - inc_pc, ${setw}_setw
       - sp_ea, waitmem, vs_fetch, spd_rmux, ld1_opnd
       - ld0_opnd
       - ${dst}_ld, xsp_rmux, ld0_opnd
-      - add_alu, xsp_ld
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ POPr ]
-    seq:
-      - inc_pc, spd_rmux, ld1_opnd
-      - sp_ea, waitmem, q_fetch
-      - ld0_opnd
-      - dst_ld, xsp_rmux, ld0_opnd
-      - add_alu, xsp_ld
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ POPM ]
-    seq:
-      - inc_pc, ${setw}_setw
-      - spd_rmux, ld1_opnd
-      - sp_ea, waitmem, q_fetch
-      - m_ea, wr
-      - xsp_rmux, ld0_opnd
+      - ?${wr}, m_ea, wr
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
