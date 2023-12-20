@@ -17,11 +17,35 @@ You can show your appreciation through
 
 Only source files are included in this repository. Binary files can be obtained by compiling the sources.
 
-## RAM controller
+## Decoding
 
-The RAM controller always reads 4 bytes now, it should be optimised to read 2 bytes when only 2 bytes are needed
+- procedures linked to a decoding step (_op_ element in [the YAML file](hdl/900h.yaml)) assume that the 4 bytes in MD are valid and that the PC points to the first byte
+- each procedure that consumes a byte must move the PC forward
 
-The PUSH operation takes an extra cycle to cater for the case when the XSP is at an odd address. It should be optimised to either check the RAM controller status and finish early, or check XSP LSB and add the extra cycle only if needed
+### Memory Addressing
+
+**Group 2: R,mem and mem,R**
+First OP byte is a memory addressing (page 43 of 900H_CPU_BOOK_CP3.pdf):
+
+- **ea** contains the memory address calculated
+- **op1** contains the data at that memory address
+- **md** contains 4 valid bytes starting at PC
+
+Second OP byte contains a register selection:
+
+- **dst** points to the register
+- **op0** contains the register value
+
+**Group 1: R,#3**
+
+First byte contains the destination register
+
+- **dst** points to the register
+- **op0** contains the register value
+
+Second OP byte contains a 3-bit value (#3)
+
+- **op1** is set to the value
 
 ## PC at Reset
 
@@ -29,4 +53,9 @@ The NeoGeo Pocket seems to start operation from FF1800, which does not agree wit
 
 ## Resource utilization
 
-Compiled on MiSTer: ~7000 LE and no BRAM
+Compiled on MiSTer
+
+| Version    | Usage                |
+| ---------- | -------------------- |
+| Old        | ~7000 LE and no BRAM |
+| microcoded | TBD                  |

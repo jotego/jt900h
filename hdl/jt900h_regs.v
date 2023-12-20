@@ -179,8 +179,8 @@ always @(posedge clk, posedge rst) begin
             default:;
         endcase
         case( fetch_sel )
-            VS_FETCH, Q_FETCH:  md <= din;
-            S8_FETCH: md <= md>>8;
+            VS_FETCH, Q_FETCH: md <= din;
+            S8_FETCH:          md <= md>>8;
             default:;
         endcase
         case( ral_sel ) // Register Address Latch
@@ -238,7 +238,7 @@ always @(posedge clk, posedge rst) begin
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: imask <= rslt[2:0];
-            DA_LD:  da <= rslt[23:0];
+            DA_LD:  da <= { qs ? rslt[23:16]:8'd0, ws ? rslt[15:8]:8'd0, rslt[7:0] };
             CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase
