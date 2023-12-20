@@ -66,11 +66,11 @@ ops:
   ########### instructions ###################
 
   # group 0 instructions
-  - { name: DECF,   op: 0x00d, ctl: { alu: ADD }}
-  - { name: EI,     op: 0x006                } # also serves as DI when operand is 7
+  - { name: EI,     op: 0x006, ctl: { alu: , carry: , srca: num3, ld: rfp, wr: , swp: 1, cc: }} # also serves as DI when operand is 7
   - { name: EXFF,   op: 0x016                } # EX F,F'
   - { name: HALT,   op: 0x005                }
-  - { name: INCF,   op: 0x00c, ctl: { alu: SUB }}
+  - { name: DECF,   op: 0x00d, ctl: { alu: ADD, carry: hi, srca: rfp, ld: rfp, wr: , swp: , cc: }}
+  - { name: INCF,   op: 0x00c, ctl: { alu: SUB, carry: hi, srca: rfp, ld: rfp, wr: , swp: , cc: }}
   - { name: JP,     op: 0x01a, ctl: { srca: imm1,   setw: w }} # JP #16
   - { name: JP,     op: 0x01b, ctl: { srca: imm24, setw: q }} # JP #24
   - { name: JR,     op: 0x060, ctl: { setw: b          }, mask: 0x3f0 } # JR [cc,]
@@ -108,14 +108,14 @@ ops:
   - { name: ZCF,    op: 0x013, ctl: { carry: zf, cc: n0c }}
 
   # group 1 instructions, R,r
-  - { name: ADC,   op: 0x190, ctl: { alu: ADD, carry: cin, srca: reg, ld: dst, swp: 0, cc: "${ADD_CC}" }, mask: 0x3f8, cycles: 1 }
-  - { name: ADD,   op: 0x180, ctl: { alu: ADD, carry:    , srca: reg, ld: dst, swp: 0, cc: "${ADD_CC}" }, mask: 0x3f8, cycles: 1 }
-  - { name: AND,   op: 0x1c0, ctl: { alu: AND, carry:    , srca: reg, ld: dst, swp: 0, cc: "${AND_CC}" }, mask: 0x3f8 }
-  - { name: CP,    op: 0x1f0, ctl: { alu: SUB, carry:    , srca: reg, ld:    , swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8 }
-  - { name: OR,    op: 0x1e0, ctl: { alu: OR,  carry:    , srca: reg, ld: dst, swp: 0, cc: "${OR_CC}"  }, mask: 0x3f8 }
-  - { name: SBC,   op: 0x1b0, ctl: { alu: SUB, carry: cin, srca: reg, ld: dst, swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
-  - { name: SUB,   op: 0x1a0, ctl: { alu: SUB, carry:    , srca: reg, ld: dst, swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
-  - { name: XOR,   op: 0x1d0, ctl: { alu: XOR, carry:    , srca: reg, ld: dst, swp: 0, cc: "${OR_CC}"  }, mask: 0x3f8, cycles: 1 }
+  - { name: ADC,   op: 0x190, ctl: { alu: ADD, carry: cin, srca: reg, ld: dst, wr: , swp: 0, cc: "${ADD_CC}" }, mask: 0x3f8, cycles: 1 }
+  - { name: ADD,   op: 0x180, ctl: { alu: ADD, carry:    , srca: reg, ld: dst, wr: , swp: 0, cc: "${ADD_CC}" }, mask: 0x3f8, cycles: 1 }
+  - { name: AND,   op: 0x1c0, ctl: { alu: AND, carry:    , srca: reg, ld: dst, wr: , swp: 0, cc: "${AND_CC}" }, mask: 0x3f8 }
+  - { name: CP,    op: 0x1f0, ctl: { alu: SUB, carry:    , srca: reg, ld:    , wr: , swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8 }
+  - { name: OR,    op: 0x1e0, ctl: { alu: OR,  carry:    , srca: reg, ld: dst, wr: , swp: 0, cc: "${OR_CC}"  }, mask: 0x3f8 }
+  - { name: SBC,   op: 0x1b0, ctl: { alu: SUB, carry: cin, srca: reg, ld: dst, wr: , swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
+  - { name: SUB,   op: 0x1a0, ctl: { alu: SUB, carry:    , srca: reg, ld: dst, wr: , swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
+  - { name: XOR,   op: 0x1d0, ctl: { alu: XOR, carry:    , srca: reg, ld: dst, wr: , swp: 0, cc: "${OR_CC}"  }, mask: 0x3f8, cycles: 1 }
 
   - { name: DIV,   op: 0x150, ctl: { alu: DIV,  cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, cc: v },                                          mask: 0x3f8 } # only byte/word
@@ -129,8 +129,8 @@ ops:
   - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, srca: acc, carry: cin, cc: c }}
   - { name: BS1B,   op: 0x10f, ctl: {             cc: z2v }}
   - { name: BS1F,   op: 0x10e, ctl: { alu: MIRR , cc: z2v }}
-  - { name: DAA,    op: 0x110, ctl: {             cc: szhvcr }}
-  - { name: DEC,    op: 0x168, ctl: { alu: SUB, srca: num3, ld: dst, wr: 0, swp: 0, cc: "${DEC_CC}" }, mask: 0x3f8 } # DEC #3,r
+  - { name: DAA,    op: 0x110, ctl: { alu: ADD, carry: , srca: daa,  ld: dst, wr:  , swp: 0, cc: szhvcr }}
+  - { name: DEC,    op: 0x168, ctl: { alu: SUB, carry: , srca: num3, ld: dst, wr: 0, swp: 0, cc: "${DEC_CC}" }, mask: 0x3f8 } # DEC #3,r
   - { name: DJNZ,   op: 0x11c }
   - { name: EXTS,   op: 0x113, ctl: { ext: sex }}
   - { name: EXTZ,   op: 0x112, ctl: { ext: zex }}
@@ -413,6 +413,16 @@ ucode:
     auto: true
     seq: # increments PC despite not reading data, so it can be used in the general OP template
       - zero_rmux, ld1_opnd, inc_pc, ret_jsr
+  - name: rfp
+    auto: true
+    seq: # loads rfp to op0 and zero to op1
+      - rfp_rmux, ld0_opnd, inc_pc
+      - zero_rmux, ld1_opnd, ret_jsr
+  - name: daa
+    auto: true
+    seq:
+      - daa_alu, md_ld, inc_pc
+      - ld1_opnd, ret_jsr
   - name: imm24
     auto: true
     seq:
@@ -476,7 +486,7 @@ ucode:
       - m_ea, waitmem, vs_fetch
       - g2_nxgr, ni
 # instructions
-  - mnemo: [ ADC, ADD, AND, ANDCF, BIT, CCF, CP, CPL, DEC, INC,
+  - mnemo: [ ADC, ADD, AND, ANDCF, BIT, CCF, CP, CPL, DAA. DEC, INC, DECF, INCF,
             LD, LDC, LDCF, MIRR, NEG, NOP, OR, ORCF, PAA, RCF,
             SUB, SBC, SCF, XOR, XORCF, ZCF ]
     seq:
@@ -515,27 +525,6 @@ ucode:
       - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
       - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
       - inc_pc
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ DAA ]
-    seq:
-      - daa_alu, md_ld, inc_pc
-      - ld1_opnd
-      - add_alu, dst_ld, ${cc}_cc
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ INCF, DECF ]
-    seq:
-      - rfp_rmux, ld0_opnd, inc_pc
-      - zero_rmux, ld1_opnd
-      - ${alu}_alu, hi_carry, rfp_ld
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ EI ]
-    seq:
-      - s8_fetch, inc_pc
-      - num3_jsr
-      - iff_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ BS1F, BS1B ]
