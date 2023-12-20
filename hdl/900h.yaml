@@ -90,8 +90,8 @@ ops:
   - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b }}
   - { name: PUSHF,  op: 0x018, ctl: { rmux: f,  setw: b }}
   - { name: POPF,   op: 0x019, ctl: { dst:  f,  setw: b }}
-  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, cx: hi }, mask: 0x3f8 } # POP R
-  - { name: POPQ,   op: 0x058, mask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w }, mask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q }, mask: 0x3f8 } # POP R
   - { name: PUSHR,  op: 0x028, ctl: { setw: w }, mask: 0x3f8 } # PUSH R
   - { name: PUSHR,  op: 0x038, ctl: { setw: q }, mask: 0x3f8 } # PUSH R
   - { name: PUSHW,  op: 0x009, ctl: { setw: b }}
@@ -141,7 +141,7 @@ ops:
   - { name: LDC,    op: 0x12f, ctl: { alu:    , cx: ,   srca: cr0,  ld: dst, setw: ,wr: 0, swp: 0, cc: }} # LDC r,cr
   - { name: PAA,    op: 0x114, ctl: { alu: ADD, cx: b0, srca: zero, ld: dst, setw: ,wr: 0, swp: 0, cc: }} # PAA r
   - { name: POPr,   op: 0x105 } # POP r
-  - { name: PUSHR,  op: 0x104 } # PUSH r
+  - { name: PUSHR2, op: 0x104 } # PUSH r
   - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, cx: cin, srca: acc, ld: ,setw: ,swp: , wr: , cc: c }} # register A always used
   # group 1 with immediate data ADC r,#
   - { name: ADC,   op: 0x1c9, ctl: { alu: ADD, cx: cin, srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${ADD_CC}" }}
@@ -458,6 +458,15 @@ ucode:
   - name: znvloop # repeats the current instruction, reloading indexed data
     seq:
       -
+  - name: pshdst
+    seq:
+      - xsp_rmux, ld0_opnd
+      - spd_rmux, ld1_opnd
+      - sub_alu, xsp_ld, dst_rmux, ld0_opnd
+      - md_ld
+      - sp_ea, wr
+      - waitmem, q_fetch
+      - ni
   ########################################################
   # Load op0 operand (destination)
   - mnemo: [ rzzB, rzzW, rzzQ ]
@@ -689,32 +698,26 @@ ucode:
       - inc_pc, ${setw}_setw
       - xsp_rmux, ld0_opnd
       - spd_rmux, ld1_opnd
-      - sub_alu, xsp_ld
-      - ${rmux}_rmux, ld0_opnd
+      - sub_alu, xsp_ld, ${rmux}_rmux, ld0_opnd
       - md_ld
       - sp_ea, wr
       - waitmem, q_fetch
       - ni
   - mnemo: [ PUSHR ]
     seq:
-      - inc_pc
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd, src_ral
-      - sub_alu, xsp_ld, src_rmux, ld0_opnd
-      - md_ld
-      - sp_ea, wr
-      - waitmem
-      - waitmem, q_fetch
-      - ni
+      - inc_pc, ${setw}_setw, dst_ral
+      - pshdst_jsr
+  - mnemo: [ PUSHR2 ]
+    seq:
+      - inc_pc, pshdst_jsr
   - mnemo: [ PUSHW ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
       - ?${setw}=w, inc_pc
-      - xsp_rmux, ld0_opnd
+      - inc_pc, xsp_rmux, ld0_opnd
       - spd_rmux, ld1_opnd
       - sub_alu, xsp_ld
       - sp_ea, wr
-      - waitmem
       - waitmem, q_fetch
       - ni
   - mnemo: [ PUSHM ]
@@ -752,15 +755,6 @@ ucode:
       - sp_ea, waitmem, q_fetch
       - m_ea, wr
       - xsp_rmux, ld0_opnd
-      - add_alu, xsp_ld
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ POPQ ] # Pops a 32-bit value
-    seq:
-      - inc_pc, q_setw
-      - sp_ea, waitmem, q_fetch, spd_rmux, ld1_opnd
-      - ld0_opnd
-      - dst_ld, xsp_rmux, ld0_opnd
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
