@@ -101,7 +101,7 @@ always @* begin
     endcase
 
     v=0;
-    cc={2'd0,cx};
+    cc={3{cx}};
     rslt = op0;
     case(alu_sel)
         ADD_ALU: begin
