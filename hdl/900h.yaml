@@ -66,7 +66,7 @@ ops:
   ########### instructions ###################
 
   # group 0 instructions
-  - { name: EI,     op: 0x006, ctl: { alu: , cx: , srca: num3, ld: rfp, setw: b, wr: , swp: 1, cc: }} # also serves as DI when operand is 7
+  - { name: EI,     op: 0x006, ctl: { alu: , cx: , srca: num30, ld: rfp, setw: b, wr: , swp: 1, cc: }} # also serves as DI when operand is 7
   - { name: EXFF,   op: 0x016 } # EX F,F'
   - { name: HALT,   op: 0x005 }
   - { name: DECF,   op: 0x00d, ctl: { alu: SUB, cx: hi, srca: rfp, ld: rfp, setw: b, wr: , swp: , cc: }}
@@ -80,7 +80,7 @@ ops:
   - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: b, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
   - { name: LD,     op: 0x030, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: w, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
   - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: q, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
-  - { name: LDF,    op: 0x017 }
+  - { name: LDF,    op: 0x017, ctl: { alu: , cx: , srca: num30,ld: rfp, setw: b, wr: , swp: , cc: } }
   - { name: LDX,    op: 0x0f7 }
   - { name: CALL16, op: 0x01c, ctl: { setw: w, call24:   }}
   - { name: CALL24, op: 0x01d, ctl: { setw: q, call24: 1 }} # only 24 bits read
@@ -436,9 +436,13 @@ ucode:
     seq: # note that it consumes the first byte too, which contains the OP code
       - inc_pc, s8_fetch
       - inc_pc, n4_rmux, ld1_opnd, ret_jsr
-  - name: num3 # #3
+  - name: num3 # #3 -> op1, pc+=1
     seq:
-      - n3_rmux, ld1_opnd, inc_pc, s8_fetch, ret_jsr
+      - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr
+  - name: num30 # #3 -> op0, pc+=2
+    seq:
+      - inc_pc, s8_fetch
+      - inc_pc, n3_rmux, ld0_opnd, ret_jsr
   - name: zni
     seq:
       - inc_pc
@@ -482,7 +486,7 @@ ucode:
 # instructions
   - mnemo: [ ADC, ADD, AND, ANDCF, BIT, CCF, CP, CPL, DAA, DEC, INC, DECF, INCF,
             EI, CHG, RES, SET, STCF, TSET,
-            LD, LDC, LDCF, MIRR, NEG, NOP, OR, ORCF, PAA, RCF,
+            LD, LDC, LDCF, LDF, MIRR, NEG, NOP, OR, ORCF, PAA, RCF,
             SUB, SBC, SCC, SCF, XOR, XORCF, ZCF ]
     seq:
       - ${setw}_setw, ${srca}_jsr
@@ -643,29 +647,28 @@ ucode:
       - ni
   - mnemo: [ CALL16, CALL24 ]
     seq:
-      - s8_fetch, inc_pc, ${setw}_setw
-      - xsp_rmux, ld0_opnd
-      - four_rmux, ld1_opnd
-      - sub_alu, xsp_ld       # XSP = XSP-4
-      - zex, ld0_opnd, inc_pc
+      - inc_pc, s8_fetch
+      - xsp_rmux, ld0_opnd, q_setw
+      - spd_rmux, ld1_opnd
+      - sub_alu, xsp_ld, ${setw}_setw       # XSP = XSP-4
+      - inc_pc, zex, ld0_opnd
       - ?${call24}, inc_pc
-      - md_ld, inc_pc       # zex-applied MD
+      - inc_pc, md_ld       # zex-applied MD
       - md_rmux, ld1_opnd   # store it in op1
       - pc_rmux, ld0_opnd   # move PC to MD
-      - md_ld, swp_opnd
+      - md_ld, swp_opnd, q_setw
       - sp_ea, wr           # push PC
-      - waitmem
       - pc_ld               # PC gets the jump address
       - waitmem, q_fetch    # jump
       - ni
   - mnemo: [ CALR ]
     seq:
-      - s8_fetch, inc_pc, q_setw
+      - inc_pc, s8_fetch, q_setw
       - xsp_rmux, ld0_opnd
       - spd_rmux, ld1_opnd
       - sub_alu, xsp_ld, w_setw # XSP = XSP-4
-      - sex, ld0_opnd, inc_pc
-      - md_ld, inc_pc       # sex-applied MD
+      - inc_pc, sex, ld0_opnd
+      - inc_pc, md_ld       # sex-applied MD
       - md_rmux, ld1_opnd   # store it in op1
       - pc_rmux, ld0_opnd   # move PC to MD
       - md_ld
@@ -850,21 +853,21 @@ ucode:
       - ${alu}_alu, dst_ld # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
-  - mnemo: [ LDF ]
-    seq:
-      - inc_pc, s8_fetch
-      - n3_rmux, ld0_opnd, inc_pc
-      - rfp_ld
-      - waitmem, q_fetch
-      - ni
+  # - mnemo: [ LDF ]
+  #   seq:
+  #     - inc_pc, s8_fetch
+  #     - n3_rmux, ld0_opnd, inc_pc
+  #     - rfp_ld
+  #     - waitmem, q_fetch
+  #     - ni
   - mnemo: [ LDX ]
     seq:
       - inc_pc, s8_fetch
       - inc_pc, s8_fetch
       - inc_pc, ld0_opnd
-      - inc_pc, da_ld
-      - waitmem, q_fetch
-      - da_ea, wr, inc_pc
+      - inc_pc, da_ld, b_setw
+      - waitmem, vs_fetch
+      - inc_pc, da_ea, wr
       - inc_pc
       - waitmem, q_fetch
       - ni
