@@ -693,7 +693,6 @@ ucode:
       - ${rmux}_rmux, ld0_opnd
       - md_ld
       - sp_ea, wr
-      - waitmem
       - waitmem, q_fetch
       - ni
   - mnemo: [ PUSHR ]
