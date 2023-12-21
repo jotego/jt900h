@@ -244,14 +244,14 @@ ops:
   - { name: SRAM,  op: 0x27d, ctl: { alu: SHR, cc: "${SH_CC}", cx: sa  }}
   - { name: SRLM,  op: 0x27f, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }}
   # Group 2 - string instructions
-  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${DEC_CC}" }}
-  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${DEC_CC}" }}
-  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${DEC_CC}" }}
-  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${DEC_CC}" }}
-  - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}"  }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
-  - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}"  }} # v3, becomes v0 at the end of the instruction
-  - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}"  }} # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}"  }} # v3, becomes v0 at the end of the instruction
+  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${DEC_CC}", loop: 0 }}
+  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${DEC_CC}", loop: 1 }}
+  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${DEC_CC}", loop: 0 }}
+  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${DEC_CC}", loop: 1 }}
+  - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
+  - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
+  - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
   - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: szh0vn0 }} # RLD [A,](mem)
   - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: szh0vn0 }} # RRD [A,](mem)
@@ -502,7 +502,7 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - dst_rmux, ld0_opnd
+      - set_loop, dst_rmux, ld0_opnd
       - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
       - ${step}_alu, dst_ld, da_ea, vs_fetch  # variable-size fetch (byte or word)
       - a_ral
@@ -511,7 +511,7 @@ ucode:
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
       - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      - ?${loop}, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -524,10 +524,10 @@ ucode:
       - waitmem, vs_fetch, src_rmux, ld0_opnd
       - da_ld, md_rmux,  ld0_opnd
       - da_ea, wr, ${step}_alu, src_ld
-      - waitmem, zero_rmux, ld1_opnd
+      - zero_rmux, ld1_opnd
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
-      - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      - waitmem, sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
+      - ?${loop}, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -743,7 +743,7 @@ ucode:
   - mnemo: [ RLD, RRD ]
     seq:
       - a_ral
-      - src_rmux, ld0_opnd
+      - src_rmux, ld1_opnd
       - ${alu}_alu, ${cc}_cc, a_ld
       - ${alu}_alu, md_ld
       - s8_fetch  # get the upper part of the ALU results

@@ -46,6 +46,7 @@ reg  [ 7:0] daa;
 reg  [ 2:0] cc;
 reg  [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
+wire [11:0] rdig;
 wire        daa_carry, bsel,
             div_sign, div_v;
 
@@ -56,6 +57,7 @@ assign c = bs ? cc[0] : ws ? cc[1] : cc[2];
 assign bidx = {1'b0,ws&op1[3],op1[2:0]};
 assign bsel = op0[bidx];
 assign div_sign = alu_sel==DIVS_ALU;
+assign rdig = {op1[3:0],op0[7:0]};
 
 jt900h_div u_div (
     .rst  ( rst         ),
@@ -150,8 +152,8 @@ always @* begin
             if( ws ) rslt[15] = cx;
             cc[2:1] = {2{op2[0]}};
         end
-        RRD_ALU: rslt[15:0]={op0[3:0],op1[7:4],op0[7:4],op1[3:0]}; // op1=mem, op0=A
-        RLD_ALU: rslt[15:0]={op1[3:0],op0[3:0],op0[7:4],op1[7:4]};
+        RRD_ALU: rslt[15:0]={op1[7:4],rdig[3:0],rdig[11:4]}; // op0=mem, op1=A
+        RLD_ALU: rslt[15:0]={op1[7:4],rdig[7:0],rdig[11:8]};
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15] };
