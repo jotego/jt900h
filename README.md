@@ -38,13 +38,15 @@ Second OP byte contains a register selection:
 
 **Group 1: R,#3**
 
-First byte contains the destination register
+| Byte 1                            | Byte 2                    |
+| --------------------------------- | ------------------------- |
+| destination register: **dst,op0** | 3-bit value (#3): **op1** |
+| destination register: **dst,op0** | register (R): **src/op1** |
+| destination register: **dst,op0** | A: **src/op1**            |
+| destination register: **dst,op0** | DAA: **op1**              |
+| destination register: **dst,op0** | CR:  **md/pc+=2**         |
+| destination register: **dst,op0** | PAA: **op1=0**            |
 
-- **dst** points to the register
-- **op0** contains the register value
-
-- byte 2 is a 3-bit value (#3) -> **op1** is set to the value
-- byte 2 is a register (R) -> **src/op1** are set
 
 ## PC at Reset
 

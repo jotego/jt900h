@@ -73,7 +73,7 @@ wire  [1:0] nxgr_sel,
       [2:0] setw_sel,
       [4:0] jsr_sel;
 wire        ni, r32jmp, halt, jb5, retb, retw,
-            swpss, widen, waitmem;
+            waitmem;
 
 assign still = div_busy | (waitmem & mem_busy);
 
@@ -108,12 +108,13 @@ always @(posedge clk, posedge rst) begin
         {bs,ws,qs} <= 0;
         alts       <= 0;
     end else if(cen) begin
-        if(  widen ) {qs,ws} <= {ws,bs};
-        if(  swpss ) {altss,qs,ws,bs}<={qs,ws,bs,altss};
         case( setw_sel )
-            B_SETW: {qs,ws,bs}<=3'b001;
-            W_SETW: {qs,ws,bs}<=3'b010;
-            Q_SETW: {qs,ws,bs}<=3'b100;
+            B_SETW:     {qs,ws,bs} <= 3'b001;
+            W_SETW:     {qs,ws,bs} <= 3'b010;
+            Q_SETW:     {qs,ws,bs} <= 3'b100;
+            WIDEN_SETW: {qs,ws,bs} <= {qs,ws,bs}<<1;
+            SHRTN_SETW: {qs,ws,bs} <= {qs,ws,bs}>>1;
+            SWP_SETW:   {altss,qs,ws,bs}<={qs,ws,bs,altss};
             default:;
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;

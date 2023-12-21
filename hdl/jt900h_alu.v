@@ -45,6 +45,7 @@ reg  cx,
 reg  [ 7:0] daa;
 reg  [ 2:0] cc;
 reg  [15:0] div_quot, div_rem;
+wire [ 4:0] bidx;
 wire        daa_carry, bsel,
             div_sign, div_v;
 
@@ -52,7 +53,8 @@ assign z = bs ? z8    : ws ? z16   : z32;
 assign n = bs ? n8    : ws ? n16   : n32;
 assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
 assign c = bs ? cc[0] : ws ? cc[1] : cc[2];
-assign bsel = op0[{1'b0,ws&op1[3],op1[2:0]}];
+assign bidx = {1'b0,ws&op1[3],op1[2:0]};
+assign bsel = op0[bidx];
 assign div_sign = alu_sel==DIVS_ALU;
 
 jt900h_div u_div (
@@ -119,19 +121,14 @@ always @* begin
             // update v
         end
         DAA_ALU: rslt[7:0] = daa;
-        BAND_ALU: begin cc[0]=bsel & cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
-        BOR_ALU:  begin cc[0]=bsel | cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
-        BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[{1'b0,op1[3:0]}]=cc[0]; end
-        BSET_ALU: begin rslt[{1'b0,ws&op1[3],op1[2:0]}]=cx; cc = ~{3{bsel}}; end
+        BAND_ALU: begin cc[0]=bsel & cx; rslt[bidx]=cc[0]; end
+        BOR_ALU:  begin cc[0]=bsel | cx; rslt[bidx]=cc[0]; end
+        BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[bidx]=cc[0]; end
+        BSET_ALU: begin cc = ~{3{bsel}}; rslt[bidx]=cx;    end
         OR_ALU:   rslt = op0^op1;
         XOR_ALU:  rslt = op0^op1;
         AND_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
-        SHL_ALU: begin // shift one bit left
-            {cc[2],rslt} = {op2,cx};
-            cc[0] = op2[ 7];
-            cc[1] = op2[15];
-        end
         MUL_ALU:  rslt = op0[15:0]*op1[15:0];
         MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
         DIV_ALU, DIVS_ALU: begin
@@ -140,6 +137,11 @@ always @* begin
             else
                 rslt[31:0] = { div_rem[15:0], div_quot[15:0] };
             v = div_v;
+        end
+        SHL_ALU: begin // shift one bit left
+            {cc[2],rslt} = {op2,cx};
+            cc[0] = op2[ 7];
+            cc[1] = op2[15];
         end
         SHR_ALU: begin // shift one bit right
             {rslt,cc[0]} = {cx,op2};

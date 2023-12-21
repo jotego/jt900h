@@ -104,7 +104,7 @@ always @* begin
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
-        F_RMUX:   rmux = { 16'd0, sr };
+        SR_RMUX:  rmux = { 16'd0, sr };
         PC_RMUX:  rmux = {8'd0,pc};
         RFP_RMUX: rmux[1:0] = rfp;
         XSP_RMUX: rmux = ptrs[XSP];
@@ -234,7 +234,10 @@ always @(posedge clk, posedge rst) begin
             BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
             F_LD:   {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
             OP2_LD: op2 <= rslt;
-            SR_LD:  {imask,rfp,s,z,h,v,n,c} <= {rslt[14:12],rslt[9:8],rslt[7:6],rslt[4],rslt[2:0]};
+            SR_LD:  begin
+                if( ws ) {imask,rfp} <= {rslt[14:12],rslt[9:8]};
+                {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]}
+            end
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: imask <= rslt[2:0];

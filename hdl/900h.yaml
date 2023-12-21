@@ -86,16 +86,16 @@ ops:
   - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }} # only 24 bits read
   - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }}
   - { name: NOP,    op: 0x000, ctl: { alu: , cx: , srca: zero, ld: , setw: , wr: , swp: , cc: }}
-  - { name: POPA,   op: 0x015, ctl: { dst: acc, setw: b, wr: }}
-  - { name: POPF,   op: 0x019, ctl: { dst:  f,  setw: b, wr: }}
+  - { name: POPA,   op: 0x015, ctl: { dst:  a,  setw: b, wr: }}
+  - { name: POPF,   op: 0x019, ctl: { dst: sr,  setw: b, wr: }}
   - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: }, mask: 0x3f8 } # POP R
   - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: }, mask: 0x3f8 } # POP R
   - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: }} # POP SR
   - { name: PUSHA,  op: 0x014, ctl: { pshr: 0, rmux: src, setw: b }}
-  - { name: PUSHF,  op: 0x018, ctl: { pshr: 0, rmux: f,   setw: b }}
+  - { name: PUSHF,  op: 0x018, ctl: { pshr: 0, rmux: sr,  setw: b }}
   - { name: PUSHR,  op: 0x028, ctl: { pshr: 1, rmux: dst, setw: w }, mask: 0x3f8 } # PUSH R
   - { name: PUSHR,  op: 0x038, ctl: { pshr: 1, rmux: dst, setw: q }, mask: 0x3f8 } # PUSH R
-  - { name: PUSHSR, op: 0x002, ctl: { pshr: 0, rmux: sr, setw: w }} # PUSH SR
+  - { name: PUSHSR, op: 0x002, ctl: { pshr: 0, rmux: sr,  setw: w }} # PUSH SR
   - { name: PUSHW,  op: 0x009, ctl: { setw: b }}
   - { name: PUSHW,  op: 0x00b, ctl: { setw: w }}
   - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }}
@@ -162,12 +162,12 @@ ops:
   # group 1 but limited valid addressing
   - { name: CPL,   op: 0x106, ctl: { alu: CPL, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: h1n1 }} # only byte/word
   - { name: LINK,  op: 0x10c                } # only long word
-  - { name: MDEC1, op: 0x13c, ctl: { rmux: one,  alu: sub }} # only word
-  - { name: MDEC2, op: 0x13d, ctl: { rmux: two,  alu: sub }} # only word
-  - { name: MDEC4, op: 0x13e, ctl: { rmux: four, alu: sub }} # only word
-  - { name: MINC1, op: 0x138, ctl: { rmux: one,  alu: add }} # only word
-  - { name: MINC2, op: 0x139, ctl: { rmux: two,  alu: add }} # only word
-  - { name: MINC4, op: 0x13a, ctl: { rmux: four, alu: add }} # only word
+  - { name: MDEC1, op: 0x13c, ctl: { setw: b, alu: sub }} # only word
+  - { name: MDEC2, op: 0x13d, ctl: { setw: w, alu: sub }} # only word
+  - { name: MDEC4, op: 0x13e, ctl: { setw: q, alu: sub }} # only word
+  - { name: MINC1, op: 0x138, ctl: { setw: b, alu: add }} # only word
+  - { name: MINC2, op: 0x139, ctl: { setw: w, alu: add }} # only word
+  - { name: MINC4, op: 0x13a, ctl: { setw: q, alu: add }} # only word
   - { name: MIRR,  op: 0x116, ctl: { alu: MIRR,cx: , srca: imm1, ld: dst, swp:  , setw: ,wr: , cc: }} # only byte
   - { name: NEG,   op: 0x107, ctl: { alu: SUB, cx: , srca: zero, ld: src, swp: 1, setw: ,wr: , cc: "${SUB_CC}" }} # only byte/word
   - { name: RLA,   op: 0x1fa, ctl: { alu: SHL, srca: acc, cx: cin,cc: "${SH_CC}" }} # register A always used RL  A,r
@@ -331,21 +331,21 @@ ucode:
       - g2_nxgr, ni
   - name: r32com
     seq:
-      - da2ea, swpss
+      - da2ea, swp_setw
       - m_ea, q_fetch, waitmem
       - ld0_opnd
       - waitmem, q_fetch
       - g3_nxgr, ni
   - name: r32_00
     seq:
-      - swpss
+      - swp_setw
       - full, dst_ral, inc_pc, q_setw
       - dst_rmux, ld0_opnd
       - da_ld
       - r32com_jsr
   - name: r32_01
     seq:
-      - swpss
+      - swp_setw
       - full, dst_ral, inc_pc, q_setw, s8_fetch
       - dst_rmux, ld0_opnd, w_setw, inc_pc
       - sex, md_rmux, ld1_opnd, q_setw, inc_pc
@@ -353,7 +353,7 @@ ucode:
       - r32com_jsr
   - name: r32_8
     seq:
-      - swpss
+      - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, full, dst_ral
       - dst_rmux, ld0_opnd, b_setw
@@ -363,7 +363,7 @@ ucode:
       - r32com_jsr
   - name: r32_16
     seq:
-      - swpss
+      - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, full, dst_ral
       - dst_rmux, ld0_opnd, w_setw
@@ -384,12 +384,12 @@ ucode:
   - name: cr0
     seq:
       - inc_pc, s8_fetch
-      - cr_rd
+      - inc_pc, cr_rd
       - cr_rmux, ld0_opnd, ret_jsr  # loaded into op0 because it is used for a transfer only
   - name: cr1
     seq:
       - inc_pc, s8_fetch
-      - ret_jsr  # loaded into md
+      - inc_pc, ret_jsr  # loaded into md
   - name: zero
     seq:
       - inc_pc, s8_fetch, zero_rmux, ld1_opnd, ret_jsr
@@ -536,17 +536,17 @@ ucode:
       - ni
   - mnemo: [ BS1F, BS1B ]
     seq:
-      - ${alu}_alu, md_ld, inc_pc # for BS1F, this will mirror the operand
-      - ld0_opnd
-      - bs1b_alu, a_ld
+      - ?${alu}, ${alu}_alu, md_ld  # for BS1F, this will mirror the operand
+      - ?${alu}, ld0_opnd
+      - inc_pc, bs1b_alu, a_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ DJNZ ]
     seq:
-      - s8_fetch, inc_pc                    # jump offset and PC adjustment
+      - inc_pc, s8_fetch                    # jump offset and PC adjustment
       - zero_rmux, ld1_opnd
-      - sub_alu, hi_carry, dst_ld, zni_jsr  # conditionally end if ALU's z output was set
-      - sex, ld0_opnd
+      - sub_alu, hi_carry, dst_ld, b_setw, zni_jsr  # conditionally end if ALU's z output was set
+      - inc_pc, sex, ld0_opnd, q_setw
       - pc_rmux, ld1_opnd
       - add_alu, pc_ld
       - waitmem, q_fetch
@@ -574,8 +574,9 @@ ucode:
       - ni
   - mnemo: [ EXTS, EXTZ ]
     seq:
+      - shrtn_setw
       - md_ld, inc_pc
-      - ${ext}, ld0_opnd
+      - ${ext}, ld0_opnd, widen_setw
       - dst_ld
       - waitmem, q_fetch
       - ni
@@ -724,8 +725,9 @@ ucode:
       - ni
   - mnemo: [ MINC1, MINC2, MINC4, MDEC1, MDEC2, MDEC4 ]
     seq:
+      - ${setw}_setw
+      - spd_rmux, ld1_opnd      # loads 1,2 or 4 to op1
       - w_setw, imm0_jsr        # op0 holds the register value
-      - ${rmux}_rmux, ld1_opnd
       - ${alu}_alu, op2_ld      # op2 holds the modified LSB
       - md_rmux, ld1_opnd       # op1 holds the mask
       - mod_alu, dst_ld
@@ -736,12 +738,12 @@ ucode:
       - op2_ld                  # what to shift in op2
       - ${srca}_jsr             # times to shift in op1
       - sh4_alu,  md_ld         # times to shift adjusted in MD
-      - ld1_opnd,               # times to shift adjusted in op1
-      - one_rmux, ld0_opnd
+      - ld0_opnd,               # times to shift adjusted in op0
+      - zero_rmux, ld1_opnd
       - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc
       - ${alu}_alu,  ${cx}_carry, op2_ld
-      - sub_alu, md_ld
-      - sub_alu, ld1_opnd, zni_jsr # return if ALU's z is set
+      - sub_alu, hi_cx, md_ld
+      - sub_alu, hi_cx, ld0_opnd, zni_jsr # return if ALU's z is set
       - jb5                        # jumps back by 5
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
@@ -765,7 +767,7 @@ ucode:
       - swp_ral, inc_pc
       - mulsel, dst_ral
       - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, src_rmux, ld1_opnd, widen
+      - ${ex}, src_rmux, ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
@@ -773,7 +775,7 @@ ucode:
     seq:
       - s8_fetch, inc_pc
       - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, md_rmux,  ld1_opnd, widen
+      - ${ex}, md_rmux,  ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
@@ -781,7 +783,7 @@ ucode:
     seq:
       - mulsel, dst_ral, inc_pc
       - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, md_rmux,  ld1_opnd, widen
+      - ${ex}, md_rmux,  ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
@@ -789,7 +791,7 @@ ucode:
     seq:
       - inc_pc, swp_ral
       - mulsel, dst_ral
-      - ${ex}, src_rmux, ld1_opnd, widen  # dst(q/w)÷src(w/b)
+      - ${ex}, src_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
       - ${ex}, dst_rmux, ld0_opnd
       - ${alu}_alu, div
       - ${alu}_alu, dst_ld # ctrl logic will automatically wait for the ALU
@@ -814,9 +816,9 @@ ucode:
       - waitmem, q_fetch
       - ni
   - mnemo: [ LINK ]
-    seq:
+    seq: # q_setw already set
       - inc_pc, xsp_rmux, ld0_opnd, s8_fetch
-      - four_rmux, ld1_opnd, inc_pc
+      - spd_rmux, ld1_opnd, inc_pc
       - sub_alu, xsp_ld, inc_pc
       - dst_rmux, ld0_opnd
       - md_rmux,  ld1_opnd
@@ -828,14 +830,14 @@ ucode:
       - waitmem, q_fetch
       - ni
   - mnemo: [ UNLK ]
-    seq:
+    seq: # q_setw already set
       - inc_pc, xsp_ld
       - sp_ea,
       - sp_ea, q_fetch, waitmem
       - ld0_opnd
       - dst_ld
       - xsp_rmux, ld0_opnd
-      - four_rmux, ld1_opnd
+      - spd_rmux, ld1_opnd
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
