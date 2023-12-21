@@ -36,7 +36,6 @@ module jt900h_ctrl(
     output            exff,
     output            alt,
     output            inc_pc,
-    output            jb5,
     output            mulcheck,
     output            mulsel,
     output            sex,
@@ -44,7 +43,7 @@ module jt900h_ctrl(
     output            zex,
     output      [1:0] ea_sel,
     output      [1:0] opnd_sel,
-    output      [2:0] carry_sel,
+    output      [2:0] cx_sel,
     output      [2:0] fetch_sel,
     output      [2:0] ral_sel,
     output      [3:0] ld_sel,
@@ -66,14 +65,12 @@ reg  [2:0] altss;
 wire       halt, swi, still;
 reg        nmi_l;
 wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
-reg        stack_bsy, cc;
-wire       still;
+reg        stack_bsy;
 
 // signals from ucode
-wire  [1:0] nxgr_sel,
-      [2:0] setw_sel,
-      [4:0] jsr_sel;
-wire        ni, r32jmp, halt, jb5, retb, retw,
+wire  [1:0] nxgr_sel, loop_sel;
+wire  [2:0] setw_sel;
+wire        ni, r32jmp, retb, retw,
             waitmem;
 
 assign still = div_busy | (waitmem & mem_busy);
@@ -104,10 +101,9 @@ always @(posedge clk, posedge rst) begin
         uaddr      <= IVRD;
         jsr_ret    <= 0;
         iv         <= 4'o17; // reset vector
-        ba         <= 0;
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
-        alts       <= 0;
+        altss      <= 0;
     end else if(cen) begin
         case( setw_sel )
             B_SETW:     {qs,ws,bs} <= 3'b001;

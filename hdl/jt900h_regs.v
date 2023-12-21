@@ -42,11 +42,11 @@ module jt900h_regs(
     input             ws,
     input             zex,
     input       [1:0] opnd_sel,
-    input       [2:0] fetch_sel,
+    input       [1:0] fetch_sel,
     input       [2:0] ral_sel,
     input       [3:0] ld_sel,
     input       [4:0] cc_sel,
-    input       [4:0] rmux_sel,
+    input       [3:0] rmux_sel,
     // "Control Registers" (MCU MMR)
     output reg [ 7:0] cra,
     output reg [31:0] crin,
@@ -81,7 +81,7 @@ reg         is_mul;
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,2'b10,rfp,flags};
-assign {no,ho,co,zo} = {n,h,c,z}
+assign {no,ho,co,zo} = {n,h,c,z};
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
@@ -115,9 +115,6 @@ always @* begin
         N4_RMUX:  rmux = {28'd0, md[3:0]};
 
         ZERO_RMUX:rmux = 0;
-        ONE_RMUX: rmux = 1;
-        TWO_RMUX: rmux = 2;
-        FOUR_RMUX:rmux = 4;
         SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
 
         EA_RMUX:  rmux = {8'd0,ea};
@@ -154,27 +151,25 @@ always @(posedge clk, posedge rst) begin
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
-            SZHVN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
+            H0N0C_CC:       {    h,  n,c} <= {      1'b0,    1'b0,ci  };
+            N0C_CC:         {        n,c} <= {               1'b0,ci  };
+            SZHVCR_CC:      {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            H1N1_CC:        {    h,  n  } <= {      1'b1,    1'b1     };
             SZHVN1C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
-            SZH0VN0C_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, vi,1'b0,ci  };
-            SZH0VN0_CC:     {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
+            V_CC:           {      v    } <= {          vi            };
+            Z2V_CC:         {      v    } <= {               zi       };
+            SZV_CC:         {s,z,  v    } <= {ni,zi,    vi            };
+            C_CC:           {          c} <= {               ci       };
+            ZCH1N0_CC:      {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
             SZHVN0_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     };
             SZHVN1_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     };
+            SZHVN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
             SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
             SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
-            ZCH1N0_CC:      {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
-            // ZHN_CC:         {  z,h,  n  } <= {   zi,hi,      ni       };
-            N0C_CC:         {        n,c} <= {               1'b0,ci  };
-            H0N0C0_CC:      {    h,  n,c} <= {      1'b0,    1'b0,1'b0};
-            H0N0C_CC:       {    h,  n,c} <= {      1'b0,    1'b0,ci  };
-            H1N1_CC:        {    h,  n  } <= {      1'b1,    1'b1     };
-            // V_CC:           {      v    } <= {          vi            };
-            C_CC:           {          c} <= {               ci       };
-            // Z2V_CC:         {      v    } <= {               zi       };
-            Z3V_CC:         {      v    } <= {              ~zi       };
-            // SZV_CC:         {s,z,  v    } <= {si,zi,    vi            };
-            SZHVCR_CC:      {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            SZH0VN0C_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, vi,1'b0,ci  };
+            SZH0VN0_CC:     {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
             H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            Z3V_CC:         {      v    } <= {              ~zi       };
             default:;
         endcase
         case( fetch_sel )
@@ -232,11 +227,10 @@ always @(posedge clk, posedge rst) begin
                 if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];
             end
             BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
-            F_LD:   {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
             OP2_LD: op2 <= rslt;
             SR_LD:  begin
                 if( ws ) {imask,rfp} <= {rslt[14:12],rslt[9:8]};
-                {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]}
+                {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
             end
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;

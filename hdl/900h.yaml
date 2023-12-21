@@ -69,7 +69,7 @@ ops:
   ########### instructions ###################
 
   # group 0 instructions
-  - { name: EI,     op: 0x006, ctl: { alu: , cx: , srca: num30, ld: rfp, setw: b, wr: , swp: 1, cc: }} # also serves as DI when operand is 7
+  - { name: EI,     op: 0x006, ctl: { alu: , cx: , srca: num30, ld: iff, setw: b, wr: , swp: 1, cc: }} # also serves as DI when operand is 7
   - { name: EXFF,   op: 0x016 } # EX F,F'
   - { name: HALT,   op: 0x005 }
   - { name: DECF,   op: 0x00d, ctl: { alu: SUB, cx: hi, srca: rfp, ld: rfp, setw: b, wr: , swp: , cc: }}
@@ -104,10 +104,10 @@ ops:
   - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }}
   - { name: RETD,   op: 0x00f, ctl: { retd: 1, ncc: }}
   - { name: RETI,   op: 0x007, ctl: { ncc: }}
-  - { name: RCF,    op: 0x010, ctl: { alu: , cx:    , srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c0 }}
-  - { name: CCF,    op: 0x012, ctl: { alu: , cx: com, srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
-  - { name: SCF,    op: 0x011, ctl: { alu: , cx: hi,  srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c  }}
-  - { name: ZCF,    op: 0x013, ctl: { alu: , cx: zf,  srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
+  - { name: RCF,    op: 0x010, ctl: { alu: BAND, cx:    , srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c  }}
+  - { name: CCF,    op: 0x012, ctl: { alu:     , cx: com, srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
+  - { name: SCF,    op: 0x011, ctl: { alu:     , cx: hi,  srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c  }}
+  - { name: ZCF,    op: 0x013, ctl: { alu:     , cx: zf,  srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
   - { name: SWI,    op: 0x0f8, mask: 0x3f8 }
 
   # group 1 instructions, R,r
@@ -277,22 +277,22 @@ ops:
   - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0 }
   - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b }}
   - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w }}
-  - { name: ANDCF, op: 0x380, ctl: { alu: BAND, cx: cin,srca: num3, ld:   , wr:  , setw: b, cc: c }, mask: 0x3f8 }
-  - { name: BIT,   op: 0x3c8, ctl: { alu: BXOR, cx: hi, srca: num3, ld:   , wr:  , setw: b, cc: "${BIT_CC}"}, mask: 0x3f8 }
-  - { name: LDCF,  op: 0x398, ctl: { alu: BOR,  cx:    ,srca: num3, ld:   , wr:  , setw: b, cc: c }, mask: 0x3f8 }
-  - { name: ORCF,  op: 0x388, ctl: { alu: BOR,  cx: cin,srca: num3, ld:   , wr:  , setw: b, cc: c }, mask: 0x3f8 }
-  - { name: XORCF, op: 0x390, ctl: { alu: BXOR, cx: cin,srca: num3, ld:   , wr:  , setw: b, cc: c }, mask: 0x3f8 }
-  - { name: CHG,   op: 0x3c0, ctl: { alu: BXOR, cx: hi, srca: num3, ld: md, wr: 1, setw: b, cc:   }, mask: 0x3f8 }
-  - { name: RES,   op: 0x3b0, ctl: { alu: BAND, cx:   , srca: num3, ld: md, wr: 1, setw: b, cc:   }, mask: 0x3f8 }
-  - { name: SET,   op: 0x3b8, ctl: { alu: BOR,  cx: hi, srca: num3, ld: md, wr: 1, setw: b, cc:   }, mask: 0x3f8 }
-  - { name: STCF,  op: 0x3a0, ctl: { alu: BSET, cx: cin,srca: num3, ld: md, wr: 1, setw: b, cc:   }, mask: 0x3f8 }
-  - { name: TSET,  op: 0x3a8, ctl: { alu: BSET, cx: hi, srca: num3, ld: md, wr: 1, setw: b, cc: "${BIT_CC}" },  mask: 0x3f8 }
+  - { name: ANDCF, op: 0x380, ctl: { alu: BAND, cx: cin,srca: num3, ld:   , wr:  , swp: ,setw: b, cc: c }, mask: 0x3f8 }
+  - { name: BIT,   op: 0x3c8, ctl: { alu: BXOR, cx: hi, srca: num3, ld:   , wr:  , swp: ,setw: b, cc: "${BIT_CC}"}, mask: 0x3f8 }
+  - { name: LDCF,  op: 0x398, ctl: { alu: BOR,  cx:    ,srca: num3, ld:   , wr:  , swp: ,setw: b, cc: c }, mask: 0x3f8 }
+  - { name: ORCF,  op: 0x388, ctl: { alu: BOR,  cx: cin,srca: num3, ld:   , wr:  , swp: ,setw: b, cc: c }, mask: 0x3f8 }
+  - { name: XORCF, op: 0x390, ctl: { alu: BXOR, cx: cin,srca: num3, ld:   , wr:  , swp: ,setw: b, cc: c }, mask: 0x3f8 }
+  - { name: CHG,   op: 0x3c0, ctl: { alu: BXOR, cx: hi, srca: num3, ld: md, wr: 1, swp: ,setw: b, cc:   }, mask: 0x3f8 }
+  - { name: RES,   op: 0x3b0, ctl: { alu: BAND, cx:   , srca: num3, ld: md, wr: 1, swp: ,setw: b, cc:   }, mask: 0x3f8 }
+  - { name: SET,   op: 0x3b8, ctl: { alu: BOR,  cx: hi, srca: num3, ld: md, wr: 1, swp: ,setw: b, cc:   }, mask: 0x3f8 }
+  - { name: STCF,  op: 0x3a0, ctl: { alu: BSET, cx: cin,srca: num3, ld: md, wr: 1, swp: ,setw: b, cc:   }, mask: 0x3f8 }
+  - { name: TSET,  op: 0x3a8, ctl: { alu: BSET, cx: hi, srca: num3, ld: md, wr: 1, swp: ,setw: b, cc: "${BIT_CC}" },  mask: 0x3f8 }
   # group 3 1m11'mmmm A,(mem)
-  - { name: LDCF,  op: 0x32b, ctl: { alu: BOR,  cx:    ,srca: acc, ld:   , wr:  , setw: b, cc: c }}
-  - { name: ANDCF, op: 0x328, ctl: { alu: BAND, cx: cin,srca: acc, ld:   , wr:  , setw: b, cc: c }}
-  - { name: ORCF,  op: 0x329, ctl: { alu: BOR,  cx: cin,srca: acc, ld:   , wr:  , setw: b, cc: c }}
-  - { name: XORCF, op: 0x32a, ctl: { alu: BXOR, cx: cin,srca: acc, ld:   , wr:  , setw: b, cc: c }}
-  - { name: STCF,  op: 0x32c, ctl: { alu: BSET, cx: cin,srca: acc, ld: md, wr: 1, setw: b, cc:   }}
+  - { name: LDCF,  op: 0x32b, ctl: { alu: BOR,  cx:    ,srca: acc, ld:   , wr:  , swp: ,setw: b, cc: c }}
+  - { name: ANDCF, op: 0x328, ctl: { alu: BAND, cx: cin,srca: acc, ld:   , wr:  , swp: ,setw: b, cc: c }}
+  - { name: ORCF,  op: 0x329, ctl: { alu: BOR,  cx: cin,srca: acc, ld:   , wr:  , swp: ,setw: b, cc: c }}
+  - { name: XORCF, op: 0x32a, ctl: { alu: BXOR, cx: cin,srca: acc, ld:   , wr:  , swp: ,setw: b, cc: c }}
+  - { name: STCF,  op: 0x32c, ctl: { alu: BSET, cx: cin,srca: acc, ld: md, wr: 1, swp: ,setw: b, cc:   }}
 
 ucode:
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing
@@ -596,7 +596,7 @@ ucode:
     seq:
       - ?${alu}, ${alu}_alu, md_ld  # for BS1F, this will mirror the operand
       - ?${alu}, ld0_opnd
-      - inc_pc, bs1b_alu, a_ld
+      - inc_pc, bs1b_alu, a_ld, ${cc}_cc
       - waitmem, q_fetch
       - ni
   - mnemo: [ DJNZ ]

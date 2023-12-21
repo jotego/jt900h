@@ -24,7 +24,7 @@ module jt900h_alu(
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
     input      [31:0] op2,      // extra operand
-    input             bs,ws,
+    input             bs,ws,qs,
 
     // control
     input             div,
