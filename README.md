@@ -52,30 +52,30 @@ Second OP byte contains a register selection:
 
 | Instruction         | Encoding                  |
 | ------------------- | ------------------------- |
-| RET cc              | `1011'0000 - 1111'cccc`   |
-| LDAR                | `1111'0011 - 0001'0011`   |
-| JP cc,mem           | `1m11'mmmm - 1101'cccc`   |
-| LD (mem),R          | `1m11'mmmm - 01zz'0RRR`   |
-| LD<W> (mem),#       | `1m11'mmmm - 0000'00z0`   |
-| LD<W> (mem),(#16)   | `1m11'mmmm - 0001'01z0`   |
-| LDA R,mem           | `1m11'mmmm - 001s'0RRR`   |
-| CALL cc,mem         | `1m11'mmmm - 1110'cccc`   |
-| POP<W> (mem)        | `1m11'mmmm - 0000'01z0`   |
-| ANDCF  A,(mem)      | `1m11'mmmm - 0010'1000`   |
-| LDCF   A,(mem)      | `1m11'mmmm - 0010'1011`   |
-| ORCF   A,(mem)      | `1m11'mmmm - 0010'1001`   |
-| XORCF  A,(mem)      | `1m11'mmmm - 0010'1010`   |
-| STCF   A,(mem)      | `1m11'mmmm - 0010'1100`   |
-| BIT   #3,(mem)      | `1m11'mmmm - 1100'1~3~`   |
-| ANDCF #3,(mem)      | `1m11'mmmm - 1000'0~3~`   |
-| LDCF  #3,(mem)      | `1m11'mmmm - 1001'1~3~`   |
-| ORCF  #3,(mem)      | `1m11'mmmm - 1000'1~3~`   |
-| XORCF #3,(mem)      | `1m11'mmmm - 1001'0~3~`   |
-| STCF  #3,(mem)      | `1m11'mmmm - 1010'0~3~`   |
-| CHG   #3,(mem)      | `1m11'mmmm - 1100'0~3~`   |
-| RES   #3,(mem)      | `1m11'mmmm - 1011'0~3~`   |
-| SET   #3,(mem)      | `1m11'mmmm - 1011'1~3~`   |
-| TSET  #3,(mem)      | `1m11'mmmm - 1010'1~3~`   |
+| `RET cc           ` | `1011'0000 - 1111'cccc`   |
+| `LDAR             ` | `1111'0011 - 0001'0011`   |
+| `JP cc,mem        ` | `1m11'mmmm - 1101'cccc`   |
+| `LD (mem),R       ` | `1m11'mmmm - 01zz'0RRR`   |
+| `LD<W> (mem),#    ` | `1m11'mmmm - 0000'00z0`   |
+| `LD<W> (mem),(#16)` | `1m11'mmmm - 0001'01z0`   |
+| `LDA R,mem        ` | `1m11'mmmm - 001s'0RRR`   |
+| `CALL cc,mem      ` | `1m11'mmmm - 1110'cccc`   |
+| `POP<W> (mem)     ` | `1m11'mmmm - 0000'01z0`   |
+| `ANDCF  A,(mem)   ` | `1m11'mmmm - 0010'1000`   |
+| `LDCF   A,(mem)   ` | `1m11'mmmm - 0010'1011`   |
+| `ORCF   A,(mem)   ` | `1m11'mmmm - 0010'1001`   |
+| `XORCF  A,(mem)   ` | `1m11'mmmm - 0010'1010`   |
+| `STCF   A,(mem)   ` | `1m11'mmmm - 0010'1100`   |
+| `BIT   #3,(mem)   ` | `1m11'mmmm - 1100'1~3~`   |
+| `ANDCF #3,(mem)   ` | `1m11'mmmm - 1000'0~3~`   |
+| `LDCF  #3,(mem)   ` | `1m11'mmmm - 1001'1~3~`   |
+| `ORCF  #3,(mem)   ` | `1m11'mmmm - 1000'1~3~`   |
+| `XORCF #3,(mem)   ` | `1m11'mmmm - 1001'0~3~`   |
+| `STCF  #3,(mem)   ` | `1m11'mmmm - 1010'0~3~`   |
+| `CHG   #3,(mem)   ` | `1m11'mmmm - 1100'0~3~`   |
+| `RES   #3,(mem)   ` | `1m11'mmmm - 1011'0~3~`   |
+| `SET   #3,(mem)   ` | `1m11'mmmm - 1011'1~3~`   |
+| `TSET  #3,(mem)   ` | `1m11'mmmm - 1010'1~3~`   |
 
 
 
