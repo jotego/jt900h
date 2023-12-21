@@ -85,8 +85,8 @@ assign {no,ho,co,zo} = {n,h,c,z}
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
-    r3sel = bs ? {             2'd0,rfp, md[2:1],1'b0,~md[0]} :             // byte register
-                 {md[2]?4'hf:{2'd0,rfp}, md[1:0],2'd0};  // word/qword register
+    r3sel = bs ? {             2'd0,rfp, md[2:1],1'b0,~md[0]} : // byte register
+                 {md[2]?4'hf:{2'd0,rfp}, md[1:0],2'd0};         // word/qword register
     mulsel = bs ? { 2'd0, rfp, md[2:1], 2'd0 } :
           md[2] ? { 2'd0, rfp, md[1:0], 2'd0 } :
                   { 4'hf,      md[1:0], 2'd0 } ; // pointers
@@ -102,7 +102,6 @@ always @* begin
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
     sdsh  = bs ? {sdmux[1:0],3'd0} : ws ? {sdmux[1],4'd0} : 5'd0; // shift to select byte/word part as data
     case( rmux_sel )
-        A_RMUX:   rmux = {16'd0, ws ? accs[{rfp,2'd1}][15:8]:8'd0, accs[{rfp,2'd0}][7:0]};
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
         F_RMUX:   rmux = { 16'd0, sr };
@@ -185,6 +184,7 @@ always @(posedge clk, posedge rst) begin
         endcase
         case( ral_sel ) // Register Address Latch
             SRC_RAL:  src <= r3sel;
+            A_RAL:    src <= {2'b0,rfp,4'b0};
             DST_RAL:  dst <= full ? fsel : (mul|is_mul) ? mulsel : r3sel;
             XSRC_RAL: src <= dst | 8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
             SWP_RAL:  {src,dst}<={dst,src};
