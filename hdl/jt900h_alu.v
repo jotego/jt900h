@@ -61,7 +61,7 @@ jt900h_div u_div (
     .rst  ( rst         ),
     .clk  ( clk         ),
     .cen  ( cen         ),
-    .op0  ( op0         ),
+    .op0  ( op0         ), // dividend
     .op1  ( op1[15:0]   ),
     .len  ( qs          ),
     .sign ( div_sign    ),

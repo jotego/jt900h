@@ -117,14 +117,14 @@ ops:
   - { name: SUB,   op: 0x1a0, ctl: { alu: SUB, cx:    , srca: reg, ld: dst, setw: ,wr: , swp: 0, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: XOR,   op: 0x1d0, ctl: { alu: XOR, cx:    , srca: reg, ld: dst, setw: ,wr: , swp: 0, cc: "${OR_CC}"  }, mask: 0x3f8, cycles: 1 }
 
-  - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, cc: v },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, cc: v },                                          mask: 0x3f8 } # only byte/word
-  - { name: EX,    op: 0x1b8, mask: 0x3f8 } # EX R,r
+  - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
+  - { name: EX,    op: 0x1b8, ctl: { srca: reg, ld: src, wr:   }, mask: 0x3f8 } # EX R,r
   - { name: LD,    op: 0x188, ctl: { alu: , cx: , srca: reg, ld: src, setw: ,wr: , swp:  , cc: }, mask: 0x3f8 } # LD R,r
   - { name: LD,    op: 0x198, ctl: { alu: , cx: , srca: reg, ld: src, setw: ,wr: , swp: 1, cc: }, mask: 0x3f8 } # LD r,R
   - { name: MULA,  op: 0x119, ctl: { cc: szv }}
-  - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex },                                     mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex },                                     mask: 0x3f8 } # only byte/word
+  - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex, src: src, swp: 1 },                                     mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex, src: src, swp: 1 },                                     mask: 0x3f8 } # only byte/word
   # group 1 - r
   - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, cx: cin, srca: acc, ld: , setw: , swp: , wr: , cc: c }}
   - { name: LDCF,   op: 0x12b, ctl: { alu: BOR,  cx:    , srca: acc, ld: , setw: , swp: , wr: , cc: c }} # register A always used
@@ -149,8 +149,8 @@ ops:
   - { name: AND,   op: 0x1cc, ctl: { alu: AND, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${AND_CC}" }}
   - { name: CP,    op: 0x1cf, ctl: { alu: SUB, cx:    , srca: imm1, ld:    , setw: ,wr: , swp: , cc: "${SUB_CC}" }}
   - { name: CP,    op: 0x1d8, ctl: { alu: SUB, cx:    , srca: num3, ld:    , setw: ,wr: , swp: , cc: "${SUB_CC}" }, mask: 0x3f8 }
-  - { name: DIV,   op: 0x10a, ctl: { alu: DIV, ex: zex, cc: v }}
-  - { name: DIVS,  op: 0x10b, ctl: { alu: DIVS,ex: sex, cc: v }}
+  - { name: DIVI,  op: 0x10a, ctl: { alu: DIV, ex: zex, cc: v }}
+  - { name: DIVSI, op: 0x10b, ctl: { alu: DIVS,ex: sex, cc: v }}
   - { name: LD,    op: 0x103, ctl: { alu:     ,cx:    , srca: imm0, ld: dst, setw: ,wr: , swp:  , cc: }} # LD r,#
   - { name: LD,    op: 0x1a8, ctl: { alu:     ,cx:    , srca: num3, ld: src, setw: ,wr: , swp: 1, cc: }, mask: 0x3f8 } # LD r,#3
   - { name: MULI,  op: 0x108, ctl: { alu: MUL,  ex: zex }}
@@ -209,20 +209,20 @@ ops:
   - { name: CP,    op: 0x2f0, ctl: { alu: SUB, cx:    , srca: rmem, ld:    , setw: ,wr:  , swp:  , cc: "${SUB_CC}" }, mask: 0x3f8 }
   - { name: CP,    op: 0x2f8, ctl: { alu: SUB, cx:    , srca: rmem, ld:    , setw: ,wr:  , swp: 1, cc: "${SUB_CC}" }, mask: 0x3f8 }
   - { name: OR,    op: 0x2e0, ctl: { alu: OR,  cx:    , srca: rmem, ld: dst, setw: ,wr:  , swp:  , cc: "${OR_CC}"  }, mask: 0x3f8 }
-  - { name: OR,    op: 0x2e8, ctl: { alu: OR,  cx:    , srca: rmem, ld: md,  setw: ,wr: 1, swp: 1, cc: "${OR_CC}"  }, mask: 0x3f8 }
+  - { name: OR,    op: 0x2e8, ctl: { alu: OR,  cx:    , srca: rmem, ld: md,  setw: ,wr: 1, swp:  , cc: "${OR_CC}"  }, mask: 0x3f8 }
   - { name: SBC,   op: 0x2b0, ctl: { alu: SUB, cx: cin, srca: rmem, ld: dst, setw: ,wr:  , swp:  , cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: SBC,   op: 0x2b8, ctl: { alu: SUB, cx: cin, srca: rmem, ld: md,  setw: ,wr: 1, swp: 1, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: SUB,   op: 0x2a0, ctl: { alu: SUB, cx:    , srca: rmem, ld: dst, setw: ,wr:  , swp:  , cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: SUB,   op: 0x2a8, ctl: { alu: SUB, cx:    , srca: rmem, ld: dst, setw: ,wr: 1, swp: 1, cc: "${SUB_CC}" }, mask: 0x3f8, cycles: 1 }
   - { name: XOR,   op: 0x2d0, ctl: { alu: XOR, cx:    , srca: rmem, ld: dst, setw: ,wr:  , swp:  , cc: "${OR_CC}"  }, mask: 0x3f8, cycles: 1 }
   - { name: XOR,   op: 0x2d8, ctl: { alu: XOR, cx:    , srca: rmem, ld: dst, setw: ,wr: 1, swp:  , cc: "${OR_CC}"  }, mask: 0x3f8, cycles: 1 }
-  - { name: EXM,   op: 0x230, mask: 0x3f8 } # special
+  - { name: EX,    op: 0x230, ctl: { srca: rmem, ld: md, wr: 1 }, mask: 0x3f8 } # special
   # group 2 - RR,(mem) bit 3 does not follow the same pattern as in R,(mem)-(mem),R
-  - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, cc: v }, mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, cc: v }, mask: 0x3f8 } # only byte/word
-  - { name: LD,    op: 0x220, ctl: { alu: , srca: rmem, cx: , ld: dst, swp: , setw: ,wr: , cc: }, mask: 0x3f8 } # LD R,(mem)
-  - { name: MULM,  op: 0x240, ctl: { alu: MUL,  ex: zex }, mask: 0x3f8 } # only byte/word
-  - { name: MULSM, op: 0x248, ctl: { alu: MULS, ex: sex }, mask: 0x3f8 } # only byte/word
+  - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, src: md, swp: ,cc: v }, mask: 0x3f8 } # DIV  RR,(mem)
+  - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, src: md, swp: ,cc: v }, mask: 0x3f8 } # DIVS RR,(mem)
+  - { name: LD,    op: 0x220, ctl: { alu: , srca: rmem, cx: , ld: src, swp: 1, setw: ,wr: , cc: }, mask: 0x3f8 } # LD R,(mem)
+  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md, swp: }, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { alu: MULS, ex: sex, src: md, swp: }, mask: 0x3f8 } # only byte/word
   # group 2 - <W> (mem)
   - { name: ADC,   op: 0x239, ctl: { alu: ADD, cx: cin, srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${ADD_CC}" }}
   - { name: ADD,   op: 0x238, ctl: { alu: ADD, cx:    , srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${ADD_CC}" }}
@@ -496,7 +496,7 @@ ucode:
       - ${setw}_setw, ${srca}_jsr
       - ?${swp}, swp_opnd, swp_ral
       - ${alu}_alu, ${cx}_carry, ${ld}_ld, ${cc}_cc
-      - ${wr}?, m_ea, wr
+      - ?${wr}, m_ea, wr
       - waitmem, q_fetch
       - ni
   # compare data and count up/down BC
@@ -550,23 +550,14 @@ ucode:
       - ni
   - mnemo: [ EX ]
     seq:
-      - reg_jsr
-      - src_ld, swp_opnd
+      - ${srca}_jsr
+      - ${ld}_ld, swp_opnd
+      - ?${wr}, m_ea, wr
       - dst_ld, waitmem, q_fetch
       - ni
   - mnemo: [ EXFF ]
     seq:
       - exff, inc_pc
-      - waitmem, q_fetch
-      - ni
-  - mnemo: [ EXM ]
-    seq:
-      - reg_jsr
-      - swp_ral
-      - swp_opnd, dst_ld
-      - md_ld
-      - m_ea, wr
-      - m_ea, waitmem
       - waitmem, q_fetch
       - ni
   - mnemo: [ EXTS, EXTZ ]
@@ -739,8 +730,8 @@ ucode:
       - zero_rmux, ld1_opnd
       - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc, set_loop
       - ${alu}_alu,  ${cx}_carry, op2_ld
-      - sub_alu, hi_cx, md_ld
-      - sub_alu, hi_cx, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
+      - sub_alu, hi_carry, md_ld
+      - sub_alu, hi_carry, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
       - op2_ld, inc_pc
@@ -760,10 +751,10 @@ ucode:
       - ni
   - mnemo: [ MUL, MULS ]
     seq:
-      - swp_ral, inc_pc
-      - mulsel, dst_ral
-      - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, src_rmux, ld1_opnd, widen_setw
+      - ?${swp}, swp_ral
+      - inc_pc, mulsel, dst_ral
+      - ${ex}, dst_rmux,    ld0_opnd
+      - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
@@ -775,20 +766,21 @@ ucode:
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ MULM, MULSM ]
-    seq:
-      - mulsel, dst_ral, inc_pc
-      - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, md_rmux,  ld1_opnd, widen_setw
-      - ${alu}_alu, dst_ld
-      - waitmem, q_fetch
-      - ni
   - mnemo: [ DIV, DIVS ]
     seq:
-      - inc_pc, swp_ral
-      - mulsel, dst_ral
-      - ${ex}, src_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
-      - ${ex}, dst_rmux, ld0_opnd
+      - ?${swp}, swp_ral
+      - inc_pc, mulsel, dst_ral
+      - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
+      - ${ex}, dst_rmux,    ld0_opnd
+      - ${alu}_alu, div
+      - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ DIVI, DIVSI ]
+    seq:
+      - inc_pc, s8_fetch
+      - inc_pc, ${ex}, md_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
+      - inc_pc, ${ex}, dst_rmux,    ld0_opnd
       - ${alu}_alu, div
       - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
