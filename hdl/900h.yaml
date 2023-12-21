@@ -221,9 +221,9 @@ ops:
   - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, src: md, swp: ,cc: v }, mask: 0x3f8 } # DIV  RR,(mem)
   - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, src: md, swp: ,cc: v }, mask: 0x3f8 } # DIVS RR,(mem)
   - { name: LD,    op: 0x220, ctl: { alu: , srca: rmem, cx: , ld: src, swp: 1, setw: ,wr: , cc: }, mask: 0x3f8 } # LD R,(mem)
-  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md, swp: }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { alu: MULS, ex: sex, src: md, swp: }, mask: 0x3f8 } # only byte/word
-  # group 2 - <W> (mem)
+  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md, swp: }, mask: 0x3f8 } # MUL  RR,(mem)
+  - { name: MULS,  op: 0x248, ctl: { alu: MULS, ex: sex, src: md, swp: }, mask: 0x3f8 } # MULS RR,(mem)
+  # group 2 - <W> (mem),#
   - { name: ADC,   op: 0x239, ctl: { alu: ADD, cx: cin, srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${ADD_CC}" }}
   - { name: ADD,   op: 0x238, ctl: { alu: ADD, cx:    , srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${ADD_CC}" }}
   - { name: AND,   op: 0x23c, ctl: { alu: AND, cx:    , srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${AND_CC}" }}
@@ -235,12 +235,12 @@ ops:
   - { name: SUB,   op: 0x23a, ctl: { alu: SUB, cx:    , srca: imm0, ld: md, setw: ,wr: 1, swp: 1, cc: "${SUB_CC}" }}
   - { name: XOR,   op: 0x23d, ctl: { alu: XOR, cx:    , srca: imm0, ld: md, setw: ,wr: 1, swp:  , cc: "${OR_CC}"  }}
 
-  - { name: PUSHM, op: 0x204 }
+  - { name: PUSHM, op: 0x204 } # PUSH<W> (mem)
   - { name: RLCM,  op: 0x278, ctl: { alu: SHL, cc: "${SH_CC}", cx: sa  }}
   - { name: RRCM,  op: 0x279, ctl: { alu: SHR, cc: "${SH_CC}", cx: sh  }}
   - { name: RLM,   op: 0x27a, ctl: { alu: SHL, cc: "${SH_CC}", cx: cin }}
   - { name: RRM,   op: 0x27b, ctl: { alu: SHR, cc: "${SH_CC}", cx: cin }}
-  - { name: SLAM,  op: 0x27c, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }, opmask: 0x3fd } # SLA=SLM
+  - { name: SLAM,  op: 0x27c, ctl: { alu: SHL, cc: "${SH_CC}", cx:     }, opmask: 0x3fd } # SLA=SLM
   - { name: SRAM,  op: 0x27d, ctl: { alu: SHR, cc: "${SH_CC}", cx: sa  }}
   - { name: SRLM,  op: 0x27f, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }}
   # Group 2 - string instructions
@@ -324,7 +324,7 @@ ucode:
       - r32jmp   # this jump is based on lower 2 bits
   - name: da2ea2md
     seq: # loads operand data in op0, sets ea, and md contains the next op
-      - da2ea # keep md (contains op)
+      - da2ea # op-code data is held in op0
       - m_ea, q_fetch, waitmem # loads data in md
       - ld1_opnd # operand data in md
       - md_ld, swp_opnd # restores md to have op code, operand data in op0
@@ -700,7 +700,8 @@ ucode:
       - inc_pc, psh_jsr
   - mnemo: [ PUSHM ]
     seq:
-      - inc_pc, psh_jsr
+      - inc_pc, md_ld
+      - psh_jsr
   - mnemo: [ POP, POPM, POPF, POPA, POPSR ]
     seq:
       - inc_pc, ${setw}_setw
