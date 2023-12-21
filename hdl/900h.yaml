@@ -495,7 +495,7 @@ ucode:
     seq:
       - ${setw}_setw, ${srca}_jsr
       - ?${swp}, swp_opnd, swp_ral
-      - ${alu}_alu, ${cx}_carry, ${ld}_ld, ${cc}_cc
+      - ${alu}_alu, ${cx}_cx, ${ld}_ld, ${cc}_cc
       - ?${wr}, m_ea, wr
       - waitmem, q_fetch
       - ni
@@ -510,7 +510,7 @@ ucode:
       - md_rmux,  ld1_opnd
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
-      - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
+      - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
       # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
@@ -526,7 +526,7 @@ ucode:
       - da_ea, wr, ${step}_alu, src_ld
       - waitmem, zero_rmux, ld1_opnd
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
-      - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
+      - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
       # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
@@ -542,7 +542,7 @@ ucode:
     seq:
       - inc_pc, s8_fetch                    # jump offset and PC adjustment
       - zero_rmux, ld1_opnd
-      - sub_alu, hi_carry, dst_ld, b_setw, zni_jsr  # conditionally end if ALU's z output was set
+      - sub_alu, hi_cx, dst_ld, b_setw, zni_jsr  # conditionally end if ALU's z output was set
       - inc_pc, sex, ld0_opnd, q_setw
       - pc_rmux, ld1_opnd
       - add_alu, pc_ld
@@ -728,14 +728,14 @@ ucode:
       - sh4_alu,  md_ld         # times to shift adjusted in MD
       - ld0_opnd,               # times to shift adjusted in op0
       - zero_rmux, ld1_opnd
-      - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc, set_loop
-      - ${alu}_alu,  ${cx}_carry, op2_ld
-      - sub_alu, hi_carry, md_ld
-      - sub_alu, hi_carry, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
+      - ${alu}_alu,  ${cx}_cx, dst_ld, ${cc}_cc, set_loop
+      - ${alu}_alu,  ${cx}_cx, op2_ld
+      - sub_alu, hi_cx, md_ld
+      - sub_alu, hi_cx, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
       - op2_ld, inc_pc
-      - ${alu}_alu, ${cx}_carry, md_ld, ${cc}_cc
+      - ${alu}_alu, ${cx}_cx, md_ld, ${cc}_cc
       - m_ea, wr
       - waitmem, q_fetch
       - ni

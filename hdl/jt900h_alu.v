@@ -91,15 +91,15 @@ end
 
 always @* begin
     case( carry_sel )
-        CIN_CARRY: cx =  cin;
-        COM_CARRY: cx = ~cin;
-        B0_CARRY:  cx = op0[0]; // PAA instruction
-        HI_CARRY:  cx = 1;
-        ZF_CARRY:  cx = zin;
+        CIN_CX:  cx =  cin;
+        COM_CX:  cx = ~cin;
+        B0_CX:   cx = op0[0]; // PAA instruction
+        HI_CX:   cx = 1;
+        ZF_CX:   cx = zin;
         // used for shifts (op2)
-        SA_CARRY:  cx = bs ? op2[7] : ws ? op2[15] : op2[31];   // shift arithmetic
-        SH_CARRY:  cx = op2[0];
-        default:   cx = 0;
+        SA_CX:   cx = bs ? op2[7] : ws ? op2[15] : op2[31];   // shift arithmetic
+        SH_CX:   cx = op2[0];
+        default: cx = 0;
     endcase
 
     v=0;
