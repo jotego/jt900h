@@ -22,6 +22,7 @@ module jt900h_ctrl(
     input             cen,
     input       [7:0] md,
     input       [7:0] flags,
+    input             zu,       // z from ALU
     input             div_busy,
     input             mem_busy,
     output reg        bs,
@@ -118,12 +119,16 @@ always @(posedge clk, posedge rst) begin
             default:;
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;
+        if( loop_sel==SET_LOOP ) jsr_ret[3:0] <= uaddr[3:0];
         if( ni ) begin
-            uaddr <= { nxgr_sel, md[7:0], 4'd0 };
-            stack_bsy  <= 0;
-            {bs,ws,qs} <= 0;
+            if( loop_sel==NZ_LOOP && !zu ) begin
+                uaddr[3:0] <= jsr_ret[3:0];
+            end else begin
+                uaddr <= { nxgr_sel, md[7:0], 4'd0 };
+                stack_bsy  <= 0;
+                {bs,ws,qs} <= 0;
+            end
         end
-        if( jb5 ) uaddr[4:0] <=  uaddr[4:0]-4'd5;
         if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;
         if( jsr_en && (jsr_sel!=NCC_JSR || !cc) ) begin
             jsr_ret      <= uaddr;

@@ -151,8 +151,8 @@ ops:
   - { name: CP,    op: 0x1d8, ctl: { alu: SUB, cx:    , srca: num3, ld:    , setw: ,wr: , swp: , cc: "${SUB_CC}" }, mask: 0x3f8 }
   - { name: DIV,   op: 0x10a, ctl: { alu: DIV, ex: zex, cc: v }}
   - { name: DIVS,  op: 0x10b, ctl: { alu: DIVS,ex: sex, cc: v }}
-  - { name: LD,    op: 0x103, ctl: { alu:     ,cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: }} # LD r,#
-  - { name: LD,    op: 0x1a8, ctl: { alu:     ,cx:    , srca: num3, ld: dst, setw: ,wr: , swp: , cc: }, mask: 0x3f8 } # LD r,#3
+  - { name: LD,    op: 0x103, ctl: { alu:     ,cx:    , srca: imm0, ld: dst, setw: ,wr: , swp:  , cc: }} # LD r,#
+  - { name: LD,    op: 0x1a8, ctl: { alu:     ,cx:    , srca: num3, ld: src, setw: ,wr: , swp: 1, cc: }, mask: 0x3f8 } # LD r,#3
   - { name: MULI,  op: 0x108, ctl: { alu: MUL,  ex: zex }}
   - { name: MULSI, op: 0x109, ctl: { alu: MULS, ex: sex }}
   - { name: OR,    op: 0x1ce, ctl: { alu: OR,  cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${OR_CC}"  }}
@@ -160,7 +160,7 @@ ops:
   - { name: SUB,   op: 0x1ca, ctl: { alu: SUB, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${SUB_CC}" }}
   - { name: XOR,   op: 0x1cd, ctl: { alu: XOR, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${OR_CC}"  }}
   # group 1 but limited valid addressing
-  - { name: CPL,   op: 0x106, ctl: { alu: CPL, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: h1n1 }} # only byte/word
+  - { name: CPL,   op: 0x106, ctl: { alu: CPL, cx:    , srca: zero, ld: dst, setw: ,wr: , swp: , cc: h1n1 }} # only byte/word
   - { name: LINK,  op: 0x10c                } # only long word
   - { name: MDEC1, op: 0x13c, ctl: { setw: b, alu: sub }} # only word
   - { name: MDEC2, op: 0x13d, ctl: { setw: w, alu: sub }} # only word
@@ -168,11 +168,11 @@ ops:
   - { name: MINC1, op: 0x138, ctl: { setw: b, alu: add }} # only word
   - { name: MINC2, op: 0x139, ctl: { setw: w, alu: add }} # only word
   - { name: MINC4, op: 0x13a, ctl: { setw: q, alu: add }} # only word
-  - { name: MIRR,  op: 0x116, ctl: { alu: MIRR,cx: , srca: imm1, ld: dst, swp:  , setw: ,wr: , cc: }} # only byte
+  - { name: MIRR,  op: 0x116, ctl: { alu: MIRR,cx: , srca: zero, ld: dst, swp:  , setw: ,wr: , cc: }} # only byte
   - { name: NEG,   op: 0x107, ctl: { alu: SUB, cx: , srca: zero, ld: src, swp: 1, setw: ,wr: , cc: "${SUB_CC}" }} # only byte/word
   - { name: RLA,   op: 0x1fa, ctl: { alu: SHL, srca: acc, cx: cin,cc: "${SH_CC}" }} # register A always used RL  A,r
   - { name: RRA,   op: 0x1fb, ctl: { alu: SHR, srca: acc, cx: cin,cc: "${SH_CC}" }} # register A always used RR  A,r
-  - { name: RLCA,  op: 0x1f8, ctl: { alu: SHL, srca: acc, cx: sa, cc: "${SH_CC}" }} # register A always used RRC A,r
+  - { name: RLCA,  op: 0x1f8, ctl: { alu: SHL, srca: acc, cx: sa, cc: "${SH_CC}" }} # register A always used RLC A,r
   - { name: RRCA,  op: 0x1f9, ctl: { alu: SHR, srca: acc, cx: sh, cc: "${SH_CC}" }} # register A always used RRC A,r
   - { name: SLAA,  op: 0x1fc, ctl: { alu: SHL, srca: acc, cx:   , cc: "${SH_CC}"  }, opmask: 0x3fd } # register A always used SLL A,r SLA=SLL
   - { name: SRAA,  op: 0x1fd, ctl: { alu: SHR, srca: acc, cx: sa, cc: "${SH_CC}"  }} # register A always used SRA A,r
@@ -454,9 +454,6 @@ ucode:
       - inc_pc
       - waitmem, q_fetch
       - ni
-  - name: znvloop # repeats the current instruction, reloading indexed data
-    seq:
-      -
   - name: psh
     seq: # pushes MD contents. b/w/qs must already be set
       - xsp_rmux, ld0_opnd
@@ -514,7 +511,7 @@ ucode:
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
       - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
-      - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -530,7 +527,7 @@ ucode:
       - waitmem, zero_rmux, ld1_opnd
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - sub_alu, hi_carry, bc_ld, z3v_cc # v = ~z
-      - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
+      # - znvloop_jsr  # loops while z!=1 && v!=0. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -740,11 +737,10 @@ ucode:
       - sh4_alu,  md_ld         # times to shift adjusted in MD
       - ld0_opnd,               # times to shift adjusted in op0
       - zero_rmux, ld1_opnd
-      - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc
+      - ${alu}_alu,  ${cx}_carry, dst_ld, ${cc}_cc, set_loop
       - ${alu}_alu,  ${cx}_carry, op2_ld
       - sub_alu, hi_cx, md_ld
-      - sub_alu, hi_cx, ld0_opnd, zni_jsr # return if ALU's z is set
-      - jb5                        # jumps back by 5
+      - sub_alu, hi_cx, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
       - op2_ld, inc_pc
@@ -773,9 +769,9 @@ ucode:
       - ni
   - mnemo: [ MULI, MULSI ]
     seq:
-      - s8_fetch, inc_pc
-      - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, md_rmux,  ld1_opnd, widen_setw
+      - inc_pc, s8_fetch
+      - inc_pc, ${ex}, dst_rmux, ld0_opnd
+      - inc_pc, ${ex}, md_rmux,  ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
@@ -794,7 +790,7 @@ ucode:
       - ${ex}, src_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
       - ${ex}, dst_rmux, ld0_opnd
       - ${alu}_alu, div
-      - ${alu}_alu, dst_ld # ctrl logic will automatically wait for the ALU
+      - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
   # - mnemo: [ LDF ]
@@ -821,8 +817,7 @@ ucode:
       - spd_rmux, ld1_opnd, inc_pc
       - sub_alu, xsp_ld, inc_pc
       - dst_rmux, ld0_opnd
-      - md_rmux,  ld1_opnd
-      - md_ld
+      - md_rmux,  ld1_opnd, md_ld
       - sp_ea, wr
       - xsp_rmux, ld0_opnd
       - dst_ld
@@ -832,14 +827,11 @@ ucode:
   - mnemo: [ UNLK ]
     seq: # q_setw already set
       - inc_pc, xsp_ld
-      - sp_ea,
       - sp_ea, q_fetch, waitmem
-      - ld0_opnd
-      - dst_ld
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd
-      - add_alu, xsp_ld
-      - waitmem, q_fetch
+      - ld0_opnd, spd_rmux, ld1_opnd
+      - dst_ld,   xsp_rmux, ld0_opnd
+      - add_alu,  xsp_ld
+      - waitmem,  q_fetch
       - ni
   - mnemo: [ LDAR ]
     seq: # loads EA register and jumps to NI within group 3

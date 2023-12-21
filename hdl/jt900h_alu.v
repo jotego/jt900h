@@ -96,7 +96,7 @@ always @* begin
         B0_CARRY:  cx = op0[0]; // PAA instruction
         HI_CARRY:  cx = 1;
         ZF_CARRY:  cx = zin;
-        // used for shifts
+        // used for shifts (op2)
         SA_CARRY:  cx = bs ? op2[7] : ws ? op2[15] : op2[31];   // shift arithmetic
         SH_CARRY:  cx = op2[0];
         default:   cx = 0;
@@ -131,6 +131,7 @@ always @* begin
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         MUL_ALU:  rslt = op0[15:0]*op1[15:0];
         MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
+        SH4_ALU:  rslt = { 27'd0, op1[3:0]==0, op1[3:0] }; // convert 4'd0 to 5'd16
         DIV_ALU, DIVS_ALU: begin
             if( bs )
                 rslt[15:0] = { div_rem[ 7:0], div_quot[ 7:0] };
