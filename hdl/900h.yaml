@@ -630,17 +630,15 @@ ucode:
       - ni
   - mnemo: [ RET, RETcc, RETD ]
     seq:
-      - inc_pc, s8_fetch, w_setw, ${ncc}_jsr
+      - inc_pc, s8_fetch, w_setw, ${ncc}_jsr      # sets ws for RETD
       - ?${retd}=1, inc_pc, zex, ld1_opnd, q_setw # imm at op1
       - ?${retd}=0, q_setw
-      - xsp_rmux, ld0_opnd
-      - da_ld
-      - da_ea, waitmem, q_fetch
+      - sp_ea, waitmem, q_fetch
       - ld0_opnd
-      - pc_ld
+      - pc_ld, xsp_rmux, ld0_opnd
       - ?${retd}, inc_pc, add_alu, xsp_ld       # adds the deallocate portion
-      - xsp_rmux, ld0_opnd
-      - spd_rmux, ld1_opnd    # regular +4
+      - ?${retd}, xsp_rmux, ld0_opnd            # reloads XSP to add the rest
+      - spd_rmux, ld1_opnd                      # regular +4
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
@@ -827,14 +825,17 @@ ucode:
       - waitmem,  q_fetch
       - ni
   - mnemo: [ LDAR ]
-    seq: # loads EA register and jumps to NI within group 3
+    seq: # loads EA to R register
       - inc_pc, s8_fetch
-      - inc_pc, s8_fetch
-      - inc_pc, ld0_opnd
+      - inc_pc, s8_fetch, w_setw
+      - inc_pc, sex, ld0_opnd
       - inc_pc
-      - pc_rmux, ld1_opnd
-      - add_alu, da_ea
-      - da2ea, g3_nxgr, ni
+      - pc_rmux, ld1_opnd, b_setw
+      - waitmem, vs_fetch
+      - dst_ral, s_setw             # decodes 001s'0RRR byte
+      - inc_pc, add_alu, dst_ld
+      - waitmem, vs_fetch
+      - ni
   - mnemo: [ MULA ]
     seq:
       - xde_ral, w_setw, inc_pc     # SRC = XDE
