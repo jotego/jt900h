@@ -43,9 +43,8 @@ First byte contains the destination register
 - **dst** points to the register
 - **op0** contains the register value
 
-Second OP byte contains a 3-bit value (#3)
-
-- **op1** is set to the value
+- byte 2 is a 3-bit value (#3) -> **op1** is set to the value
+- byte 2 is a register (R) -> **src/op1** are set
 
 ## PC at Reset
 

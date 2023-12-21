@@ -39,7 +39,6 @@ module jt900h_ctrl(
     output            mulcheck,
     output            mulsel,
     output            sex,
-    output            swpss,
     output            wr,
     output            zex,
     output      [1:0] ea_sel,
@@ -74,7 +73,7 @@ wire  [1:0] nxgr_sel,
       [2:0] setw_sel,
       [4:0] jsr_sel;
 wire        ni, r32jmp, halt, jb5, retb, retw,
-            widen, waitmem;
+            swpss, widen, waitmem;
 
 assign still = div_busy | (waitmem & mem_busy);
 

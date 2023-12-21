@@ -77,9 +77,9 @@ ops:
   - { name: JR,     op: 0x070, ctl: { setw: w, jr16: 1 }, mask: 0x3f0 } # JRL [cc,]
   - { name: LD8,    op: 0x008, ctl: { setw: b }} # LD<B> (#8),#
   - { name: LD8,    op: 0x00a, ctl: { setw: w }} # LD<W> (#8),#
-  - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: b, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
-  - { name: LD,     op: 0x030, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: w, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
-  - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: q, alu: ,wr: ,swp: ,cx: ,cc: }} # LD R,# zzz encoding
+  - { name: LD,     op: 0x020, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: b, alu: ,wr: , swp: ,cx: ,cc: }} # LD R,# zzz encoding
+  - { name: LD,     op: 0x030, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: w, alu: ,wr: , swp: ,cx: ,cc: }} # LD R,# zzz encoding
+  - { name: LD,     op: 0x040, mask: 0x3f8, ctl: { srca: imm1, ld: dst, setw: q, alu: ,wr: , swp: ,cx: ,cc: }} # LD R,# zzz encoding
   - { name: LDF,    op: 0x017, ctl: { alu: , cx: , srca: num30,ld: rfp, setw: b, wr: , swp: , cc: } }
   - { name: LDX,    op: 0x0f7 }
   - { name: CALL16, op: 0x01c, ctl: { alu:    , ex: zex, setw: w, call24:   }}
@@ -120,15 +120,15 @@ ops:
   - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: EX,    op: 0x1b8, mask: 0x3f8 } # EX R,r
-  - { name: LD,    op: 0x188, ctl: { alu: , cx: , srca: reg, ld: dst, setw: ,wr: , swp:  , cc: }, mask: 0x3f8 } # LD R,r
-  - { name: LD,    op: 0x198, ctl: { alu: , cx: , srca: reg, ld: dst, setw: ,wr: , swp: 1, cc: }, mask: 0x3f8 } # LD r,R
+  - { name: LD,    op: 0x188, ctl: { alu: , cx: , srca: reg, ld: src, setw: ,wr: , swp:  , cc: }, mask: 0x3f8 } # LD R,r
+  - { name: LD,    op: 0x198, ctl: { alu: , cx: , srca: reg, ld: src, setw: ,wr: , swp: 1, cc: }, mask: 0x3f8 } # LD r,R
   - { name: MULA,  op: 0x119, ctl: { cc: szv }}
   - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex },                                     mask: 0x3f8 } # only byte/word
   - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex },                                     mask: 0x3f8 } # only byte/word
   # group 1 - r
-  - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, cx: cin, srca: acc, ld: , setw: ,swp: , wr: , cc: c }}
-  - { name: LDCF,   op: 0x12b, ctl: { alu: BOR,  cx:    , srca: acc, ld: , setw: ,swp: , wr: , cc: c }} # register A always used
-  - { name: ORCF,   op: 0x129, ctl: { alu: BOR,  cx: cin, srca: acc, ld: , setw: ,swp: , wr: , cc: c }} # register A always used
+  - { name: ANDCF,  op: 0x128, ctl: { alu: BAND, cx: cin, srca: acc, ld: , setw: , swp: , wr: , cc: c }}
+  - { name: LDCF,   op: 0x12b, ctl: { alu: BOR,  cx:    , srca: acc, ld: , setw: , swp: , wr: , cc: c }} # register A always used
+  - { name: ORCF,   op: 0x129, ctl: { alu: BOR,  cx: cin, srca: acc, ld: , setw: , swp: , wr: , cc: c }} # register A always used
   - { name: BS1B,   op: 0x10f, ctl: { alu:      , cc: z2v }}
   - { name: BS1F,   op: 0x10e, ctl: { alu: MIRR , cc: z2v }}
   - { name: DAA,    op: 0x110, ctl: { alu: ADD, cx: , srca: daa,  ld: dst, setw: ,wr:  , swp: 0, cc: szhvcr }}
@@ -142,7 +142,7 @@ ops:
   - { name: PAA,    op: 0x114, ctl: { alu: ADD, cx: b0, srca: zero, ld: dst, setw: ,wr: 0, swp: 0, cc: }} # PAA r
   - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: }} # POP r
   - { name: PUSHR2, op: 0x104 } # PUSH r
-  - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, cx: cin, srca: acc, ld: ,setw: ,swp: , wr: , cc: c }} # register A always used
+  - { name: XORCF,  op: 0x12A, ctl: { alu: BXOR, cx: cin, srca: acc, ld: ,setw: , swp: , wr: , cc: c }} # register A always used
   # group 1 with immediate data ADC r,#
   - { name: ADC,   op: 0x1c9, ctl: { alu: ADD, cx: cin, srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${ADD_CC}" }}
   - { name: ADD,   op: 0x1c8, ctl: { alu: ADD, cx:    , srca: imm1, ld: dst, setw: ,wr: , swp: , cc: "${ADD_CC}" }}
@@ -552,10 +552,8 @@ ucode:
   - mnemo: [ EX ]
     seq:
       - reg_jsr
-      - swp_opnd
-      - dst_ld, swp_ral
-      - dst_ld
-      - waitmem, q_fetch
+      - src_ld, swp_opnd
+      - dst_ld, waitmem, q_fetch
       - ni
   - mnemo: [ EXFF ]
     seq:
@@ -783,12 +781,12 @@ ucode:
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ DIV, DIVS ] # division instruction are a placeholder
+  - mnemo: [ DIV, DIVS ]
     seq:
-      - swp_ral, inc_pc
+      - inc_pc, swp_ral
       - mulsel, dst_ral
+      - ${ex}, src_rmux, ld1_opnd, widen  # dst(q/w)÷src(w/b)
       - ${ex}, dst_rmux, ld0_opnd
-      - ${ex}, src_rmux, ld1_opnd, widen
       - ${alu}_alu, div
       - ${alu}_alu, dst_ld # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
@@ -846,7 +844,21 @@ ucode:
       - pc_rmux, ld1_opnd
       - add_alu, da_ea
       - da2ea, g3_nxgr, ni
+  - mnemo: [ MULA ]
+    seq:
+      - xde_ral, w_setw, inc_pc     # SRC = XDE
+      - src_rmux, ld0_opnd, xhl_ral
+      - da_ld, dst_rmux, ld0_opnd   # DST = XHL
+      - da_ea vs_fetch, waitmem
+      - da_ld, ld0_opnd             # OP0 = (XDE)
+      - da_ea, vs_fetch, waitmem
+      - ld1_opnd, q_setw            # OP1 = (XHL)
+      - muls_alu, dst_ld, ${cc}_cc, w_setw
+      - spd_rmux, ld1_opnd, dst_rmux
+      - dst_rmux, ld0_opnd
+      - sub_alu, dst_ld, waitmem, q_fetch
+      - ni
   # To do:
-  - mnemo: [ MULA, SWI, RETI ]
+  - mnemo: [ SWI, RETI ]
     seq:
       - halt

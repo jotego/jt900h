@@ -61,7 +61,7 @@ jt900h_div u_div (
     .cen  ( cen         ),
     .op0  ( op0         ),
     .op1  ( op1[15:0]   ),
-    .len  ( ws          ),
+    .len  ( qs          ),
     .sign ( div_sign    ),
     .start( div         ),
     .quot ( div_quot    ),
