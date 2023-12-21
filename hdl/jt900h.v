@@ -48,7 +48,7 @@ module jt900h(
 
 wire        bs, ws, qs, cc, mul, shex;
 // from ucode
-wire        cr_rd, da2ea, div, exff, full, inc_pc,
+wire        cr_rd, da2ea, div, exff, alt, inc_pc,
             mulcheck, mulsel, sex, swpss, wr, zex;
 wire [ 1:0] ea_sel;
 wire [ 1:0] opnd_sel;
@@ -93,7 +93,7 @@ jt900h_ctrl u_ctrl(
     .da2ea      ( da2ea     ),
     .div        ( div       ),
     .exff       ( exff      ),
-    .full       ( full      ),
+    .alt        ( alt       ),
     .inc_pc     ( inc_pc    ),
     .mulcheck   ( mulcheck  ),
     .mulsel     ( mulsel    ),
@@ -136,7 +136,7 @@ jt900h_regs u_regs(
     // control (from ucode)
     .bs         ( bs        ),
     .exff       ( exff      ),
-    .full       ( full      ),
+    .alt        ( alt       ),
     .mul        ( mul       ),
     .mulcheck   ( mulcheck  ),
     .qs         ( qs        ),

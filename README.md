@@ -50,6 +50,12 @@ Second OP byte contains a register selection:
 
 ###  1?11'???? Series
 
+These instructions may not use memory addressing, may use it just to obtain an address, and may also load data. The first byte does not provide enough information about what to do. JT900H always decodes the memory address and stores it in EA. Then decodes the next byte as a _group 3_ instruction.
+
+- `RET cc` is detected in the control unit
+- `LDAR` is detected as a special case of `F3` addressing by the _r32jmp case_ (control unit)
+- For the rest, the regular memory decoding is done.
+
 | Instruction         | Encoding                  |
 | ------------------- | ------------------------- |
 | `RET cc           ` | `1011'0000 - 1111'cccc`   |

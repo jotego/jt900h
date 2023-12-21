@@ -32,7 +32,7 @@ module jt900h_regs(
     // control (from ucode)
     input             bs,
     input             exff,
-    input             full,
+    input             alt,
     input             inc_pc,
     input             mul,
     input             mulcheck,
@@ -185,7 +185,7 @@ always @(posedge clk, posedge rst) begin
         case( ral_sel ) // Register Address Latch
             SRC_RAL:  src <= r3sel;
             A_RAL:    src <= {2'b0,rfp,4'b0};
-            DST_RAL:  dst <= full ? fsel : (mul|is_mul) ? mulsel : r3sel;
+            DST_RAL:  dst <= alt ? fsel : (mul|is_mul) ? mulsel : r3sel;
             XSRC_RAL: src <= dst | 8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
             SWP_RAL:  {src,dst}<={dst,src};
             default:;

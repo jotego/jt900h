@@ -34,7 +34,7 @@ module jt900h_ctrl(
     output            da2ea,
     output            div,
     output            exff,
-    output            full,
+    output            alt,
     output            inc_pc,
     output            jb5,
     output            mulcheck,
