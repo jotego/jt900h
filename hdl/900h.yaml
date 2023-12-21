@@ -194,7 +194,7 @@ ops:
   - { name: ORCF,  op: 0x121, ctl: { alu: BOR,  cx: cin,srca: num4, ld:    , setw: ,wr: , swp: , setw: , cc: c }}
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, cx: cin,srca: num4, ld:    , setw: ,wr: , swp: , setw: , cc: c }}
   - { name: CHG,   op: 0x132, ctl: { alu: BXOR, cx: hi, srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc:   }}
-  - { name: RES,   op: 0x130, ctl: { alu: BAND, cx:   , srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc:   }}
+  - { name: RES,   op: 0x130, ctl: { alu: BSET, cx:   , srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc:   }}
   - { name: SET,   op: 0x131, ctl: { alu: BSET, cx: hi, srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc:   }}
   - { name: STCF,  op: 0x124, ctl: { alu: BSET, cx: cin,srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc:   }}
   - { name: TSET,  op: 0x134, ctl: { alu: BSET, cx: hi, srca: num4, ld: dst, setw: ,wr: , swp: , setw: , cc: "${BIT_CC}" }}
