@@ -24,13 +24,14 @@ module jt900h_mem(
     output reg [23:0] bus_addr,
     input      [15:0] bus_dout,
     output reg [15:0] bus_din,
-    output            bus_wr,
+    output reg [ 1:0] bus_we,
     output            bus_rd,
     // from ucode
     input       [2:0] fetch_sel,
     input       [1:0] ea_sel,
     input             da2ea,
     input             wr,
+    input             inc_pc,       // only read memory for PC address if inc_pc is stable
     // from control unit
     input             bs, ws, qs,
     // from register unit
@@ -41,16 +42,21 @@ module jt900h_mem(
     // outputs
     output reg [23:0] ea,
     output reg [31:0] mdata,
-    output            busy
+    output reg        busy
 );
 
 reg  [31:0] ea;     // address calculated from memory addressing instructions
+wire [39:0] wdadj;
+reg  [23:0] nx_din;
+
+assign wdadj = baddr[0] ? {md,8'd0} : {8'd0,md};
 
 always @* begin
     case( ea_sel )
-        DA_EA: nx_addr = da;
-        SP_EA: nx_addr = xsp[23:0];
-        M_EA:  nx_addr = ea;
+        DA_EA:   nx_addr = da;
+        SP_EA:   nx_addr = xsp[23:0];
+        M_EA:    nx_addr = ea;
+        default: nx_addr = pc;
     endcase
 end
 
@@ -58,13 +64,45 @@ always @(posedge clk or posedge rst) begin
     if(rst) begin
         bus_addr <= 0;
         bus_din  <= 0;
+        bus_we   <= 0;
         ea       <= 0;
         mdata    <= 0;
+        {wr2,wr3}<= 0;
     end else if(cen) begin
         if( da2ea ) ea <= da;
         if( !busy ) begin
+            bus_we <= 0;
             if( wr ) begin
                 bus_addr <= nx_addr;
+                busy     <= 1;
+                bus_din  <= wdadj[15:0];
+                nx_din   <= wdadj[39-:24];
+                bus_we   <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])}
+                if( (ws & nx_addr[0]) | qs ) wr2 <= 1;
+            end else if( nx_addr != bus_addr ) begin
+                busy <= ea_sel!=0 || !inc_pc;
+
+            end
+        end else begin
+            if( wr2 ) begin
+                wr2      <= 0;
+                bus_addr <= bus_addr + (bus_addr[0] ? 2'b01 : 2'b10);
+                bus_din  <= nx_din[15:0];
+                bus_we   <= { qs, qs | ws };
+                nx_din   <= nx_din>>16;
+                if( qs&bus_addr[0] ) begin
+                    wr3 <= 1;
+                end else begin
+                    busy <= 0;
+                end
+            end
+            if( wr3 ) begin
+                wr3      <= 0;
+                bus_addr <= bus_addr + 2'd2;
+                bus_din  <= nx_din[15:0];
+                bus_we   <= 2'b01;
+                wr3      <= qs&bus_addr[0];
+                busy     <= 0;
             end
         end
     end
