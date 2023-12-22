@@ -36,11 +36,11 @@ module jt900h(
     // set to zero to use the regular interrupt vectors at FFFF00
     // or set to one and pass the interrupt vector lower 8 bits
     input             inta_en,    // the external device sets the vector address
-    input      [ 7:0] int_addr
+    input      [ 7:0] int_addr,
     // Register dump
-    // output            buserror,
-    // input      [ 7:0] dmp_addr,     // dump
-    // output     [ 7:0] dmp_dout,
+    output            dec_err,
+    input      [ 7:0] dmp_addr,     // dump
+    output     [ 7:0] dmp_dout
     // Debug
     // input      [ 7:0] st_addr,
     // output     [ 7:0] st_dout,
@@ -95,6 +95,7 @@ jt900h_ctrl u_ctrl(
     .ws         ( ws        ),
     .qs         ( qs        ),
     .cc         ( cc        ),       // condition code
+    .dec_err    ( dec_err   ),
     // signals from ucode
     .cr_rd      ( cr_rd     ),
     .da2ea      ( da2ea     ),
@@ -169,7 +170,10 @@ jt900h_regs u_regs(
     .da         ( da        ),  // direct memory address from OP, like #8 in LD<W> (#8),#
     .op0        ( op0       ),
     .op1        ( op1       ),
-    .op2        ( op2       )
+    .op2        ( op2       ),
+    // Register dump
+    .dmp_addr   ( dmp_addr  ),
+    .dmp_dout   ( dmp_dout  )
 );
 
 jt900h_alu u_alu(

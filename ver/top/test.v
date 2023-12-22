@@ -25,12 +25,12 @@ reg        dump_rdout, dump_2file;
 
 reg        simctrl_cs, intctrl_cs;
 // CPU registers
-wire [31:0] sim_xix = uut.u_regs.xix;
-wire [31:0] sim_xiy = uut.u_regs.xiy;
-wire [31:0] sim_xiz = uut.u_regs.xiz;
-wire [15:0] mem_xix;
-wire [15:0] mem_xiy;
-wire [15:0] mem_xiz;
+// wire [31:0] sim_xix = uut.u_regs.xix;
+// wire [31:0] sim_xiy = uut.u_regs.xiy;
+// wire [31:0] sim_xiz = uut.u_regs.xiz;
+// wire [15:0] mem_xix;
+// wire [15:0] mem_xiy;
+// wire [15:0] mem_xiz;
 
 integer    cnt,file;
 
@@ -47,9 +47,9 @@ assign ram_a    = ram_addr[AW-1:0]; // short version for plotting
 assign ram_dout = mem[ram_addr[AW-1:1]];
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
-assign mem_xix  = mem[sim_xix];
-assign mem_xiy  = mem[sim_xiy];
-assign mem_xiz  = mem[sim_xiz];
+// assign mem_xix  = mem[sim_xix];
+// assign mem_xiy  = mem[sim_xiy];
+// assign mem_xiz  = mem[sim_xiz];
 
 `ifndef NODUMP
 initial begin
@@ -107,19 +107,18 @@ always @* begin
     intctrl_cs = ram_addr[15:1]=='h7ff8;
 end
 
-always @(posedge uut.u_ctrl.buserror ) begin
-    $display("Bus error detected. Simulation will be interrupted.");
+always @(posedge uut.u_ctrl.dec_err ) begin
+    $display("Decode error detected. Simulation will be interrupted.");
     #100 $finish;
 end
 
-always @(posedge uut.u_ctrl.halted ) begin
-    $display("CPU Halted");
-end
+// always @(posedge uut.u_ctrl.halted ) begin
+//     $display("CPU Halted");
+// end
 
-always @(negedge uut.u_ctrl.halted ) begin
-    if( !rst ) $display("Halt released");
-end
-
+// always @(negedge uut.u_ctrl.halted ) begin
+//     if( !rst ) $display("Halt released");
+// end
 
 always @(posedge clk) begin
     `ifdef USECEN
@@ -179,6 +178,7 @@ jt900h uut(
     .din        ( ram_dout  ),
     .dout       ( ram_din   ),
     .we         ( ram_we    ),
+    .rd         (           ),
     .busy       ( 1'b0      ),
 
     .intrq      ( intrq     ),
@@ -187,6 +187,7 @@ jt900h uut(
     .inta_en    ( 1'b0      ),
     .int_addr   ( 8'd0      ),
 
+    .dec_err    (           ),
     .dmp_addr   ( dmp_addr  ),
     .dmp_dout   ( dmp_dout  )
 );

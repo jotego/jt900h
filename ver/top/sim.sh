@@ -35,9 +35,7 @@ else
 fi
 
 # Try linting the code first
-cd ../../hdl
-verilator --lint-only *.v --top-module jt900h || exit $?
-cd -
+verilator --lint-only ../../hdl/*.v --top-module jt900h -I || exit $?
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -98,10 +96,17 @@ if [ $RAM = 1 ]; then
     xxd ${FNAME}.bin | head
 fi
 
+if ! which jtframe; then
+    echo "Missing jtframe"
+    exit 1
+fi
+
+jtframe ucode --list jt900h 900h
+
 iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat ${FNAME}.hex|wc -l) \
     -DFNAME=\"$FNAME\" \
-    -I../../hdl || exit $?
+    -I. || exit $?
 ./$SIMEXE -lxt
 rm -f $SIMEXE
 

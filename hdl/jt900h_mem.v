@@ -25,7 +25,7 @@ module jt900h_mem(
     input      [15:0] bus_dout,
     output reg [15:0] bus_din,
     output reg [ 1:0] bus_we,
-    output            bus_rd,
+    output reg        bus_rd,
     // from ucode
     input       [1:0] fetch_sel,
     input       [1:0] ea_sel,
@@ -42,7 +42,7 @@ module jt900h_mem(
     // outputs
     output reg [23:0] ea,           // address calculated from memory addressing instructions
     output reg [31:0] mdata,
-    output reg        busy
+    output            busy
 );
 
 `include "900h_param.vh"
@@ -53,10 +53,11 @@ wire [39:0] wdadj;
 reg  [23:0] nx_din, nx_addr;
 reg  [ 1:0] wp;
 reg  [ 2:0] rp;
-reg         part;
+reg         part, wrk;
 
 assign wdadj    = bus_addr[0] ? {md,8'd0} : {8'd0,md};
 assign bus_addr = ca + {22'd0,adelta};
+assign busy     = wrk || wr || (nx_addr != ca && (!inc_pc || ea_sel!=0));
 
 always @* begin
     case( ea_sel )
@@ -69,33 +70,35 @@ end
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
-        ca       <= 0;
+        ca       <= ~24'h0;
         bus_din  <= 0;
         bus_we   <= 0;
+        bus_rd   <= 0;
         ea       <= 0;
         rp       <= 0;
         wp       <= 0;
         mdata    <= 0;
         adelta   <= 0;
         part     <= 0;
+        wrk      <= 0;
     end else if(cen) begin
         bus_we <= 0;
         wp     <= wp<<1;
         rp     <= rp<<1;
         if( da2ea ) ea <= da;
-        if( !busy ) begin
+        if( !wrk ) begin
             if( wr ) begin
                 ca       <= nx_addr;
                 adelta   <= 0;
-                busy     <= 1;
+                wrk      <= 1;
                 bus_din  <= wdadj[15:0];
                 nx_din   <= wdadj[39-:24];
                 bus_we   <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])};
                 if( (ws & nx_addr[0]) | qs ) wp <= 1;
-            end else if( nx_addr != bus_addr && (!inc_pc || ea_sel!=0)) begin
+            end else if( nx_addr != ca && (!inc_pc || ea_sel!=0)) begin
                 ca       <= nx_addr;
                 adelta   <= 0;
-                busy     <= 1;
+                wrk      <= 1;
                 bus_rd   <= 1;
                 part     <= fetch_sel==VS_FETCH && (bs|ws);
                 rp       <= 1;
@@ -107,14 +110,14 @@ always @(posedge clk or posedge rst) begin
                 bus_we   <= { qs, qs | ws };
                 nx_din   <= nx_din>>16;
                 if( ~(qs&bus_addr[0]) ) begin
-                    wp   <= 0;
-                    busy <= 0;
+                    wp     <= 0;
+                    wrk    <= 0;
                 end
             end else if( wp[1] ) begin
-                adelta    <= 2'b11;
-                bus_din  <= nx_din[15:0];
-                bus_we   <= 2'b01;
-                busy     <= 0;
+                adelta  <= 2'b11;
+                bus_din <= nx_din[15:0];
+                bus_we  <= 2'b01;
+                wrk     <= 0;
             end else if(rp[0]) begin
                 mdata  <= 0;
                 if(bus_addr[0]) begin
@@ -124,21 +127,23 @@ always @(posedge clk or posedge rst) begin
                 end
                 if(part & (bs|(ws&~bus_addr[0]))) begin
                     rp     <= 0;
-                    busy   <= 0;
+                    wrk    <= 0;
                     bus_rd <= 0;
+                end else begin
+                    adelta <= bus_addr[0] ? 2'b01 : 2'b10;
                 end
             end else if(rp[1]) begin
-                mdata[(bus_addr[0]?8:16)+:16] <= bus_dout;
-                if( ~bus_addr[0]|(part&ws) ) begin
+                mdata[(adelta[0]?8:16)+:16] <= bus_dout;
+                if( ~adelta[0]|(part&ws) ) begin
                     rp     <= 0;
-                    busy   <= 0;
+                    wrk    <= 0;
                     bus_rd <= 0;
                 end else begin
                     adelta <= 2'b11;
                 end
             end else if(rp[2]) begin
                 mdata[31-:8] <= bus_dout[7:0];
-                busy   <= 0;
+                wrk    <= 0;
                 bus_rd <= 0;
             end
         end

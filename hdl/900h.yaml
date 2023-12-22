@@ -298,6 +298,11 @@ ops:
   - { name: STCF,  op: 0x32c, ctl: { alu: BSET, cx: cin,srca: acc, ld: md, wr: 1, swp: ,setw: b, cc:   }}
 
 ucode:
+  - name: intexec
+    seq:
+      - # let the memory unit grab the address
+      - waitmem, q_fetch
+      - ni
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing and
     seq:               # (XWA+d8), 8-bit indexing
       - inc_pc, q_setw, s8_fetch
@@ -451,7 +456,7 @@ ucode:
   - name: imm0
     seq:
       - inc_pc
-      - waitmem, vs_fetch              # guarantees that the data will be valid in all cases
+      - waitmem, q_fetch               # guarantees that the data will be valid in all cases
       - inc_pc, retb, zex, ld0_opnd    # conditional return on byte size
       - inc_pc, retw                   # conditional return on word size
       - inc_pc
@@ -459,7 +464,7 @@ ucode:
   - name: imm1
     seq:
       - inc_pc
-      - waitmem, vs_fetch              # guarantees that the data will be valid in all cases
+      - waitmem, q_fetch               # guarantees that the data will be valid in all cases
       - inc_pc, retb, zex, ld1_opnd    # conditional return on byte size
       - inc_pc, retw                   # conditional return on word size
       - inc_pc

@@ -29,6 +29,7 @@ module jt900h_ctrl(
     output reg        ws,
     output reg        qs,
     output reg        cc,       // condition code
+    output            dec_err,  // decode error
     // signals from ucode
     output            cr_rd,
     output            da2ea,
@@ -56,8 +57,6 @@ module jt900h_ctrl(
 `include "900h.vh"
 
 localparam FS=7, FZ=6, FH=4, FV=2, FN=1, FC=0; // Flag bits
-localparam IVRD   = 14'h0000,       // to be udpated
-           INTSRV = 14'h0c70;
 
 wire [4:0] jsr_sel;
 reg  [2:0] iv_sel;
@@ -75,6 +74,7 @@ wire        ni, r32jmp, retb, retw,
 
 assign still    = div_busy | (waitmem & mem_busy);
 assign nx_ualo  = uaddr[3:0] + 4'd1;
+assign dec_err  = halt;     // temptative
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -99,9 +99,8 @@ end
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        uaddr      <= IVRD;
+        uaddr      <= INTEXEC_SEQA;
         jsr_ret    <= 0;
-        // iv         <= 4'o17; // reset vector
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
         altss      <= 0;

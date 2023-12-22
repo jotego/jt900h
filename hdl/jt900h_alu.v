@@ -33,7 +33,8 @@ module jt900h_alu(
     input       [2:0] cx_sel,
 
     input             nin, hin, cin, zin,
-    output reg        n,h,z,v,c,p,
+    output            n,z,p,c,
+    output reg        h,v,
     output reg [31:0] rslt
 );
 
@@ -44,7 +45,7 @@ reg  cx,
      n8, n16, n32;
 reg  [ 7:0] daa;
 reg  [ 2:0] cc;
-reg  [15:0] div_quot, div_rem;
+wire [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
 wire [11:0] rdig;
 wire        daa_carry, bsel,

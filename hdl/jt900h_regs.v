@@ -59,7 +59,10 @@ module jt900h_regs(
     output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
     output reg [31:0] op0,
     output reg [31:0] op1,
-    output reg [31:0] op2
+    output reg [31:0] op2,
+    // Register dump
+    input      [ 7:0] dmp_addr,
+    output     [ 7:0] dmp_dout
 );
 
 `include "900h_param.vh"
@@ -70,6 +73,7 @@ localparam [1:0] BC=1;
 reg  [31:0] sdmux, rmux;
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
+wire [31:0] dmp_mux;
 reg  [ 7:0] r3sel, fsel, sdsel, mulsel, src, dst;
 reg  [ 4:0] sdsh;
 wire [ 7:0] flags_;
@@ -85,6 +89,23 @@ assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,2'b10,rfp,flags};
 assign {no,ho,co,zo} = {n,h,c,z};
 assign xsp     = ptrs[XSP];
+
+assign dmp_mux  = dmp_addr[7] ? ptrs[dmp_addr[3:2]] : accs[dmp_addr[5:2]];
+assign dmp_dout = dmp_addr[1:0]==0 ? dmp_mux[ 0+:8] :
+                  dmp_addr[1:0]==1 ? dmp_mux[ 8+:8] :
+                  dmp_addr[1:0]==2 ? dmp_mux[16+:8] : dmp_mux[24+:8];
+
+`ifdef SIMULATION
+    wire [31:0] xwa0 /* verilator public */, xbc0 /* verilator public */, xde0 /* verilator public */, xhl0 /* verilator public */,
+                xwa1 /* verilator public */, xbc1 /* verilator public */, xde1 /* verilator public */, xhl1 /* verilator public */,
+                xwa2 /* verilator public */, xbc2 /* verilator public */, xde2 /* verilator public */, xhl2 /* verilator public */,
+                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */;
+
+    assign { xwa3, xwa2, xwa1, xwa0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd0}],accs[{2'd1,2'd0}],accs[{2'd0,2'd0}]};
+    assign { xbc3, xbc2, xbc1, xbc0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
+    assign { xde3, xde2, xde1, xde0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
+    assign { xhl3, xhl2, xhl1, xhl0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
+`endif
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
