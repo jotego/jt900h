@@ -23,6 +23,8 @@ module jt900h_regs(
     // memory unit
     input      [23:0] ea,
     input      [31:0] din,      // data from memory controller
+    output     [31:0] xsp,
+    output reg [31:0] md,
     // ALU
     input      [31:0] rslt,
     input             zi,hi,vi,ni,ci,pi, // flag updates
@@ -39,7 +41,6 @@ module jt900h_regs(
     input             mulcheck,
     input             qs,
     input             sex,
-    input             shex,
     input             ws,
     input             zex,
     input       [1:0] opnd_sel,
@@ -66,7 +67,7 @@ module jt900h_regs(
 localparam [1:0] XSP=3;
 localparam [1:0] BC=1;
 
-reg  [31:0] md, sdmux, rmux;
+reg  [31:0] sdmux, rmux;
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 reg  [ 7:0] r3sel, fsel, sdsel, mulsel, src, dst;
@@ -83,6 +84,7 @@ assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
 assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,imask,2'b10,rfp,flags};
 assign {no,ho,co,zo} = {n,h,c,z};
+assign xsp     = ptrs[XSP];
 
 always @* begin
     // r3sel -> selects register from 3-bit R value in op
@@ -122,7 +124,6 @@ always @* begin
         default:  rmux = {qs?md[31:16]:16'd0,ws?md[15:8]:8'd0,md[7:0]};
     endcase
     // extend the sign
-    if(   shex   ) rmux[4] = rmux[3:0]==0; // adjust it so a 4'd0 shifts by 16
     if( ws & sex ) rmux[31: 8] = {24{rmux[ 7]}};
     if( qs & sex ) rmux[31:16] = {16{rmux[15]}};
     if( ws & zex ) rmux[31: 8] = 0;

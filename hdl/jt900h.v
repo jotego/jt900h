@@ -25,6 +25,7 @@ module jt900h(
     input      [15:0] din,
     output     [15:0] dout,
     output     [ 1:0] we,
+    output            rd,
     input             busy,
 
     // interrupt processing
@@ -48,12 +49,12 @@ module jt900h(
 
 wire        bs, ws, qs, cc, mul, shex;
 // Register unit
-wire [31:0] md;
+wire [31:0] md, xsp;
 wire [ 7:0] flags;
 wire        n,h,c,z;
 // from ucode
 wire        cr_rd, da2ea, div, exff, alt, inc_pc,
-            mulcheck, mulsel, sex, wr, zex;
+            mulcheck, sex, wr, zex;
 wire [ 1:0] ea_sel;
 wire [ 1:0] opnd_sel;
 wire [ 2:0] cx_sel;
@@ -66,7 +67,7 @@ wire [ 3:0] rmux_sel;
 // memory unit
 wire [23:0] ea, da, pc;
 wire [31:0] mdata;
-wire        mem_busy;
+wire        mem_busy, nc;
 // ALU
 wire [31:0] op0, op1, op2, rslt;
 wire        div_busy;
@@ -77,11 +78,15 @@ wire [31:0] crin;
 wire [31:0] cr;
 wire        cr_we;    // cr_rd goes directly from control unit
 
+// To do
+assign irq_ack = 0;
+assign cr = 0;
+
 jt900h_ctrl u_ctrl(
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen       ),
-    .md         ( md        ),
+    .md         ( md[7:0]   ),
     .flags      ( flags     ),
     .zu         ( zu        ),
     .div_busy   ( div_busy  ),
@@ -98,7 +103,7 @@ jt900h_ctrl u_ctrl(
     .alt        ( alt       ),
     .inc_pc     ( inc_pc    ),
     .mulcheck   ( mulcheck  ),
-    .mulsel     ( mulsel    ),
+    .mulsel     ( mul       ),
     .sex        ( sex       ),
     .wr         ( wr        ),
     .zex        ( zex       ),
@@ -120,6 +125,8 @@ jt900h_regs u_regs(
     // memory unit
     .ea         ( ea        ),
     .din        ( mdata     ),
+    .xsp        ( xsp       ),
+    .md         ( md        ),
     // ALU
     .rslt       ( rslt      ),
     .zi         ( zu        ),
@@ -144,7 +151,6 @@ jt900h_regs u_regs(
     .mulcheck   ( mulcheck  ),
     .qs         ( qs        ),
     .sex        ( sex       ),
-    .shex       ( shex      ),
     .ws         ( ws        ),
     .zex        ( zex       ),
     .opnd_sel   ( opnd_sel  ),
@@ -197,6 +203,37 @@ jt900h_alu u_alu(
     .c          ( cu        ),
     .p          ( pu        ),
     .rslt       ( rslt      )
+);
+
+jt900h_mem u_mem(
+    .rst        ( rst       ),
+    .clk        ( clk       ),
+    .cen        ( cen       ),
+
+    .bus_addr   ( {addr,nc} ),
+    .bus_dout   ( din       ),
+    .bus_din    ( dout      ),
+    .bus_we     ( we        ),
+    .bus_rd     ( rd        ),
+    // from ucode
+    .fetch_sel  ( fetch_sel ),
+    .ea_sel     ( ea_sel    ),
+    .da2ea      ( da2ea     ),
+    .wr         ( wr        ),
+    .inc_pc     ( inc_pc    ),
+    // from control unit
+    .bs         ( bs        ),
+    .ws         ( ws        ),
+    .qs         ( qs        ),
+    // from register unit
+    .da         ( da        ),
+    .pc         ( pc        ),
+    .xsp        ( xsp       ),
+    .md         ( md        ),
+    // outputs
+    .ea         ( ea        ),
+    .mdata      ( mdata     ),
+    .busy       ( mem_busy  )
 );
 
 endmodule
