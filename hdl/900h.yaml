@@ -630,8 +630,6 @@ ucode:
     seq:
       - inc_pc
       - halt
-      - waitmem, q_fetch
-      - ni
   - mnemo: [ JP ]
     seq:
       - ${setw}_setw, ${srca}_jsr
@@ -820,13 +818,6 @@ ucode:
       - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
-  # - mnemo: [ LDF ]
-  #   seq:
-  #     - inc_pc, s8_fetch
-  #     - n3_rmux, ld0_opnd, inc_pc
-  #     - rfp_ld
-  #     - waitmem, q_fetch
-  #     - ni
   - mnemo: [ LDX ]
     seq:
       - inc_pc, s8_fetch
