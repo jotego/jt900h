@@ -300,7 +300,7 @@ ops:
 ucode:
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing and
     seq:               # (XWA+d8), 8-bit indexing
-      - q_setw, s8_fetch, inc_pc
+      - inc_pc, q_setw, s8_fetch
       - dst_ral
       - dst_rmux, ld0_opnd, b_setw
       - ?${d8}=1, sex, ld1_opnd, q_setw
@@ -310,17 +310,17 @@ ucode:
       - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_da ]
     seq:
-      - b_setw, s8_fetch, inc_pc    # #8 by default
-      - ?${off16}, w_setw, inc_pc   # #16 if off16 is set
+      - inc_pc, b_setw, s8_fetch    # #8 by default
+      - ?${off16}, inc_pc, w_setw   # #16 if off16 is set
       - zex, ld0_opnd, q_setw
       - da_ld, ${setw}_setw, ld0_opnd
       - ?${rd}=1, da2ea2md_jsr
       - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_da24 ]
     seq:
-      - q_setw, s8_fetch, inc_pc
+      - inc_pc, q_setw, s8_fetch
       - inc_pc
-      - ld0_opnd, inc_pc
+      - inc_pc, ld0_opnd
       - inc_pc
       - waitmem, q_fetch # need to fetch new data
       - da_ld, ${setw}_setw, ld0_opnd
@@ -333,7 +333,7 @@ ucode:
       - ?${rd}=1, r32jmp,       # r32 jump is based on lower bits
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
-      - q_setw, inc_pc, s8_fetch
+      - inc_pc, q_setw, s8_fetch
       - dst_ral
       - dst_rmux, ld0_opnd, ${setw}_setw
       - spd_rmux, ld1_opnd, q_setw
@@ -354,29 +354,29 @@ ucode:
   - name: r32_00
     seq:
       - swp_setw
-      - alt, dst_ral, inc_pc, q_setw
+      - inc_pc, alt, dst_ral, q_setw
       - dst_rmux, ld0_opnd
       - da_ld
       - r32com_jsr
   - name: r32_00_nord
     seq:
-      - alt, dst_ral, inc_pc, q_setw
+      - inc_pc, alt, dst_ral, q_setw
       - dst_rmux, ld0_opnd
       - da_ld, waitmem, q_fetch
       - g3_nxgr, ni
   - name: r32_01
     seq:
       - swp_setw
-      - alt, dst_ral, inc_pc, q_setw, s8_fetch
-      - dst_rmux, ld0_opnd, w_setw, inc_pc
-      - sex, md_rmux, ld1_opnd, q_setw, inc_pc
+      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, dst_rmux, ld0_opnd, w_setw
+      - inc_pc, sex, md_rmux, ld1_opnd, q_setw
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_01_nord
     seq:
-      - alt, dst_ral, inc_pc, q_setw, s8_fetch
-      - dst_rmux, ld0_opnd, w_setw, inc_pc
-      - sex, md_rmux, ld1_opnd, q_setw, inc_pc
+      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, dst_rmux, ld0_opnd, w_setw
+      - inc_pc, sex, md_rmux, ld1_opnd, q_setw
       - add_alu, da_ld, waitmem, q_fetch
       - g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
@@ -469,11 +469,11 @@ ucode:
       - inc_pc, s8_fetch, zero_rmux, ld1_opnd, ret_jsr
   - name: rfp
     seq: # loads rfp to op0 and zero to op1
-      - rfp_rmux, ld0_opnd, inc_pc
+      - inc_pc, rfp_rmux, ld0_opnd
       - zero_rmux, ld1_opnd, ret_jsr
   - name: daa
     seq:
-      - daa_alu, md_ld, inc_pc
+      - inc_pc, daa_alu, md_ld
       - ld1_opnd, ret_jsr
   - name: cc0
     seq:
@@ -519,13 +519,12 @@ ucode:
       - ni
   - name: dir16
     seq: # loads data from 16-bit address into MD. Does not set EA
-      - inc_pc, s8_fetch, swp_setw      # load direct address from 16-bit immediate value
+      - s8_fetch, swp_setw      # load direct address from 16-bit immediate value
       - inc_pc, w_setw
       - inc_pc, zex, ld0_opnd
-      - da_ld, swp_setw
+      - inc_pc, da_ld, swp_setw
       - da_ea, waitmem, vs_fetch
-      - waitmem, q_fetch
-      - ni
+      - ret_jsr
   - name: ea0
     seq: # moves EA to op0 and increases PC
       - inc_pc, ea_rmux, ld0_opnd, ret_jsr
@@ -533,13 +532,13 @@ ucode:
   # Load op0 operand (destination)
   - mnemo: [ rzzB, rzzW, rzzQ ]
     seq:
-      - ${setw}_setw, mulcheck, dst_ral, inc_pc
+      - inc_pc, ${setw}_setw, mulcheck, dst_ral
       - waitmem, q_fetch
       - g1_nxgr, ni, dst_rmux, ld0_opnd
   - mnemo: [ frzzB, frzzW, frzzQ ]
     seq:
-      - ${setw}_setw, s8_fetch, inc_pc
-      - alt, dst_ral, s8_fetch, inc_pc
+      - inc_pc, ${setw}_setw, s8_fetch
+      - inc_pc, alt, dst_ral, s8_fetch
       - waitmem, q_fetch
       - g1_nxgr, ni, dst_rmux, ld0_opnd
 # instructions
@@ -562,7 +561,7 @@ ucode:
       - ${step}_alu, dst_ld, da_ea, vs_fetch  # variable-size fetch (byte or word)
       - a_ral
       - src_rmux, ld0_opnd
-      - md_rmux,  ld1_opnd
+      - md_rmux,  ld1_opnd, waitmem
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
       - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
@@ -612,13 +611,13 @@ ucode:
       - ni
   - mnemo: [ EXFF ]
     seq:
-      - exff, inc_pc
+      - inc_pc, exff
       - waitmem, q_fetch
       - ni
   - mnemo: [ EXTS, EXTZ ]
     seq:
       - shrtn_setw
-      - md_ld, inc_pc
+      - inc_pc, md_ld
       - ${ext}, ld0_opnd, widen_setw
       - dst_ld
       - waitmem, q_fetch
@@ -643,7 +642,7 @@ ucode:
       - ni
   - mnemo: [ LD8 ]  # LD<W> (#8),#
     seq:
-      - b_setw, s8_fetch, inc_pc      # load direct address from 8-bit immediate value
+      - inc_pc, b_setw, s8_fetch      # load direct address from 8-bit immediate value
       - ld0_opnd
       - da_ld
       - ${setw}_setw, imm1_jsr
@@ -707,7 +706,7 @@ ucode:
       - ?${jr16}, inc_pc
       - inc_pc, ncc_jsr
       - s8_fetch, ${setw}_setw
-      - sex, ld0_opnd, inc_pc
+      - inc_pc, sex, ld0_opnd
       - pc_rmux, ld1_opnd
       - add_alu, pc_ld
       - waitmem, q_fetch
@@ -764,7 +763,7 @@ ucode:
       - sub_alu, hi_cx, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
-      - op2_ld, inc_pc
+      - inc_pc, op2_ld
       - ${alu}_alu, ${cx}_cx, md_ld, ${cc}_cc
       - m_ea, wr
       - waitmem, q_fetch
@@ -821,7 +820,7 @@ ucode:
       - inc_pc, s8_fetch
       - inc_pc, ld0_opnd
       - inc_pc, da_ld, b_setw
-      - waitmem, vs_fetch
+      - waitmem, vs_fetch       # get only the next byte in (PC) for now
       - inc_pc, da_ea, wr
       - inc_pc
       - waitmem, q_fetch
@@ -829,8 +828,8 @@ ucode:
   - mnemo: [ LINK ]
     seq: # q_setw already set
       - inc_pc, xsp_rmux, ld0_opnd, s8_fetch
-      - spd_rmux, ld1_opnd, inc_pc
-      - sub_alu, xsp_ld, inc_pc
+      - inc_pc, spd_rmux, ld1_opnd
+      - inc_pc, sub_alu, xsp_ld
       - dst_rmux, ld0_opnd
       - md_rmux,  ld1_opnd, md_ld
       - sp_ea, wr
@@ -853,7 +852,7 @@ ucode:
       - inc_pc, s8_fetch, w_setw
       - inc_pc, sex, ld0_opnd
       - inc_pc
-      - pc_rmux, ld1_opnd, b_setw
+      - inc_pc, pc_rmux, ld1_opnd, b_setw
       - waitmem, vs_fetch
       - dst_ral, s_setw             # decodes 001s'0RRR byte
       - inc_pc, add_alu, dst_ld
@@ -861,11 +860,11 @@ ucode:
       - ni
   - mnemo: [ MULA ]
     seq:
-      - xde_ral, w_setw, inc_pc     # SRC = XDE
+      - xde_ral, w_setw             # SRC = XDE
       - src_rmux, ld0_opnd, xhl_ral
       - da_ld, dst_rmux, ld0_opnd   # DST = XHL
-      - da_ea vs_fetch, waitmem
-      - da_ld, ld0_opnd             # OP0 = (XDE)
+      - da_ea, vs_fetch, waitmem
+      - inc_pc, da_ld, ld0_opnd     # OP0 = (XDE). Leave the inc_pc here to optimize mem access
       - da_ea, vs_fetch, waitmem
       - ld1_opnd, q_setw            # OP1 = (XHL)
       - muls_alu, dst_ld, ${cc}_cc, w_setw

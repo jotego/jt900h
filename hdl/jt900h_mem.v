@@ -21,13 +21,13 @@ module jt900h_mem(
     input             clk,
     input             cen,
     // external interface
-    output reg [23:0] bus_addr,
+    output     [23:0] bus_addr,
     input      [15:0] bus_dout,
     output reg [15:0] bus_din,
     output reg [ 1:0] bus_we,
     output            bus_rd,
     // from ucode
-    input       [2:0] fetch_sel,
+    input       [1:0] fetch_sel,
     input       [1:0] ea_sel,
     input             da2ea,
     input             wr,
@@ -40,16 +40,23 @@ module jt900h_mem(
     input      [31:0] xsp,
     input      [31:0] md,
     // outputs
-    output reg [23:0] ea,
+    output reg [23:0] ea,           // address calculated from memory addressing instructions
     output reg [31:0] mdata,
     output reg        busy
 );
 
-reg  [31:0] ea;     // address calculated from memory addressing instructions
-wire [39:0] wdadj;
-reg  [23:0] nx_din;
+`include "900h_param.vh"
 
-assign wdadj = baddr[0] ? {md,8'd0} : {8'd0,md};
+reg  [23:0] ca;     // cached address
+reg  [ 1:0] adelta;
+wire [39:0] wdadj;
+reg  [23:0] nx_din, nx_addr;
+reg  [ 1:0] wp;
+reg  [ 2:0] rp;
+reg         part;
+
+assign wdadj    = bus_addr[0] ? {md,8'd0} : {8'd0,md};
+assign bus_addr = ca + {22'd0,adelta};
 
 always @* begin
     case( ea_sel )
@@ -62,47 +69,77 @@ end
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
-        bus_addr <= 0;
+        ca       <= 0;
         bus_din  <= 0;
         bus_we   <= 0;
         ea       <= 0;
+        rp       <= 0;
+        wp       <= 0;
         mdata    <= 0;
-        {wr2,wr3}<= 0;
+        adelta   <= 0;
+        part     <= 0;
     end else if(cen) begin
+        bus_we <= 0;
+        wp     <= wp<<1;
+        rp     <= rp<<1;
         if( da2ea ) ea <= da;
         if( !busy ) begin
-            bus_we <= 0;
             if( wr ) begin
-                bus_addr <= nx_addr;
+                ca       <= nx_addr;
+                adelta   <= 0;
                 busy     <= 1;
                 bus_din  <= wdadj[15:0];
                 nx_din   <= wdadj[39-:24];
-                bus_we   <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])}
-                if( (ws & nx_addr[0]) | qs ) wr2 <= 1;
-            end else if( nx_addr != bus_addr ) begin
-                busy <= ea_sel!=0 || !inc_pc;
-
+                bus_we   <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])};
+                if( (ws & nx_addr[0]) | qs ) wp <= 1;
+            end else if( nx_addr != bus_addr && (!inc_pc || ea_sel!=0)) begin
+                ca       <= nx_addr;
+                adelta   <= 0;
+                busy     <= 1;
+                bus_rd   <= 1;
+                part     <= fetch_sel==VS_FETCH && (bs|ws);
+                rp       <= 1;
             end
         end else begin
-            if( wr2 ) begin
-                wr2      <= 0;
-                bus_addr <= bus_addr + (bus_addr[0] ? 2'b01 : 2'b10);
+            if( wp[0] ) begin
+                adelta    <= bus_addr[0] ? 2'b01 : 2'b10;
                 bus_din  <= nx_din[15:0];
                 bus_we   <= { qs, qs | ws };
                 nx_din   <= nx_din>>16;
-                if( qs&bus_addr[0] ) begin
-                    wr3 <= 1;
-                end else begin
+                if( ~(qs&bus_addr[0]) ) begin
+                    wp   <= 0;
                     busy <= 0;
                 end
-            end
-            if( wr3 ) begin
-                wr3      <= 0;
-                bus_addr <= bus_addr + 2'd2;
+            end else if( wp[1] ) begin
+                adelta    <= 2'b11;
                 bus_din  <= nx_din[15:0];
                 bus_we   <= 2'b01;
-                wr3      <= qs&bus_addr[0];
                 busy     <= 0;
+            end else if(rp[0]) begin
+                mdata  <= 0;
+                if(bus_addr[0]) begin
+                    mdata[7:0] <= bus_dout[15:8];
+                end else begin
+                    mdata[15:0] <= bus_dout;
+                end
+                if(part & (bs|(ws&~bus_addr[0]))) begin
+                    rp     <= 0;
+                    busy   <= 0;
+                    bus_rd <= 0;
+                end
+            end else if(rp[1]) begin
+                mdata[(bus_addr[0]?8:16)+:16] <= bus_dout;
+                if( ~bus_addr[0]|(part&ws) ) begin
+                    rp     <= 0;
+                    busy   <= 0;
+                    bus_rd <= 0;
+                end else begin
+                    adelta <= 2'b11;
+                end
+            end else if(rp[2]) begin
+                mdata[31-:8] <= bus_dout[7:0];
+                busy   <= 0;
+                bus_rd <= 0;
             end
         end
     end
