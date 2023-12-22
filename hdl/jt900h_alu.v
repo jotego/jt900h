@@ -23,14 +23,14 @@ module jt900h_alu(
 
     input      [31:0] op0,      // destination
     input      [31:0] op1,      // source
-    input      [31:0] op2,      // extra operand
+    input      [31:0] op2,      // extra operand for shift and module operations
     input             bs,ws,qs,
 
     // control
     input             div,
     output            div_busy,
     input       [4:0] alu_sel,
-    input       [2:0] carry_sel,
+    input       [2:0] cx_sel,
 
     input             nin, hin, cin, zin,
     output reg        n,h,z,v,c,p,
@@ -92,7 +92,7 @@ always @* begin
 end
 
 always @* begin
-    case( carry_sel )
+    case( cx_sel )
         CIN_CX:  cx =  cin;
         COM_CX:  cx = ~cin;
         B0_CX:   cx = op0[0]; // PAA instruction

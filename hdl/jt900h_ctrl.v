@@ -44,12 +44,12 @@ module jt900h_ctrl(
     output      [1:0] ea_sel,
     output      [1:0] opnd_sel,
     output      [2:0] cx_sel,
-    output      [2:0] fetch_sel,
+    output      [1:0] fetch_sel,
     output      [2:0] ral_sel,
     output      [3:0] ld_sel,
     output      [4:0] alu_sel,
     output      [4:0] cc_sel,
-    output      [4:0] rmux_sel
+    output      [3:0] rmux_sel
 );
 
 `include "900h_param.vh"
@@ -64,7 +64,7 @@ reg  [2:0] iv_sel;
 reg  [2:0] altss;
 wire       halt, swi, still;
 reg        nmi_l;
-wire [3:0] nx_ualo = uaddr[3:0] + 1'd1;
+wire [3:0] nx_ualo;
 reg        stack_bsy;
 
 // signals from ucode
@@ -73,7 +73,8 @@ wire  [2:0] setw_sel;
 wire        ni, r32jmp, retb, retw,
             waitmem;
 
-assign still = div_busy | (waitmem & mem_busy);
+assign still    = div_busy | (waitmem & mem_busy);
+assign nx_ualo  = uaddr[3:0] + 4'd1;
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -100,7 +101,7 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         uaddr      <= IVRD;
         jsr_ret    <= 0;
-        iv         <= 4'o17; // reset vector
+        // iv         <= 4'o17; // reset vector
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
         altss      <= 0;
@@ -134,13 +135,14 @@ always @(posedge clk, posedge rst) begin
         end
         if( r32jmp ) begin
             case( md[1:0] )
-                0: uaddr = R32_00_SEQA;
-                1: uaddr = R32_01_SEQA;
+                0: uaddr <= alt ? R32_00_NORD_SEQA : R32_00_SEQA;
+                1: uaddr <= alt ? R32_01_NORD_SEQA : R32_01_SEQA;
                 3: case(md[7:2])
-                    0: uaddr = R32_8_SEQA;
-                    1: uaddr = R32_16_SEQA;
+                    0: uaddr <= alt ? R32_8_NORD_SEQA  : R32_8_SEQA;
+                    1: uaddr <= alt ? R32_16_NORD_SEQA : R32_16_SEQA;
+                    4: uaddr <= R32_LDAR_SEQA;
                 endcase
-                default:;   // to do: signal a decode error
+                default: $stop;   // to do: signal a decode error
             endcase
         end
     end

@@ -29,6 +29,7 @@ module jt900h_regs(
     output            no,ho,co,zo,
     // control (from module logic)
     input             cc,
+    output      [7:0] flags,
     // control (from ucode)
     input             bs,
     input             exff,
@@ -70,7 +71,7 @@ reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 reg  [ 7:0] r3sel, fsel, sdsel, mulsel, src, dst;
 reg  [ 4:0] sdsh;
-wire [ 7:0] flags, flags_;
+wire [ 7:0] flags_;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_;   // flags (alt)
 reg  [ 2:0] imask;      // IFF

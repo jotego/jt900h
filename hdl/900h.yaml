@@ -439,9 +439,6 @@ ucode:
     seq:
       - inc_pc, s8_fetch
       - inc_pc, ret_jsr  # loaded into md
-  - name: zero
-    seq:
-      - inc_pc, s8_fetch, zero_rmux, ld1_opnd, ret_jsr
   - name: imm0
     seq:
       - inc_pc
@@ -460,7 +457,7 @@ ucode:
       - inc_pc, ret_jsr
   - name: zero
     seq: # increments PC despite not reading data, so it can be used in the general OP template
-      - zero_rmux, ld1_opnd, inc_pc, ret_jsr
+      - inc_pc, s8_fetch, zero_rmux, ld1_opnd, ret_jsr
   - name: rfp
     seq: # loads rfp to op0 and zero to op1
       - rfp_rmux, ld0_opnd, inc_pc

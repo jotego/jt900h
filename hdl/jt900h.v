@@ -35,7 +35,7 @@ module jt900h(
     // set to zero to use the regular interrupt vectors at FFFF00
     // or set to one and pass the interrupt vector lower 8 bits
     input             inta_en,    // the external device sets the vector address
-    input      [ 7:0] int_addr,
+    input      [ 7:0] int_addr
     // Register dump
     // output            buserror,
     // input      [ 7:0] dmp_addr,     // dump
@@ -47,18 +47,22 @@ module jt900h(
 );
 
 wire        bs, ws, qs, cc, mul, shex;
+// Register unit
+wire [31:0] md;
+wire [ 7:0] flags;
+wire        n,h,c,z;
 // from ucode
 wire        cr_rd, da2ea, div, exff, alt, inc_pc,
-            mulcheck, mulsel, sex, swpss, wr, zex;
+            mulcheck, mulsel, sex, wr, zex;
 wire [ 1:0] ea_sel;
 wire [ 1:0] opnd_sel;
-wire [ 2:0] carry_sel;
-wire [ 2:0] fetch_sel;
+wire [ 2:0] cx_sel;
+wire [ 1:0] fetch_sel;
 wire [ 2:0] ral_sel;
 wire [ 3:0] ld_sel;
 wire [ 4:0] alu_sel;
 wire [ 4:0] cc_sel;
-wire [ 4:0] rmux_sel;
+wire [ 3:0] rmux_sel;
 // memory unit
 wire [23:0] ea, da, pc;
 wire [31:0] mdata;
@@ -66,15 +70,12 @@ wire        mem_busy;
 // ALU
 wire [31:0] op0, op1, op2, rslt;
 wire        div_busy;
+wire        zu,hu,vu,nu,cu,pu;
 // "Control Registers" (MCU MMR)
 wire [ 7:0] cra;
 wire [31:0] crin;
 wire [31:0] cr;
 wire        cr_we;    // cr_rd goes directly from control unit
-
-// Flags
-wire zu,hu,vu,nu,ci,pu;
-wire n,h,c,z;
 
 jt900h_ctrl u_ctrl(
     .rst        ( rst       ),
@@ -82,6 +83,7 @@ jt900h_ctrl u_ctrl(
     .cen        ( cen       ),
     .md         ( md        ),
     .flags      ( flags     ),
+    .zu         ( zu        ),
     .div_busy   ( div_busy  ),
     .mem_busy   ( mem_busy  ),
     .bs         ( bs        ),
@@ -98,12 +100,11 @@ jt900h_ctrl u_ctrl(
     .mulcheck   ( mulcheck  ),
     .mulsel     ( mulsel    ),
     .sex        ( sex       ),
-    .swpss      ( swpss     ),
     .wr         ( wr        ),
     .zex        ( zex       ),
     .ea_sel     ( ea_sel    ),
     .opnd_sel   ( opnd_sel  ),
-    .carry_sel  ( carry_sel ),
+    .cx_sel     ( cx_sel    ),
     .fetch_sel  ( fetch_sel ),
     .ral_sel    ( ral_sel   ),
     .ld_sel     ( ld_sel    ),
@@ -127,16 +128,18 @@ jt900h_regs u_regs(
     .ni         ( nu        ),
     .ci         ( cu        ),
     .pi         ( pu        ),
-    .n          ( n         ),
-    .h          ( h         ),
-    .c          ( c         ),
-    .z          ( z         ),
+    .no         ( n         ),
+    .ho         ( h         ),
+    .co         ( c         ),
+    .zo         ( z         ),
     // control (from module logic)
     .cc         ( cc        ),
+    .flags      ( flags     ),
     // control (from ucode)
     .bs         ( bs        ),
     .exff       ( exff      ),
     .alt        ( alt       ),
+    .inc_pc     ( inc_pc    ),
     .mul        ( mul       ),
     .mulcheck   ( mulcheck  ),
     .qs         ( qs        ),
@@ -168,18 +171,18 @@ jt900h_alu u_alu(
     .clk        ( clk       ),
     .cen        ( cen       ),
 
-
     .op0        ( op0       ),
     .op1        ( op1       ),
     .op2        ( op2       ),
     .bs         ( bs        ),
     .ws         ( ws        ),
+    .qs         ( qs        ),
 
     // control
     .div        ( div       ),
     .div_busy   ( div_busy  ),
     .alu_sel    ( alu_sel   ),
-    .carry_sel  ( carry_sel ),
+    .cx_sel     ( cx_sel    ),
 
     // input flags
     .nin        ( n         ),
