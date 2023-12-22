@@ -31,12 +31,12 @@ ops:
 
   # Group 2 R,(mem) and (mem),R
   # R,(mem). Page 43 of 900H CPU Book
-  - { name: mem_reg,  op: 0x080, mask: 0x3f8, ctl: { rd: 1, setw: b }, cycles: 3 }
-  - { name: mem_reg,  op: 0x090, mask: 0x3f8, ctl: { rd: 1, setw: w }, cycles: 3 }
-  - { name: mem_reg,  op: 0x0a0, mask: 0x3f8, ctl: { rd: 1, setw: q }, cycles: 5 }
-  - { name: mem_reg8, op: 0x088, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 1 }, cycles: 3 }
-  - { name: mem_reg8, op: 0x098, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 1 }, cycles: 3 }
-  - { name: mem_reg8, op: 0x0a8, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 1 }, cycles: 5 }
+  - { name: mem_reg,  op: 0x080, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 0 }, cycles: 3 }
+  - { name: mem_reg,  op: 0x090, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 0 }, cycles: 3 }
+  - { name: mem_reg,  op: 0x0a0, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 0 }, cycles: 5 }
+  - { name: mem_reg,  op: 0x088, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 1 }, cycles: 3 }
+  - { name: mem_reg,  op: 0x098, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 1 }, cycles: 3 }
+  - { name: mem_reg,  op: 0x0a8, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 1 }, cycles: 5 }
 
   - { name: mem_da,   op: 0x0c0, ctl: { rd: 1, setw: b, off16:   }}  # -1--'000? (#8)
   - { name: mem_da,   op: 0x0d0, ctl: { rd: 1, setw: w, off16:   }}
@@ -59,12 +59,15 @@ ops:
   - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, setw: q, adr:     }}
 
   # Group 3 #3,(mem) 1m11'mmmm except RET cc and LDAR
-  - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw:         }, mask: 0x3f8, cycles: 5 }
-  - { name: mem_reg8, op: 0x0b8, ctl: { rd: 0, setw: , d8: 1 }, mask: 0x3f8, cycles: 3 }
+  - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw: , d8: 0 }, mask: 0x3f8, cycles: 5 }
+  - { name: mem_reg,  op: 0x0b8, ctl: { rd: 0, setw: , d8: 1 }, mask: 0x3f8, cycles: 3 }
   - { name: mem_da,   op: 0x0f0, ctl: { rd: 0, setw: , off16: 0 }}
   - { name: mem_da,   op: 0x0f1, ctl: { rd: 0, setw: , off16: 1 }}
   - { name: mem_da24, op: 0x0f2, ctl: { rd: 0, setw:            }}
   - { name: mem_r32,  op: 0x0f3, ctl: { rd: 0, setw:            }}
+  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, setw: , adr: SUB }}  # -1--'0100 (-r32)
+  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, setw: , adr:     }}  # -1--'0100 (r32+)
+
 
   ########### instructions ###################
 
@@ -103,7 +106,7 @@ ops:
   - { name: PUSHW,  op: 0x00b, ctl: { setw: w }}
   - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }}
   - { name: RETD,   op: 0x00f, ctl: { retd: 1, ncc: }}
-  - { name: RETI,   op: 0x007, ctl: { ncc: }}
+  - { name: RETI,   op: 0x007 }
   - { name: RCF,    op: 0x010, ctl: { alu: BAND, cx:    , srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c  }}
   - { name: CCF,    op: 0x012, ctl: { alu:     , cx: com, srca: imm1, setw: b, ld: , wr: , swp: , cc: n0c    }}
   - { name: SCF,    op: 0x011, ctl: { alu:     , cx: hi,  srca: imm1, setw: b, ld: , wr: , swp: , cc: h0n0c  }}
@@ -295,23 +298,16 @@ ops:
   - { name: STCF,  op: 0x32c, ctl: { alu: BSET, cx: cin,srca: acc, ld: md, wr: 1, swp: ,setw: b, cc:   }}
 
 ucode:
-  - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing
-    seq:
-      - q_setw, s8_fetch, inc_pc
-      - dst_ral
-      - dst_rmux, ld0_opnd
-      - da_ld, ld0_opnd, ${setw}_setw
-      - ?${rd}=1, da2ea2md_jsr
-      - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
-  - mnemo: [ mem_reg8 ] # (XWA+d8), 8-bit indexing
-    seq:
+  - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing and
+    seq:               # (XWA+d8), 8-bit indexing
       - q_setw, s8_fetch, inc_pc
       - dst_ral
       - dst_rmux, ld0_opnd, b_setw
-      - sex, ld1_opnd, q_setw
-      - add_alu, da_ld, ${setw}_setw, ld0_opnd
+      - ?${d8}=1, sex, ld1_opnd, q_setw
+      - ?${d8}=1, add_alu, da_ld, ld0_opnd, ${setw}_setw
+      - ?${d8}=0,          da_ld, ld0_opnd, ${setw}_setw
       - ?${rd}=1, da2ea2md_jsr
-      - ?${rd}=0,da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
+      - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_da ]
     seq:
       - b_setw, s8_fetch, inc_pc    # #8 by default
@@ -335,6 +331,19 @@ ucode:
       - ${setw}_setw, inc_pc, s8_fetch
       - ?${rd}=0, r32jmp, alt
       - ?${rd}=1, r32jmp,       # r32 jump is based on lower bits
+  - mnemo: [ mem_iter ]
+    seq: # pre-decrement / post-increment
+      - q_setw, inc_pc, s8_fetch
+      - dst_ral
+      - dst_rmux, ld0_opnd, ${setw}_setw
+      - spd_rmux, ld1_opnd, q_setw
+      - ${alu}_alu, dst_ld
+      - ${adr}_alu, da_ld
+      - ${setw}_setw
+      - da2ea
+      - ?${rd}=1, m_ea, waitmem, vs_fetch
+      - ?${rd}=1, g2_nxgr, ni
+      - ?${rd}=0, g3_nxgr, ni # EA has the address, MD keeps the OP
   - name: da2ea2md
     seq: # loads operand data in op0, sets ea, and md contains the next op
       - da2ea # op-code data is held in op0
@@ -533,18 +542,6 @@ ucode:
       - alt, dst_ral, s8_fetch, inc_pc
       - waitmem, q_fetch
       - g1_nxgr, ni, dst_rmux, ld0_opnd
-  - mnemo: [ mem_iter ]
-    seq: # pre-decrement / post-increment
-      - q_setw, inc_pc, s8_fetch
-      - dst_ral
-      - dst_rmux, ld0_opnd, ${setw}_setw
-      - spd_rmux, ld1_opnd, q_setw
-      - ${alu}_alu, dst_ld
-      - ${adr}_alu, da_ld
-      - ${setw}_setw
-      - da2ea
-      - m_ea, waitmem, vs_fetch
-      - g2_nxgr, ni
 # instructions
   - mnemo: [ ADC, ADD, AND, ANDCF, BIT, CCF, CP, CPL, DAA, DEC, INC, DECF, INCF,
             EI, CHG, RES, SET, STCF, TSET,
