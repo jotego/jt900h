@@ -143,6 +143,8 @@ ops:
   - { name: INC,   op: 0x160, ctl: { alu: ADD,  cx:   ,  srca: n31p, ld: dst, setw:  , wr: 0, swp_opnd:  , swp_ral:  ,cc: "${INC_CC}", ral:    }, mask: 0x3f8 } # INC #3,r
   - { name: INC,   op: 0x260, ctl: { alu: ADD,  cx:   ,  srca: n31p, ld:  md, setw:  , wr: 1, swp_opnd:  , swp_ral:  ,cc: "${INC_CC}", ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: INCF,  op: 0x00c, ctl: { alu: ADD,  cx: hi,  srca: rfp,  ld: rfp, setw: b, wr: ,  swp_opnd:  , swp_ral:  ,cc:            , ral:    }}
+  - { name: LD,    op: 0x200, ctl: { alu:    ,  cx:   ,  srca: imm0, ld:  md, setw: b, wr: 1, swp_opnd: $, swp_ral:  ,cc:            , ral: dst}} # LD<B> (mem),#
+  - { name: LD,    op: 0x202, ctl: { alu:    ,  cx:   ,  srca: imm0, ld:  md, setw: b, wr: 1, swp_opnd: $, swp_ral:  ,cc:            , ral: dst}} # LD<W> (mem),#
   - { name: LD,    op: 0x020, ctl: { alu:    ,  cx:   ,  srca: imm0, ld: dst, setw: b, wr: ,  swp_opnd:  , swp_ral:  ,cc:            , ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
   - { name: LD,    op: 0x030, ctl: { alu:    ,  cx:   ,  srca: imm0, ld: dst, setw: w, wr: ,  swp_opnd:  , swp_ral:  ,cc:            , ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
   - { name: LD,    op: 0x040, ctl: { alu:    ,  cx:   ,  srca: imm0, ld: dst, setw: q, wr: ,  swp_opnd:  , swp_ral:  ,cc:            , ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
@@ -322,11 +324,11 @@ ucode:
   - mnemo: [ mem_da24 ]
     seq:
       - inc_pc, q_setw, s8_fetch
-      - inc_pc
       - inc_pc, ld0_opnd
+      - inc_pc, da_ld
       - inc_pc
       - waitmem, q_fetch # need to fetch new data
-      - da_ld, ${setw}_setw, ld0_opnd
+      - ${setw}_setw, ld0_opnd
       - ?${rd}=1, da2ea2md_jsr
       - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_r32 ]
@@ -555,6 +557,7 @@ ucode:
       - ${ral}_ral, ${srca}_jsr
       - ${swp_opnd}, ${swp_ral}
       - ${alu}_alu, ${cx}_cx, ${ld}_ld, ${cc}_cc
+      - ?${wr}, waitmem
       - ?${wr}, m_ea, wr
       - waitmem, q_fetch
       - ni
