@@ -40,11 +40,11 @@ ops:
   - { name: mem_reg,  op: 0x098, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 1 }, cycles: 3 }
   - { name: mem_reg,  op: 0x0a8, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 1 }, cycles: 5 }
 
-  - { name: mem_da,   op: 0x0c0, ctl: { rd: 1, setw: b, off16:   }}  # -1--'000? (#8)
-  - { name: mem_da,   op: 0x0d0, ctl: { rd: 1, setw: w, off16:   }}
+  - { name: mem_da,   op: 0x0c0, ctl: { rd: 1, setw: b, off16:   }}  # -1--'000 (#8)
+  - { name: mem_da?*,   op: 0x0d0, ctl: { rd: 1, setw: w, off16:   }}
   - { name: mem_da,   op: 0x0e0, ctl: { rd: 1, setw: q, off16:   }}
-  - { name: mem_da,   op: 0x0c1, ctl: { rd: 1, setw: b, off16: 1 }}  # -1--'000? (#16)
-  - { name: mem_da,   op: 0x0d1, ctl: { rd: 1, setw: w, off16: 1 }}
+  - { name: mem_da,   op: 0x0c1, ctl: { rd: 1, setw: b, off16: 1 }}  # -1--'000 (#16)
+  - { name: mem_da?*,   op: 0x0d1, ctl: { rd: 1, setw: w, off16: 1 }}
   - { name: mem_da,   op: 0x0e1, ctl: { rd: 1, setw: q, off16: 1 }}
   - { name: mem_da24, op: 0x0c2, ctl: { rd: 1, setw: b }}  # -1--'0010 (#24)
   - { name: mem_da24, op: 0x0d2, ctl: { rd: 1, setw: w }}  # -1--'0010 (#24)
@@ -307,22 +307,22 @@ ucode:
     seq:               # (XWA+d8), 8-bit indexing
       - inc_pc, q_setw
       - dst_ral, s8_fetch
-      - ?${d8}=0, dst_rmux, ld0_opnd, q_setw
-      - ?${d8}=1, dst_rmux, ld0_opnd, b_setw
-      - ?${d8}=1, sex, ld1_opnd, q_setw
-      - ?${d8}=1, add_alu, da_ld, ld0_opnd, ${setw}_setw
-      - ?${d8}=0,          da_ld, ld0_opnd, ${setw}_setw
-      - ?${rd}=1, da2ea2md_jsr
-      - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
+      - ${d8}=0?*, dst_rmux, ld0_opnd, q_setw
+      - ${d8}=1?*, dst_rmux, ld0_opnd, b_setw
+      - ${d8}=1?*, sex, ld1_opnd, q_setw
+      - ${d8}=1?*, add_alu, da_ld, ld0_opnd, ${setw}_setw
+      - ${d8}=0?*,          da_ld, ld0_opnd, ${setw}_setw
+      - ${rd}=1?*, da2ea2md_jsr
+      - ${rd}=0?*, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_da ]
     seq:
       - inc_pc, b_setw, s8_fetch    # #8 by default
-      - ?${off16}, inc_pc, w_setw   # #16 if off16 is set
+      - ${off16}?*, inc_pc, w_setw   # #16 if off16 is set
       - inc_pc, s8_fetch, zex, ld0_opnd, q_setw
-      - ?${off16}, s8_fetch         # could be done in parallel with next one
+      - ${off16}?*, s8_fetch         # could be done in parallel with next one
       - da_ld, ${setw}_setw, ld0_opnd
-      - ?${rd}=1, da2ea2md_jsr
-      - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
+      - ${rd}=1?*, da2ea2md_jsr
+      - ${rd}=0?*, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_da24 ]
     seq:
       - inc_pc, q_setw, s8_fetch
@@ -331,13 +331,13 @@ ucode:
       - inc_pc
       - waitmem, q_fetch # need to fetch new data
       - ${setw}_setw, ld0_opnd
-      - ?${rd}=1, da2ea2md_jsr
-      - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
+      - ${rd}=1?*, da2ea2md_jsr
+      - ${rd}=0?*, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
       - ${setw}_setw, inc_pc, s8_fetch
-      - ?${rd}=0, r32jmp, alt
-      - ?${rd}=1, r32jmp,       # r32 jump is based on lower bits
+      - ${rd}=0?*, r32jmp, alt
+      - ${rd}=1?*, r32jmp,       # r32 jump is based on lower bits
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
       - inc_pc, q_setw, s8_fetch
@@ -348,9 +348,9 @@ ucode:
       - ${adr}_alu, da_ld
       - ${setw}_setw
       - da2ea
-      - ?${rd}=1, m_ea, waitmem, vs_fetch
-      - ?${rd}=1, g2_nxgr, ni
-      - ?${rd}=0, g3_nxgr, ni # EA has the address, MD keeps the OP
+      - ${rd}=1?*, m_ea, waitmem, vs_fetch
+      - ${rd}=1?*, g2_nxgr, ni
+      - ${rd}=0?*, g3_nxgr, ni # EA has the address, MD keeps the OP
   - name: da2ea2md
     seq: # loads operand data in op0, sets ea, and md contains the next op
       - da2ea # op-code data is held in op0
@@ -559,8 +559,8 @@ ucode:
       - ${ral}_ral, ${srca}_jsr
       - ${swp_opnd}, ${swp_ral}
       - ${alu}_alu, ${cx}_cx, ${ld}_ld, ${cc}_cc
-      - ?${wr}, waitmem
-      - ?${wr}, m_ea, wr
+      - ${wr}?*, waitmem
+      - ${wr}?*, m_ea, wr
       - waitmem, q_fetch
       - ni
   # compare data and count up/down BC
@@ -575,7 +575,7 @@ ucode:
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
       - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      - ?${loop}, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
+      - ${loop}?*, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -591,14 +591,14 @@ ucode:
       - zero_rmux, ld1_opnd
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - waitmem, sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      - ?${loop}, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
+      - ${loop}?*, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
       - inc_pc
       - waitmem, q_fetch
       - ni
   - mnemo: [ BS1F, BS1B ]
     seq:
-      - ?${alu}, ${alu}_alu, md_ld  # for BS1F, this will mirror the operand
-      - ?${alu}, ld0_opnd
+      - ${alu}?*, ${alu}_alu, md_ld  # for BS1F, this will mirror the operand
+      - ${alu}?*, ld0_opnd
       - inc_pc, bs1b_alu, a_ld, ${cc}_cc
       - waitmem, q_fetch
       - ni
@@ -617,7 +617,7 @@ ucode:
       - ${srca}_jsr
       - swp_ral
       - ${ld}_ld, swp_opnd, swp_ral
-      - ?${wr}, m_ea, wr
+      - ${wr}?*, m_ea, wr
       - dst_ld, waitmem, q_fetch
       - ni
   - mnemo: [ EXFF ]
@@ -673,13 +673,13 @@ ucode:
   - mnemo: [ RET, RETcc, RETD ]
     seq:
       - inc_pc, s8_fetch, w_setw, ${ncc}_jsr      # sets ws for RETD
-      - ?${retd}=1, inc_pc, zex, ld1_opnd, q_setw # imm at op1
-      - ?${retd}=0, q_setw
+      - ${retd}=1?*, inc_pc, zex, ld1_opnd, q_setw # imm at op1
+      - ${retd}=0?*, q_setw
       - sp_ea, waitmem, q_fetch
       - ld0_opnd
       - pc_ld, xsp_rmux, ld0_opnd
-      - ?${retd}, inc_pc, add_alu, xsp_ld       # adds the deallocate portion
-      - ?${retd}, xsp_rmux, ld0_opnd            # reloads XSP to add the rest
+      - ${retd}?*, inc_pc, add_alu, xsp_ld       # adds the deallocate portion
+      - ${retd}?*, xsp_rmux, ld0_opnd            # reloads XSP to add the rest
       - spd_rmux, ld1_opnd                      # regular +4
       - add_alu, xsp_ld
       - waitmem, q_fetch
@@ -691,7 +691,7 @@ ucode:
       - spd_rmux, ld1_opnd
       - sub_alu, xsp_ld, ${setw}_setw       # XSP = XSP-4
       - inc_pc, ${ex}, ld0_opnd
-      - ?${call24}, inc_pc
+      - ${call24}?*, inc_pc
       - inc_pc, md_ld       # zex-applied MD
       - md_rmux, ld1_opnd   # store it in op1
       - pc_rmux, ld0_opnd, q_setw   # move PC to MD
@@ -714,7 +714,7 @@ ucode:
       - ni
   - mnemo: [ JR ]
     seq:
-      - ?${jr16}, inc_pc
+      - ${jr16}?*, inc_pc
       - inc_pc, ncc_jsr
       - s8_fetch, ${setw}_setw
       - inc_pc, sex, ld0_opnd
@@ -724,9 +724,9 @@ ucode:
       - ni
   - mnemo: [ PUSHR, PUSHA, PUSHF, PUSHSR ]
     seq:
-      - ?${pshr}=1, inc_pc, ${setw}_setw
-      - ?${pshr}=1, dst_ral                       # dst_ral needed by PUSHR only
-      - ?${pshr}=0, inc_pc, ${setw}_setw, a_ral   # a_ral needed by PUSHA only
+      - ${pshr}=1?*, inc_pc, ${setw}_setw
+      - ${pshr}=1?*, dst_ral                       # dst_ral needed by PUSHR only
+      - ${pshr}=0?*, inc_pc, ${setw}_setw, a_ral   # a_ral needed by PUSHA only
       - ${rmux}_rmux, ld0_opnd
       - md_ld, psh_jsr
   - mnemo: [ PUSHR2 ]
@@ -736,7 +736,7 @@ ucode:
   - mnemo: [ PUSHW ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
-      - ?${setw}=w, inc_pc
+      - ${setw}=w?*, inc_pc
       - inc_pc, psh_jsr
   - mnemo: [ PUSHM ]
     seq:
@@ -748,7 +748,7 @@ ucode:
       - sp_ea, waitmem, vs_fetch, spd_rmux, ld1_opnd
       - ld0_opnd
       - ${dst}_ld, xsp_rmux, ld0_opnd
-      - ?${wr}, m_ea, wr
+      - ${wr}?*, m_ea, wr
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
@@ -792,7 +792,7 @@ ucode:
       - ni
   - mnemo: [ MUL, MULS ]
     seq:
-      - ?${swp}, swp_ral
+      - ${swp}?*, swp_ral
       - inc_pc, mulsel, dst_ral
       - ${ex}, dst_rmux,    ld0_opnd
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
@@ -809,7 +809,7 @@ ucode:
       - ni
   - mnemo: [ DIV, DIVS ]
     seq:
-      - ?${swp}, swp_ral
+      - ${swp}?*, swp_ral
       - inc_pc, mulsel, dst_ral
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
       - ${ex}, dst_rmux,    ld0_opnd
