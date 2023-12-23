@@ -138,7 +138,11 @@ always @(posedge clk) begin
     end
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
-        $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
+        case( ram_we )
+            2'b01: $display("RAM: %02X written to %X low  (%X)",ram_win[7:0],  ram_addr&24'hffffe, ram_a>>1 );
+            2'b10: $display("RAM: %02X written to %X high (%X)",ram_win[15:8], ram_addr&24'hffffe, ram_a>>1 );
+            2'b11: $display("RAM: %04X written to %X word (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
+        endcase
         // trigger interrupts in the test bench
         if( intctrl_cs && ram_we[0] ) begin
             // write 0 to $fff0 to clear the interrupt

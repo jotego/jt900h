@@ -47,16 +47,17 @@ module jt900h_mem(
 
 `include "900h_param.vh"
 
-reg  [23:0] ca;     // cached address
+reg  [23:0] ca,     // cached address
+            wa;     // write address
 reg  [ 1:0] adelta;
 wire [39:0] wdadj;
 reg  [23:0] nx_din, nx_addr;
 reg  [ 1:0] wp;
 reg  [ 2:0] rp;
-reg         part, wrk;
+reg         part, wrk, wrl;
 
 assign wdadj    = bus_addr[0] ? {md,8'd0} : {8'd0,md};
-assign bus_addr = ca + {22'd0,adelta};
+assign bus_addr = (bus_we!=0?wa:ca) + {22'd0,adelta};
 assign busy     = wrk || wr || (nx_addr != ca && (!inc_pc || ea_sel!=0));
 
 always @* begin
@@ -71,6 +72,7 @@ end
 always @(posedge clk or posedge rst) begin
     if(rst) begin
         ca       <= ~24'h0;
+        wa       <= 0;
         bus_din  <= 0;
         bus_we   <= 0;
         bus_rd   <= 0;
@@ -81,21 +83,25 @@ always @(posedge clk or posedge rst) begin
         adelta   <= 0;
         part     <= 0;
         wrk      <= 0;
+        wrl      <= 0;
     end else if(cen) begin
         bus_we <= 0;
         wp     <= wp<<1;
         rp     <= rp<<1;
         if( da2ea ) ea <= da;
         if( !wrk ) begin
-            if( wr ) begin
-                ca       <= nx_addr;
+            wrl <= wr;
+            if( wr & ~wrl ) begin
+                wa       <= nx_addr;
                 adelta   <= 0;
-                wrk      <= 1;
                 bus_din  <= wdadj[15:0];
                 nx_din   <= wdadj[39-:24];
                 bus_we   <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])};
-                if( (ws & nx_addr[0]) | qs ) wp <= 1;
-            end else if( nx_addr != ca && (!inc_pc || ea_sel!=0)) begin
+                if( (ws & nx_addr[0]) | qs ) begin
+                    wp  <= 1;
+                    wrk <= 1;
+                end
+            end else if( !wr && nx_addr != ca && (!inc_pc || ea_sel!=0)) begin
                 ca       <= nx_addr;
                 adelta   <= 0;
                 wrk      <= 1;
