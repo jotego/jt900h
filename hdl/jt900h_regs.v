@@ -99,12 +99,13 @@ assign dmp_dout = dmp_addr==8'd80 ? sr[15:8] :
     wire [31:0] xwa0 /* verilator public */, xbc0 /* verilator public */, xde0 /* verilator public */, xhl0 /* verilator public */,
                 xwa1 /* verilator public */, xbc1 /* verilator public */, xde1 /* verilator public */, xhl1 /* verilator public */,
                 xwa2 /* verilator public */, xbc2 /* verilator public */, xde2 /* verilator public */, xhl2 /* verilator public */,
-                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */;
-
+                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */,
+                xix  /* verilator public */, xiy  /* verilator public */, xiz  /* verilator public */;
     assign { xwa3, xwa2, xwa1, xwa0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd0}],accs[{2'd1,2'd0}],accs[{2'd0,2'd0}]};
     assign { xbc3, xbc2, xbc1, xbc0 } = {accs[{2'd3,2'd1}],accs[{2'd2,2'd1}],accs[{2'd1,2'd1}],accs[{2'd0,2'd1}]};
     assign { xde3, xde2, xde1, xde0 } = {accs[{2'd3,2'd2}],accs[{2'd2,2'd2}],accs[{2'd1,2'd2}],accs[{2'd0,2'd2}]};
     assign { xhl3, xhl2, xhl1, xhl0 } = {accs[{2'd3,2'd3}],accs[{2'd2,2'd3}],accs[{2'd1,2'd3}],accs[{2'd0,2'd3}]};
+    assign { xix,  xiy,  xiz } = { ptrs[0], ptrs[1], ptrs[2] };
 `endif
 
 always @* begin

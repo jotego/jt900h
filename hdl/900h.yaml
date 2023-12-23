@@ -15,8 +15,8 @@ constants:
   LD_CC:   h0v3n0      # LDD, LDDR, LDI, LDIR
 # alias:
 #   - &LOW3 0x3f8
-ctrl:
-  nxgr: { bw: 2, v: [ {g1: 1}, {g2: 2}, {g3: 3} ]}
+# ctrl:
+#   nxgr: { bw: 2, v: [ {g1: 1}, {g2: 2}, {g3: 3} ]}
 ops:
   # Group 1: destination is R, source is either r or memory
   # examples ADC R,r   CP R,(mem)
@@ -160,8 +160,8 @@ ops:
   - { name: LD,    op: 0x340, ctl: { alu:    ,  cx:   ,  srca: reg,  ld: md,  setw: b, wr: 1, swp_opnd: $, swp_ral:  ,cc:            , ral:    }, mask: 0x3f8 } # LD (mem),R
   - { name: LD,    op: 0x350, ctl: { alu:    ,  cx:   ,  srca: reg,  ld: md,  setw: w, wr: 1, swp_opnd: $, swp_ral:  ,cc:            , ral:    }, mask: 0x3f8 } # LD (mem),R
   - { name: LD,    op: 0x360, ctl: { alu:    ,  cx:   ,  srca: reg,  ld: md,  setw: q, wr: 1, swp_opnd: $, swp_ral:  ,cc:            , ral:    }, mask: 0x3f8 } # LD (mem),R
-  - { name: LDA,   op: 0x320, ctl: { alu:    ,  cx:   ,  srca: ea0,  ld: dst, setw: w, wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral:    }, mask: 0x3f8 }
-  - { name: LDA,   op: 0x330, ctl: { alu:    ,  cx:   ,  srca: ea0,  ld: dst, setw: q, wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral:    }, mask: 0x3f8 }
+  - { name: LDA,   op: 0x320, ctl: { alu:    ,  cx:   ,  srca: ea0,  ld: dst, setw: w, wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral: dst}, mask: 0x3f8 }
+  - { name: LDA,   op: 0x330, ctl: { alu:    ,  cx:   ,  srca: ea0,  ld: dst, setw: q, wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral: dst}, mask: 0x3f8 }
   - { name: LDC,   op: 0x12e, ctl: { alu:    ,  cx:   ,  srca: cr1,  ld: cr , setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral:    }} # LDC cr,r
   - { name: LDC,   op: 0x12f, ctl: { alu:    ,  cx:   ,  srca: cr0,  ld: dst, setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc:            , ral:    }} # LDC r,cr
   - { name: LDCF,  op: 0x12b, ctl: { alu: BOR,  cx:   ,  srca: acc,  ld:    , setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: c          , ral:    }} # A,r
@@ -305,9 +305,10 @@ ucode:
       - ni
   - mnemo: [ mem_reg ] # (XWA), (XSP)... no indexing and
     seq:               # (XWA+d8), 8-bit indexing
-      - inc_pc, q_setw, s8_fetch
-      - dst_ral
-      - dst_rmux, ld0_opnd, b_setw
+      - inc_pc, q_setw
+      - dst_ral, s8_fetch
+      - ?${d8}=0, dst_rmux, ld0_opnd, q_setw
+      - ?${d8}=1, dst_rmux, ld0_opnd, b_setw
       - ?${d8}=1, sex, ld1_opnd, q_setw
       - ?${d8}=1, add_alu, da_ld, ld0_opnd, ${setw}_setw
       - ?${d8}=0,          da_ld, ld0_opnd, ${setw}_setw
@@ -317,7 +318,8 @@ ucode:
     seq:
       - inc_pc, b_setw, s8_fetch    # #8 by default
       - ?${off16}, inc_pc, w_setw   # #16 if off16 is set
-      - zex, ld0_opnd, q_setw
+      - inc_pc, s8_fetch, zex, ld0_opnd, q_setw
+      - ?${off16}, s8_fetch         # could be done in parallel with next one
       - da_ld, ${setw}_setw, ld0_opnd
       - ?${rd}=1, da2ea2md_jsr
       - ?${rd}=0, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
