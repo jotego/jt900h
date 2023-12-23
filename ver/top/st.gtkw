@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sat Dec 23 09:00:07 2023
+[*] Sat Dec 23 10:49:18 2023
 [*]
 [dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/top/test.lxt"
-[dumpfile_mtime] "Sat Dec 23 08:56:13 2023"
-[dumpfile_size] 246812
+[dumpfile_mtime] "Sat Dec 23 10:48:56 2023"
+[dumpfile_size] 248692
 [savefile] "/home/jtejada/jtcores/modules/jt900h/ver/top/st.gtkw"
-[timestart] 235000
+[timestart] 3232300
 [size] 1264 1024
 [pos] -1 -1
-*-15.997714 388400 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.997714 3345000 585000 875000 1035000 1195000 1475000 1635000 2025000 2585000 3205000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] test.
 [treeopen] test.uut.
 [treeopen] test.uut.u_alu.
@@ -23,53 +23,72 @@ test.uut.u_ctrl.clk[0]
 test.uut.u_regs.pc[23:0]
 [color] 2
 test.uut.u_ctrl.uaddr[13:0]
-@23
 test.uut.u_ctrl.nxgr_sel[1:0]
 @28
 test.uut.u_ctrl.ni[0]
+@2022
+^1 /home/jtejada/jtcores/modules/jt900h/ver/top/FETCH.st
+test.uut.u_regs.fetch_sel[1:0]
 @200
 -
+@24
+[color] 5
+test.uut.u_regs.rfp[1:0]
 @22
 test.uut.u_regs.xwa0[31:0]
+test.uut.u_regs.xbc0[31:0]
+test.uut.u_regs.xde0[31:0]
+test.uut.u_regs.xhl0[31:0]
+test.uut.u_regs.xwa1[31:0]
+test.uut.u_regs.xde1[31:0]
+test.uut.u_regs.xhl1[31:0]
+test.uut.u_regs.xwa2[31:0]
+test.uut.u_regs.xde2[31:0]
+@28
+test.uut.u_regs.c[0]
+@23
+test.uut.u_regs.sr[15:0]
 @200
 -
+@22
+test.uut.u_regs.da[23:0]
 @2022
-^1 /home/jtejada/jtcores/modules/jt900h/ver/top/OPND.st
-test.uut.u_regs.opnd_sel[1:0]
-^2 /home/jtejada/jtcores/modules/jt900h/ver/top/LD.st
-test.uut.u_regs.ld_sel[3:0]
-^3 /home/jtejada/jtcores/modules/jt900h/ver/top/FETCH.st
-test.uut.u_regs.fetch_sel[1:0]
-^4 /home/jtejada/jtcores/modules/jt900h/ver/top/RAL.st
+^2 /home/jtejada/jtcores/modules/jt900h/ver/top/RAL.st
 test.uut.u_regs.ral_sel[2:0]
+^3 /home/jtejada/jtcores/modules/jt900h/ver/top/OPND.st
+test.uut.u_regs.opnd_sel[1:0]
+^4 /home/jtejada/jtcores/modules/jt900h/ver/top/LD.st
+test.uut.u_regs.ld_sel[3:0]
+^5 /home/jtejada/jtcores/modules/jt900h/ver/top/RMUX.st
+test.uut.u_regs.rmux_sel[3:0]
+@22
+test.uut.u_regs.rmux[31:0]
+@200
+-
 @22
 test.uut.u_regs.src[7:0]
+@c00022
 test.uut.u_regs.dst[7:0]
-@200
--
 @28
-test.uut.u_ctrl.waitmem[0]
-[color] 2
-test.uut.u_ctrl.still[0]
-test.uut.u_regs.inc_pc[0]
-@200
--
-@28
-test.uut.u_ctrl.mem_busy[0]
-test.uut.u_mem.bus_rd[0]
-test.uut.u_mem.rp[2:0]
-test.uut.u_mem.wp[1:0]
-test.uut.u_mem.wrk[0]
+(0)test.uut.u_regs.dst[7:0]
+(1)test.uut.u_regs.dst[7:0]
+(2)test.uut.u_regs.dst[7:0]
+(3)test.uut.u_regs.dst[7:0]
+(4)test.uut.u_regs.dst[7:0]
+(5)test.uut.u_regs.dst[7:0]
+(6)test.uut.u_regs.dst[7:0]
+(7)test.uut.u_regs.dst[7:0]
+@1401200
+-group_end
 @200
 -
 @22
-test.uut.u_mem.nx_addr[23:0]
-test.uut.u_mem.bus_addr[23:0]
-test.uut.u_mem.bus_dout[15:0]
+test.uut.u_regs.sdmux[31:0]
+@24
+test.uut.u_regs.sdsh[4:0]
 @200
 -
 @22
-test.uut.u_mem.mdata[31:0]
 test.uut.u_mem.md[31:0]
 @200
 -
@@ -77,12 +96,12 @@ test.uut.u_mem.md[31:0]
 test.uut.u_mem.bs[0]
 test.uut.u_mem.ws[0]
 test.uut.u_mem.qs[0]
-test.uut.u_mem.adelta[1:0]
 @200
 -
 @22
 test.uut.u_regs.op0[31:0]
 test.uut.u_regs.op1[31:0]
+[color] 2
 test.uut.u_regs.rslt[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -90,10 +90,10 @@ assign sr      = {1'b1,imask,2'b10,rfp,flags};
 assign {no,ho,co,zo} = {n,h,c,z};
 assign xsp     = ptrs[XSP];
 
-assign dmp_mux  = dmp_addr[7] ? ptrs[dmp_addr[3:2]] : accs[dmp_addr[5:2]];
-assign dmp_dout = dmp_addr[1:0]==0 ? dmp_mux[ 0+:8] :
-                  dmp_addr[1:0]==1 ? dmp_mux[ 8+:8] :
-                  dmp_addr[1:0]==2 ? dmp_mux[16+:8] : dmp_mux[24+:8];
+assign dmp_mux  = dmp_addr[7:6]!=0 ? ptrs[dmp_addr[3:2]] : accs[dmp_addr[5:2]];
+assign dmp_dout = dmp_addr==8'd80 ? sr[15:8] :
+                  dmp_addr==8'd81 ? sr[ 7:0] :
+                                    dmp_mux[{dmp_addr[1:0],3'b0}+:8];
 
 `ifdef SIMULATION
     wire [31:0] xwa0 /* verilator public */, xbc0 /* verilator public */, xde0 /* verilator public */, xhl0 /* verilator public */,
@@ -102,9 +102,9 @@ assign dmp_dout = dmp_addr[1:0]==0 ? dmp_mux[ 0+:8] :
                 xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */;
 
     assign { xwa3, xwa2, xwa1, xwa0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd0}],accs[{2'd1,2'd0}],accs[{2'd0,2'd0}]};
-    assign { xbc3, xbc2, xbc1, xbc0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
-    assign { xde3, xde2, xde1, xde0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
-    assign { xhl3, xhl2, xhl1, xhl0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd1}],accs[{2'd1,2'd2}],accs[{2'd0,2'd3}]};
+    assign { xbc3, xbc2, xbc1, xbc0 } = {accs[{2'd3,2'd1}],accs[{2'd2,2'd1}],accs[{2'd1,2'd1}],accs[{2'd0,2'd1}]};
+    assign { xde3, xde2, xde1, xde0 } = {accs[{2'd3,2'd2}],accs[{2'd2,2'd2}],accs[{2'd1,2'd2}],accs[{2'd0,2'd2}]};
+    assign { xhl3, xhl2, xhl1, xhl0 } = {accs[{2'd3,2'd3}],accs[{2'd2,2'd3}],accs[{2'd1,2'd3}],accs[{2'd0,2'd3}]};
 `endif
 
 always @* begin
@@ -124,7 +124,7 @@ always @* begin
     // Register multiplexer
     sdsel = rmux_sel==DST_RMUX ? dst : src;
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
-    sdsh  = bs ? {sdmux[1:0],3'd0} : ws ? {sdmux[1],4'd0} : 5'd0; // shift to select byte/word part as data
+    sdsh  = bs ? {sdsel[1:0],3'd0} : ws ? {sdsel[1],4'd0} : 5'd0; // shift to select byte/word part as data
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
@@ -142,13 +142,13 @@ always @* begin
         SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
 
         EA_RMUX:  rmux = {8'd0,ea};
-        default:  rmux = {qs?md[31:16]:16'd0,ws?md[15:8]:8'd0,md[7:0]};
+        default:  rmux = {qs?md[31:16]:16'd0,(qs|ws)?md[15:8]:8'd0,md[7:0]};
     endcase
     // extend the sign
-    if( ws & sex ) rmux[31: 8] = {24{rmux[ 7]}};
-    if( qs & sex ) rmux[31:16] = {16{rmux[15]}};
-    if( ws & zex ) rmux[31: 8] = 0;
-    if( qs & zex ) rmux[31:16] = 0;
+    if( bs & sex ) rmux[31: 8] = {24{rmux[ 7]}};
+    if( ws & sex ) rmux[31:16] = {16{rmux[15]}};
+    if( bs & zex ) rmux[31: 8] = 0;
+    if( ws & zex ) rmux[31:16] = 0;
 end
 
 always @(posedge clk, posedge rst) begin
@@ -160,13 +160,14 @@ always @(posedge clk, posedge rst) begin
         rfp   <= 0;
         md    <= 0;
         pc    <= 0;
+        da    <= 0;
         imask <= 7;
         cr_we <= 0;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
         accs[12] <= 0; accs[13] <= 0; accs[14] <= 0; accs[15] <= 0;
-        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
+        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 32'h100;
         {s, z, h, v, n, c } <= 0;
         {s_,z_,h_,v_,n_,c_} <= 0;
     end else if(cen) begin

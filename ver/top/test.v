@@ -161,7 +161,7 @@ always @(posedge clk) begin
 
     if (/*ram_addr>=`END_RAM ||*/ dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
-        dmp_buf[ dmp_addr-1 ] <= dmp_dout;
+        dmp_buf[ dmp_addr ] <= dmp_dout;
         cen <= 0;
         if( dmp_addr==84 ) begin
             dump_2file<=1;
