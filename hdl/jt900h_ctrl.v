@@ -123,7 +123,7 @@ always @(posedge clk, posedge rst) begin
             end else begin
                 uaddr <= { nxgr_sel, md[7:0], 4'd0 };
                 stack_bsy  <= 0;
-                {bs,ws,qs} <= 0;
+                if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
             end
         end
         if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;

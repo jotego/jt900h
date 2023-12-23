@@ -34,6 +34,13 @@ else
     exit 1
 fi
 
+if ! which jtframe; then
+    echo "Missing jtframe"
+    exit 1
+fi
+
+jtframe ucode --list --gtkwave jt900h 900h
+
 # Try linting the code first
 verilator --lint-only ../../hdl/*.v --top-module jt900h -I || exit $?
 
@@ -95,13 +102,6 @@ SIMEXE=sim_$TEST
 if [ $RAM = 1 ]; then
     xxd ${FNAME}.bin | head
 fi
-
-if ! which jtframe; then
-    echo "Missing jtframe"
-    exit 1
-fi
-
-jtframe ucode --list jt900h 900h
 
 iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat ${FNAME}.hex|wc -l) \
