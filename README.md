@@ -28,13 +28,13 @@ Only source files are included in this repository. Binary files can be obtained 
 First OP byte is a memory addressing (page 43 of 900H_CPU_BOOK_CP3.pdf):
 
 - **ea** contains the memory address calculated
-- **op1** contains the data at that memory address
+- **op0** contains the data at that memory address
 - **md** contains 4 valid bytes starting at PC
 
 Second OP byte contains a register selection:
 
 - **dst** points to the register
-- **op0** contains the register value
+- **op1** contains the register value
 
 **Group 1: R,#3**
 
