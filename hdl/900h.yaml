@@ -624,11 +624,11 @@ ucode:
   - mnemo: [ EX ]
     seq:
       - ${srca}_jsr
-      - swp_ral
-      - ${ld}_ld, swp_opnd, swp_ral
+      - swp_opnd, dst_ld
+      - ${ld}_ld
       - ${wr}?*, waitmem
       - ${wr}?*, m_ea, wr
-      - dst_ld, waitmem, q_fetch
+      - waitmem, q_fetch
       - ni
   - mnemo: [ EXFF ]
     seq:
