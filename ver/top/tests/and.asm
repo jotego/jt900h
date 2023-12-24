@@ -22,6 +22,7 @@
     and a,b     ; a=32
 test_end:
     ld (0xffff),0xff
+    jp test_end
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end
