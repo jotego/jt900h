@@ -39,11 +39,6 @@ if ! which jtframe; then
     exit 1
 fi
 
-jtframe ucode --list --gtkwave jt900h 900h
-
-# Try linting the code first
-verilator --lint-only ../../hdl/*.v --top-module jt900h -I || exit $?
-
 while [ $# -gt 0 ]; do
     case $1 in
         --nodump) NODUMP=-DNODUMP;;
@@ -72,6 +67,7 @@ if [ ! -e tests/${TEST}.asm ]; then
 fi
 
 if [ $BATCH = 0 ]; then
+    jtframe ucode --list --gtkwave jt900h 900h || exit $?
     cp tests/${TEST}.asm test.asm
     rm -f test.out
 
@@ -92,6 +88,9 @@ else
     cd ..
     FNAME=tests/$TEST
 fi
+
+# Try linting the code first
+verilator --lint-only ../../hdl/*.v --top-module jt900h -I || exit $?
 
 CODELEN=$(cat ${FNAME}.bin|wc -c)
 # The last bytes are NOPs

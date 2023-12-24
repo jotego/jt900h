@@ -10,6 +10,7 @@ for i in tests/*.ref; do
     K=$((K+1))
 done
 
+jtframe ucode --list --gtkwave jt900h 900h
 parallel sim.sh {} $* --batch ::: $ALLTEST > runall.log
 FAIL=$(grep FAIL runall.log | wc -l)
 
