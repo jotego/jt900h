@@ -33,18 +33,19 @@ module jt900h_alu(
     input       [2:0] cx_sel,
 
     input             nin, hin, cin, zin,
-    output            n,z,p,c,
-    output reg        h,v,
+    output            n,z,p,c,v,
+    output reg        h,
     output reg [31:0] rslt
 );
 
 `include "900h_param.vh"
 
 reg  cx,
+     c8, c16, c32,
      z8, z16, z32,
+     v8, v16, v32,
      n8, n16, n32;
 reg  [ 7:0] daa;
-reg  [ 2:0] cc;
 wire [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
 wire [11:0] rdig;
@@ -53,8 +54,9 @@ wire        daa_carry, bsel,
 
 assign z = bs ? z8    : ws ? z16   : z32;
 assign n = bs ? n8    : ws ? n16   : n32;
+assign v = bs ? v8    : ws ? v16   : v32;
 assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
-assign c = bs ? cc[0] : ws ? cc[1] : cc[2];
+assign c = bs ? c8 : ws ? c16 : c32;
 assign bidx = {1'b0,ws&op1[3],op1[2:0]};
 assign bsel = op0[bidx];
 assign div_sign = alu_sel==DIVS_ALU;
@@ -105,29 +107,32 @@ always @* begin
         default: cx = 0;
     endcase
 
-    v=0;
-    cc={3{cx}};
+    {c32,c16,c8}={3{cx}};
     rslt = op0;
     case(alu_sel)
         ADD_ALU: begin
-            { h    , rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx   };
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op1[ 7: 4]}+{ 4'b0,h    };
-            { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op1[15: 8]}+{ 8'b0,cc[0]};
-            { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op1[31:16]}+{16'b0,cc[1]};
-            // update v
+            { h,   rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx };
+            { c8,  rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}+{1'b0,op1[ 7: 4]}+{ 4'b0,h  };
+            { c16, rslt[15: 8] } = {1'b0,op0[15: 8]}+{1'b0,op1[15: 8]}+{ 8'b0,c8 };
+            { c32, rslt[31:16] } = {1'b0,op0[31:16]}+{1'b0,op1[31:16]}+{16'b0,c16};
+            v8  = &{op0[ 7],op1[ 7],~rslt[ 7]}|&{~op0[ 7],~op1[ 7],rslt[ 7]};
+            v16 = &{op0[15],op1[15],~rslt[15]}|&{~op0[15],~op1[15],rslt[15]};
+            v32 = &{op0[31],op1[31],~rslt[31]}|&{~op0[31],~op1[31],rslt[31]};
         end
         SUB_ALU: begin
-            { h    , rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}-{1'b0,op1[ 3: 0]}-{ 4'd0,cx   };
-            { cc[0], rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op1[ 7: 4]}-{ 4'b0,h    };
-            { cc[1], rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op1[15: 8]}-{ 8'b0,cc[0]};
-            { cc[2], rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op1[31:16]}-{16'b0,cc[1]};
-            // update v
+            { h,   rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}-{1'b0,op1[ 3: 0]}-{ 4'd0,cx };
+            { c8,  rslt[ 7: 4] } = {1'b0,op0[ 7: 4]}-{1'b0,op1[ 7: 4]}-{ 4'b0,h  };
+            { c16, rslt[15: 8] } = {1'b0,op0[15: 8]}-{1'b0,op1[15: 8]}-{ 8'b0,c8 };
+            { c32, rslt[31:16] } = {1'b0,op0[31:16]}-{1'b0,op1[31:16]}-{16'b0,c16};
+            v8  = &{op0[ 7],~op1[ 7],~rslt[ 7]}|&{~op0[ 7],op1[ 7],rslt[ 7]};
+            v16 = &{op0[15],~op1[15],~rslt[15]}|&{~op0[15],op1[15],rslt[15]};
+            v32 = &{op0[31],~op1[31],~rslt[31]}|&{~op0[31],op1[31],rslt[31]};
         end
         DAA_ALU: rslt[7:0] = daa;
-        BAND_ALU: begin cc =  {3{bsel & cx}}; rslt[bidx]=cc[0]; end
-        BOR_ALU:  begin cc =  {3{bsel | cx}}; rslt[bidx]=cc[0]; end
-        BXOR_ALU: begin cc =  {3{bsel ^ cx}}; rslt[bidx]=cc[0]; end
-        BSET_ALU: begin cc = ~{3{bsel}}; rslt[bidx]=cx;    end
+        BAND_ALU: begin {c32,c16,c8} =  {3{bsel & cx}}; rslt[bidx]=c8; end
+        BOR_ALU:  begin {c32,c16,c8} =  {3{bsel | cx}}; rslt[bidx]=c8; end
+        BXOR_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=c8; end
+        BSET_ALU: begin {c32,c16,c8} = ~{3{bsel}}; rslt[bidx]=cx;    end
         AND_ALU:  rslt = op0&op1;
         OR_ALU:   rslt = op0|op1;
         XOR_ALU:  rslt = op0^op1;
@@ -140,18 +145,18 @@ always @* begin
                 rslt[15:0] = { div_rem[ 7:0], div_quot[ 7:0] };
             else
                 rslt[31:0] = { div_rem[15:0], div_quot[15:0] };
-            v = div_v;
+            {v32,v16,v8} = {3{div_v}};
         end
         SHL_ALU: begin // shift one bit left
-            {cc[2],rslt} = {op2,cx};
-            cc[0] = op2[ 7];
-            cc[1] = op2[15];
+            {c32,rslt} = {op2,cx};
+            c8  = op2[ 7];
+            c16 = op2[15];
         end
         SHR_ALU: begin // shift one bit right
-            {rslt,cc[0]} = {cx,op2};
+            {rslt,c8} = {cx,op2};
             if( bs ) rslt[ 7] = cx;
             if( ws ) rslt[15] = cx;
-            cc[2:1] = {2{op2[0]}};
+            {c32,c16} = {2{op2[0]}};
         end
         RRD_ALU: rslt[15:0]={op1[7:4],rdig[3:0],rdig[11:4]}; // op0=mem, op1=A
         RLD_ALU: rslt[15:0]={op1[7:4],rdig[7:0],rdig[11:8]};
@@ -175,7 +180,7 @@ always @* begin
             16'b0000_0000_0000_01??: rslt[7:0] = 2;
             16'b0000_0000_0000_001?: rslt[7:0] = 1;
             16'b0000_0000_0000_0001: rslt[7:0] = 0;
-            default: begin rslt[7:0]=0; v=1; end
+            default: begin rslt[7:0]=0; {v32,v16,v8}=3'b111; end
         endcase
         MOD_ALU: rslt[15:0] = (op0[15:0]&~op1[15:0])|(op2[15:0]&op1[15:0]);
         default:;
