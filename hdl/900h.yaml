@@ -388,7 +388,7 @@ ucode:
       - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - dst_rmux, ld0_opnd, b_setw
+      - inc_pc, dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld
@@ -398,7 +398,7 @@ ucode:
       - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - dst_rmux, ld0_opnd, w_setw
+      - inc_pc, dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld
@@ -408,7 +408,7 @@ ucode:
       - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - dst_rmux, ld0_opnd, b_setw
+      - inc_pc, dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
@@ -418,7 +418,7 @@ ucode:
       - swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - dst_rmux, ld0_opnd, w_setw
+      - inc_pc, dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
