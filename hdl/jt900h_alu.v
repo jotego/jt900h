@@ -124,9 +124,9 @@ always @* begin
             // update v
         end
         DAA_ALU: rslt[7:0] = daa;
-        BAND_ALU: begin cc[0]=bsel & cx; rslt[bidx]=cc[0]; end
-        BOR_ALU:  begin cc[0]=bsel | cx; rslt[bidx]=cc[0]; end
-        BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[bidx]=cc[0]; end
+        BAND_ALU: begin cc =  {3{bsel & cx}}; rslt[bidx]=cc[0]; end
+        BOR_ALU:  begin cc =  {3{bsel | cx}}; rslt[bidx]=cc[0]; end
+        BXOR_ALU: begin cc =  {3{bsel ^ cx}}; rslt[bidx]=cc[0]; end
         BSET_ALU: begin cc = ~{3{bsel}}; rslt[bidx]=cx;    end
         AND_ALU:  rslt = op0&op1;
         OR_ALU:   rslt = op0|op1;
