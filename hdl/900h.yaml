@@ -574,9 +574,9 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - set_loop, dst_rmux, ld0_opnd
+      - set_loop, dst_rmux, ld0_opnd  # set_loop isn't really needed
       - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld, da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - ${step}_alu, dst_ld, da_ea, vs_fetch, waitmem  # variable-size fetch (byte or word)
       - a_ral
       - src_rmux, ld0_opnd
       - md_rmux,  ld1_opnd, waitmem
