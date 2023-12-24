@@ -98,7 +98,7 @@ always @* begin
         COM_CX:  cx = ~cin;
         B0_CX:   cx = op0[0]; // PAA instruction
         HI_CX:   cx = 1;
-        ZF_CX:   cx = zin;
+        ZF_CX:   cx = ~zin;
         // used for shifts (op2)
         SA_CX:   cx = bs ? op2[7] : ws ? op2[15] : op2[31];   // shift arithmetic
         SH_CX:   cx = op2[0];
