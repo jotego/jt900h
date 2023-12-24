@@ -128,9 +128,9 @@ always @* begin
         BOR_ALU:  begin cc[0]=bsel | cx; rslt[bidx]=cc[0]; end
         BXOR_ALU: begin cc[0]=bsel ^ cx; rslt[bidx]=cc[0]; end
         BSET_ALU: begin cc = ~{3{bsel}}; rslt[bidx]=cx;    end
-        OR_ALU:   rslt = op0^op1;
+        AND_ALU:  rslt = op0&op1;
+        OR_ALU:   rslt = op0|op1;
         XOR_ALU:  rslt = op0^op1;
-        AND_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
         MUL_ALU:  rslt = op0[15:0]*op1[15:0];
         MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );

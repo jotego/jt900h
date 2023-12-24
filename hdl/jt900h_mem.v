@@ -56,7 +56,7 @@ reg  [ 1:0] wp;
 reg  [ 2:0] rp;
 reg         part, wrk, wrl;
 
-assign wdadj    = bus_addr[0] ? {md,8'd0} : {8'd0,md};
+assign wdadj    = nx_addr[0] ? {md,8'd0} : {8'd0,md};
 assign bus_addr = (bus_we!=0?wa:ca) + {22'd0,adelta};
 assign busy     = wrk || wr || (nx_addr != ca && (!inc_pc || ea_sel!=0));
 
