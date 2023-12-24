@@ -204,7 +204,7 @@ ops:
   - { name: SUB,   op: 0x2a0,ctl: {alu: SUB, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
   - { name: SUB,   op: 0x2a8,ctl: {alu: SUB, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
   - { name: TSET,  op: 0x134,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }} # #4,r
-  - { name: TSET,  op: 0x3a8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    },  mask: 0x3f8 } # #3,(mem)
+  - { name: TSET,  op: 0x3a8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    },  mask: 0x3f8 } # #3,(mem)
   - { name: XOR,   op: 0x1cd,ctl: {alu: XOR, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # r,#
   - { name: XOR,   op: 0x1d0,ctl: {alu: XOR, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 1 } # R,r
   - { name: XOR,   op: 0x23d,ctl: {alu: XOR, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # <W> (mem),#
