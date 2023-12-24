@@ -771,9 +771,10 @@ ucode:
     seq:
       - ${setw}_setw
       - spd_rmux, ld1_opnd      # loads 1,2 or 4 to op1
-      - w_setw, imm0_jsr        # op0 holds the register value
+      - w_setw,   imm0_jsr      # mask in op0
+      - dst_rmux, ld0_opnd      # reg. value in op0
       - ${alu}_alu, op2_ld      # op2 holds the modified LSB
-      - md_rmux, ld1_opnd       # op1 holds the mask
+      - md_rmux,  ld1_opnd      # mask in op1
       - mod_alu, dst_ld
       - waitmem, q_fetch
       - ni

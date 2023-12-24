@@ -65,6 +65,7 @@ wire       halt, swi, still;
 reg        nmi_l;
 wire [3:0] nx_ualo;
 reg        stack_bsy;
+wire       dis_jsr;
 
 // signals from ucode
 wire  [1:0] nxgr_sel, loop_sel;
@@ -75,6 +76,7 @@ wire        ni, r32jmp, retb, retw,
 assign still    = div_busy | (waitmem & mem_busy);
 assign nx_ualo  = uaddr[3:0] + 4'd1;
 assign dec_err  = halt;     // temptative
+assign dis_jsr  = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -127,7 +129,7 @@ always @(posedge clk, posedge rst) begin
             end
         end
         if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;
-        if( jsr_en && (jsr_sel!=NCC_JSR || !cc) ) begin
+        if( jsr_en && !dis_jsr ) begin
             jsr_ret      <= uaddr;
             jsr_ret[3:0] <= nx_ualo;
             uaddr        <= jsr_ua;

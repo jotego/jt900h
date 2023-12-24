@@ -181,8 +181,8 @@ always @* begin
         default:;
     endcase
     z8  = rslt[ 7: 0]==0;
-    z16 = rslt[15: 8]==0;
-    z32 = rslt[31:16]==0;
+    z16 = rslt[15: 8]==0 && z8;     // comparing all 16 bits would result in faster logic, but this is smaller
+    z32 = rslt[31:16]==0 && z16;
     n8  = rslt[ 7];
     n16 = rslt[15];
     n32 = rslt[31];
