@@ -263,8 +263,8 @@ ops:
   - { name: SRA,   op: 0x1ed, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: sa  }}
   - { name: SRL,   op: 0x1ef, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx:     }}
 
-  - { name: EX,    op: 0x1b8, ctl: { srca: src1, ld: dst, wr:   }, mask: 0x3f8 } # EX R,r
-  - { name: EX,    op: 0x230, ctl: { srca: dst1, ld: md,  wr: 1 }, mask: 0x3f8 } # EX (mem),r
+  - { name: EXR,   op: 0x1b8, mask: 0x3f8 } # EX R,r
+  - { name: EXM,   op: 0x230, mask: 0x3f8 } # EX (mem),r
 
   # group 2 - R,(mem) - (mem),R
   - { name: PUSHM, op: 0x204 } # PUSH<W> (mem)
@@ -621,13 +621,21 @@ ucode:
       - add_alu, pc_ld
       - waitmem, q_fetch
       - ni
-  - mnemo: [ EX ]
+  - mnemo: [ EXM ]
     seq:
-      - ${srca}_jsr
+      - dst1_jsr
       - swp_opnd, dst_ld
-      - ${ld}_ld
-      - ${wr}?*, waitmem
-      - ${wr}?*, m_ea, wr
+      - md_ld
+      - waitmem
+      - m_ea, wr
+      - waitmem, q_fetch
+      - ni
+  - mnemo: [ EXR ]
+    seq:
+      - src1_jsr
+      - swp_ral
+      - swp_opnd, dst_ld, swp_ral
+      - dst_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ EXFF ]
