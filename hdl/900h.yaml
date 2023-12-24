@@ -184,7 +184,7 @@ ops:
   - { name: PAA,   op: 0x114,ctl: {alu: ADD, cx:  b0,srca: zero, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # PAA r
   - { name: RCF,   op: 0x010,ctl: {alu: BAND,cx:    ,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }}
   - { name: RES,   op: 0x130,ctl: {alu: BSET,cx:    ,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: RES,   op: 0x3b0,ctl: {alu: BAND,cx:    ,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
+  - { name: RES,   op: 0x3b0,ctl: {alu: BSET,cx:    ,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: SBC,   op: 0x1b0,ctl: {alu: SUB, cx: cin,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
   - { name: SBC,   op: 0x1cb,ctl: {alu: SUB, cx: cin,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # r,#
   - { name: SBC,   op: 0x23b,ctl: {alu: SUB, cx: cin,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
@@ -193,7 +193,7 @@ ops:
   - { name: SCC,   op: 0x170,ctl: {alu:     ,cx:    ,srca: cc0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: , cc:            ,ral:    }, mask: 0x3f0 } # SCC cc,r cc = #4
   - { name: SCF,   op: 0x011,ctl: {alu:     ,cx:  hi,srca: zero, ld:   , setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }}
   - { name: SET,   op: 0x131,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: SET,   op: 0x3b8,ctl: {alu: BOR, cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
+  - { name: SET,   op: 0x3b8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: STCF,  op: 0x124,ctl: {alu: BSET,cx: cin,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
   - { name: STCF,  op: 0x12c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: dst,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # STCF A,r
   - { name: STCF,  op: 0x32c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # A,(mem) 1'm11'mmmm
