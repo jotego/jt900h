@@ -809,13 +809,13 @@ ucode:
       - ni
   - mnemo: [ RLD, RRD ]
     seq:
-      - a_ral
+      - inc_pc, a_ral
       - src_rmux, ld1_opnd
       - ${alu}_alu, ${cc}_cc, a_ld
       - ${alu}_alu, md_ld
       - s8_fetch  # get the upper part of the ALU results
-      - waitmem
       - m_ea, wr
+      - waitmem
       - waitmem, q_fetch
       - ni
   - mnemo: [ MUL, MULS ]
