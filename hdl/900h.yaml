@@ -6,7 +6,7 @@ config:
 constants:
   ADD_CC:  szhvn0c     # ADD,ADC
   SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
-  SH_CC:   szh0vn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
+  SH_CC:   szh0pn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
   INC_CC:  szhvn0      # INC
   DEC_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
   AND_CC:  szh1pn0c0   # AND,
@@ -796,7 +796,9 @@ ucode:
       - ${alu}_alu,  ${cx}_cx, dst_ld, ${cc}_cc, set_loop
       - ${alu}_alu,  ${cx}_cx, op2_ld
       - sub_alu, hi_cx, md_ld
-      - sub_alu, hi_cx, ld0_opnd, ni, nz_loop # if ALU's z is set returns, else loops around
+      - sub_alu, hi_cx, ld0_opnd, nz_loop # if ALU's z is set returns, else loops around
+      - waitmem, q_fetch
+      - ni
   - mnemo: [  SLAM, SRAM, SRLM, RLCM, RRCM, RLM, RRM ]
     seq:
       - inc_pc, op2_ld

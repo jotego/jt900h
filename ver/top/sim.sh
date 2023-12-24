@@ -144,9 +144,11 @@ else
     if [ $BATCH = 0 ]; then
         echo ======== EXPECTED =========
         cat $CMPFILE
-        echo ======== BUT GOT ==========
-        cat $FNAME.out
-        echo see $CMPFILE
+        if [ -e $FNAME.out ]; then
+            echo ======== BUT GOT ==========
+            cat $FNAME.out
+            echo see $CMPFILE
+        fi
     fi
     echo $FNAME FAIL
     exit 1

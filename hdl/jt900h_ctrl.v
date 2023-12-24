@@ -119,14 +119,12 @@ always @(posedge clk, posedge rst) begin
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;
         if( loop_sel==SET_LOOP ) jsr_ret[3:0] <= uaddr[3:0];
-        if( ni ) begin
-            if( loop_sel==NZ_LOOP && !zu ) begin
-                uaddr[3:0] <= jsr_ret[3:0];
-            end else begin
-                uaddr <= { nxgr_sel, md[7:0], 4'd0 }; // relies on nxgr specific values (!)
-                stack_bsy  <= 0;
-                if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
-            end
+        if( loop_sel==NZ_LOOP && !zu ) begin
+            uaddr[3:0] <= jsr_ret[3:0];
+        end else if(ni) begin
+            uaddr <= { nxgr_sel, md[7:0], 4'd0 }; // relies on nxgr specific values (!)
+            stack_bsy  <= 0;
+            if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
         if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;
         if( jsr_en && !dis_jsr ) begin

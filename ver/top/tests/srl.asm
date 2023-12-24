@@ -25,15 +25,14 @@
     ld a,0x04
     ld xde,0xffff
 
-    srl a,xde;
-    srl a,xde;
-    srl a,xde;
-    srl a,xde;
+    srl a,xde
+    srl a,xde
+    srl a,xde
+    srl a,xde
 
-end_loop:
-    ld hl,0xbabe
-    ld (0xffff),0xff
-    jp end_loop
+    jp nc, bad_end
+
+    include finish.inc
 data:
     dw 0xcafe,0xbeef,0xffff,0xeeee,0xcccc
     end
