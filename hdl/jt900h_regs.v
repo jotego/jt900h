@@ -74,7 +74,8 @@ reg  [31:0] sdmux, rmux;
 reg  [31:0] accs[0:15];
 reg  [31:0] ptrs[0: 3];
 wire [31:0] dmp_mux;
-reg  [ 7:0] r3sel, fsel, sdsel, mulsel, src, dst;
+reg  [ 7:0] r3sel, fsel, sdsel, mulsel,
+            src, dst; // RALs (Register Address Latches)
 reg  [ 4:0] sdsh;
 wire [ 7:0] flags_;
 reg         s, z, h, v, n, c,    // flags (main)
@@ -122,6 +123,8 @@ always @* begin
         3'b110: fsel={2'd0,rfp,     md[3:0]}; // current bank
         default:fsel=md[7:0];
     endcase
+    if(qs) fsel[1:0]=0;     // bs/ws/qs must be set before loading the RAL
+    if(ws) fsel[  0]=0;
     // Register multiplexer
     sdsel = rmux_sel==DST_RMUX ? dst : src;
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers

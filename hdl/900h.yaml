@@ -201,14 +201,14 @@ ops:
   - { name: SUB,   op: 0x1ca, ctl: { alu: SUB,  cx:    , srca: imm1, ld: dst, setw:  , wr:  , swp_opnd: $, swp_ral:  ,cc: "${SUB_CC}", ral:    }} # r,#
   - { name: SUB,   op: 0x23a, ctl: { alu: SUB,  cx:    , srca: imm1, ld: md,  setw:  , wr: 1, swp_opnd: $, swp_ral:  ,cc: "${SUB_CC}", ral:    }} # <W> (mem),#
   - { name: SUB,   op: 0x2a0, ctl: { alu: SUB,  cx:    , srca: dst1, ld: dst, setw:  , wr:  , swp_opnd: $, swp_ral:  ,cc: "${SUB_CC}", ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: SUB,   op: 0x2a8, ctl: { alu: SUB,  cx:    , srca: dst1, ld: dst, setw:  , wr: 1, swp_opnd: $, swp_ral: $,cc: "${SUB_CC}", ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
+  - { name: SUB,   op: 0x2a8, ctl: { alu: SUB,  cx:    , srca: dst1, ld: md,  setw:  , wr: 1, swp_opnd: $, swp_ral: $,cc: "${SUB_CC}", ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
   - { name: TSET,  op: 0x134, ctl: { alu: BSET, cx:  hi, srca: n41pp,ld: dst, setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: "${BIT_CC}", ral:    }} # #4,r
   - { name: TSET,  op: 0x3a8, ctl: { alu: BSET, cx:  hi, srca: n31p, ld: md,  setw: b, wr: 1, swp_opnd:  , swp_ral:  ,cc: "${BIT_CC}", ral:    },  mask: 0x3f8 } # #3,(mem)
   - { name: XOR,   op: 0x1cd, ctl: { alu: XOR,  cx:    , srca: imm1, ld: dst, setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }} # r,#
   - { name: XOR,   op: 0x1d0, ctl: { alu: XOR,  cx:    , srca: src1, ld: dst, setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }, mask: 0x3f8, cycles: 1 } # R,r
   - { name: XOR,   op: 0x23d, ctl: { alu: XOR,  cx:    , srca: imm1, ld: md,  setw:  , wr: 1, swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }} # <W> (mem),#
   - { name: XOR,   op: 0x2d0, ctl: { alu: XOR,  cx:    , srca: dst1, ld: dst, setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: XOR,   op: 0x2d8, ctl: { alu: XOR,  cx:    , srca: dst1, ld: dst, setw:  , wr: 1, swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
+  - { name: XOR,   op: 0x2d8, ctl: { alu: XOR,  cx:    , srca: dst1, ld: md,  setw:  , wr: 1, swp_opnd:  , swp_ral:  ,cc: "${OR_CC}" , ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
   - { name: XORCF, op: 0x12A, ctl: { alu: BXOR, cx: cin, srca: acc,  ld:    , setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: c          , ral:    }} # A,r
   - { name: XORCF, op: 0x122, ctl: { alu: BXOR, cx: cin, srca: n41pp,ld:    , setw:  , wr:  , swp_opnd:  , swp_ral:  ,cc: c          , ral:    }} # #4,r
   - { name: XORCF, op: 0x32a, ctl: { alu: BXOR, cx: cin, srca: acc,  ld:    , setw: b, wr:  , swp_opnd:  , swp_ral:  ,cc: c          , ral:    }} # A,(mem) 1'm11'mmmm
@@ -339,16 +339,14 @@ ucode:
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
       - inc_pc, q_setw, s8_fetch
-      - dst_ral
+      - inc_pc, dst_ral, alt, s8_fetch
       - dst_rmux, ld0_opnd, ${setw}_setw
       - spd_rmux, ld1_opnd, q_setw
       - ${alu}_alu, dst_ld
-      - ${adr}_alu, da_ld
+      - ${adr}_alu, da_ld, ld0_opnd # hold copy of MD
       - ${setw}_setw
-      - da2ea
-      - ${rd}=1?*, m_ea, waitmem, vs_fetch
-      - ${rd}=1?*, g2_nxgr, ni
-      - ${rd}=0?*, g3_nxgr, ni # EA has the address, MD keeps the OP
+      - ${rd}=1?*, da2ea2md_jsr
+      - ${rd}=0?*, da2ea, g3_nxgr, ni # EA has the address, MD keeps the OP
   - name: da2ea2md
     seq: # loads operand data in op0, sets ea, and md contains the next op
       - da2ea # op-code data is held in op0
