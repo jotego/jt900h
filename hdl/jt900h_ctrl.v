@@ -70,7 +70,7 @@ wire       dis_jsr;
 // signals from ucode
 wire  [1:0] nxgr_sel, loop_sel;
 wire  [2:0] setw_sel;
-wire        ni, r32jmp, retb, retw,
+wire        ni, r32jmp, rets,
             waitmem;
 
 assign still    = div_busy | (waitmem & mem_busy);
@@ -127,7 +127,7 @@ always @(posedge clk, posedge rst) begin
             stack_bsy  <= 0;
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
-        if((retb&bs) | (retw&ws)) uaddr <= jsr_ret;
+        if( rets&(alt?ws:bs) ) uaddr <= jsr_ret;
         if( jsr_en && !dis_jsr ) begin
             jsr_ret      <= uaddr;
             jsr_ret[3:0] <= nx_ualo;

@@ -466,16 +466,16 @@ ucode:
     seq:
       - inc_pc
       - waitmem, q_fetch               # guarantees that the data will be valid in all cases
-      - inc_pc, retb, zex, ld0_opnd    # conditional return on byte size
-      - inc_pc, retw                   # conditional return on word size
+      - inc_pc, rets, zex, ld0_opnd    # conditional return on byte size
+      - inc_pc, rets, alt              # conditional return on word size
       - inc_pc
       - inc_pc, ret_jsr
   - name: imm1
     seq:
       - inc_pc
       - waitmem, q_fetch               # guarantees that the data will be valid in all cases
-      - inc_pc, retb, zex, ld1_opnd    # conditional return on byte size
-      - inc_pc, retw                   # conditional return on word size
+      - inc_pc, rets, zex, ld1_opnd    # conditional return on byte size
+      - inc_pc, rets, alt              # conditional return on word size
       - inc_pc
       - inc_pc, ret_jsr
   - name: zero
