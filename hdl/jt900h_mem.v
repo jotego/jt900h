@@ -54,11 +54,13 @@ wire [39:0] wdadj;
 reg  [23:0] nx_din, nx_addr;
 reg  [ 1:0] wp;
 reg  [ 2:0] rp;
-reg         part, wrk, wrl;
+reg         wrk, wrl;
+wire        part;
 
 assign wdadj    = nx_addr[0] ? {md,8'd0} : {8'd0,md};
 assign bus_addr = (bus_we!=0?wa:ca) + {22'd0,adelta};
 assign busy     = wrk || wr || (nx_addr != ca && (!inc_pc || ea_sel!=0));
+assign part     = fetch_sel==VS_FETCH && (bs|ws);
 
 always @* begin
     case( ea_sel )
@@ -81,7 +83,6 @@ always @(posedge clk or posedge rst) begin
         wp       <= 0;
         mdata    <= 0;
         adelta   <= 0;
-        part     <= 0;
         wrk      <= 0;
         wrl      <= 0;
     end else if(cen) begin
@@ -106,7 +107,6 @@ always @(posedge clk or posedge rst) begin
                 adelta   <= 0;
                 wrk      <= 1;
                 bus_rd   <= 1;
-                part     <= fetch_sel==VS_FETCH && (bs|ws);
                 rp       <= 1;
             end
         end else begin

@@ -892,7 +892,7 @@ ucode:
       - inc_pc, s8_fetch, w_setw
       - inc_pc, sex, ld0_opnd
       - inc_pc
-      - inc_pc, pc_rmux, ld1_opnd, b_setw
+      - pc_rmux, ld1_opnd, b_setw
       - waitmem, vs_fetch
       - dst_ral, s_setw             # decodes 001s'0RRR byte
       - inc_pc, add_alu, dst_ld
