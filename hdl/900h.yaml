@@ -586,11 +586,11 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - dst_rmux, ld0_opnd                    da_ea
-      - da_ld, spd_rmux, ld1_opnd, swp_setw,  da_ea,   # SRC pointer inc/dec in parallel
-      - q_setw,                               da_ea
-      - ${step}_alu, dst_ld, swp_setw,        da_ea, vs_fetch  # variable-size fetch (byte or word)
-      - a_ral                                 da_ea, vs_fetch
+      - dst_rmux, ld0_opnd
+      - da_ld, spd_rmux, ld1_opnd, swp_setw,         # SRC pointer inc/dec in parallel
+      - q_setw,
+      - ${step}_alu, dst_ld, swp_setw,               # variable-size fetch (byte or word)
+      - a_ral
       - src_rmux, ld0_opnd                    da_ea, vs_fetch, waitmem
       - md_rmux,  ld1_opnd,                   da_ea
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd, da_ea  # prepare for BC--
@@ -603,9 +603,10 @@ ucode:
   # copy data scanning a table up or down while counting down on BC
   - mnemo: [ LDD, LDDR, LDI, LDIR ]
     seq: # "src" used as destination and vice versa, because of how the instruction is encoded
-      - dst_rmux, ld0_opnd, xsrc_ral     da_ea
-      - da_ld, spd_rmux, ld1_opnd        da_ea            # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld,             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - dst_rmux, ld0_opnd, xsrc_ral
+      - da_ld, spd_rmux, ld1_opnd               swp_setw  # SRC pointer inc/dec in parallel
+      - q_setw,
+      - ${step}_alu, dst_ld,                    swp_setw  # variable-size fetch (byte or word)
       - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
       - da_ld, swp_ral,                  da_ea
       - ${step}_alu, dst_ld, swp_ral     da_ea, wr
