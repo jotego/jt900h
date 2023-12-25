@@ -58,25 +58,26 @@ module jt900h_ctrl(
 
 localparam FS=7, FZ=6, FH=4, FV=2, FN=1, FC=0; // Flag bits
 
-wire [4:0] jsr_sel;
-reg  [2:0] iv_sel;
-reg  [2:0] altss;
-wire       halt, swi, still;
-reg        nmi_l;
-wire [3:0] nx_ualo;
-reg        stack_bsy;
-wire       dis_jsr;
-
+wire [ 4:0] jsr_sel;
+reg  [ 2:0] iv_sel;
+reg  [ 2:0] altss;
+wire        halt, swi, still;
+reg         nmi_l;
+wire [ 3:0] nx_ualo;
+reg         stack_bsy;
+wire        dis_jsr;
+wire [13:0] newa;
 // signals from ucode
 wire  [1:0] nxgr_sel, loop_sel;
 wire  [2:0] setw_sel;
 wire        ni, r32jmp, rets,
             waitmem;
 
-assign still    = div_busy | (waitmem & mem_busy);
-assign nx_ualo  = uaddr[3:0] + 4'd1;
-assign dec_err  = halt;     // temptative
-assign dis_jsr  = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
+assign still   = div_busy | (waitmem & mem_busy);
+assign nx_ualo = uaddr[3:0] + 4'd1;
+assign dec_err = halt;     // temptative
+assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
+assign newa    = { nxgr_sel, md[7:0], 4'd0 };
 
 always @* begin
     case( md[3:0] )             // 4-bit cc conditions
@@ -123,8 +124,8 @@ always @(posedge clk, posedge rst) begin
             (loop_sel== V_LOOP && (flags[FV] && (!alt || !flags[FZ]))) ) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni) begin
-            uaddr     <= { nxgr_sel, md[7:0], 4'd0 }; // relies on nxgr specific values (!)
-            jsr_ret   <= { nxgr_sel, md[7:0], 4'd0 };
+            uaddr     <= newa; // relies on nxgr specific values (!)
+            jsr_ret   <= newa;
             stack_bsy <= 0;
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
