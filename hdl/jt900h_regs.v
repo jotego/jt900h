@@ -114,8 +114,8 @@ always @* begin
     r3sel = bs ? {             2'd0,rfp, md[2:1],1'b0,~md[0]} : // byte register
                  {md[2]?4'hf:{2'd0,rfp}, md[1:0],2'd0};         // word/qword register
     mulsel = bs ? { 2'd0, rfp, md[2:1], 2'd0 } :
-          md[2] ? { 2'd0, rfp, md[1:0], 2'd0 } :
-                  { 4'hf,      md[1:0], 2'd0 } ; // pointers
+          md[2] ? { 4'hf,      md[1:0], 2'd0 } :
+                  { 2'd0, rfp, md[1:0], 2'd0 } ; // pointers
     is_mul = mulcheck && md[15:10]==6'h2; // detects MUL/DIV(s) rr,#
     casez( md[6:4] )
         3'b0??: fsel={2'd0,md[5:0]};
