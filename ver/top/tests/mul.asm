@@ -4,7 +4,7 @@
     org 0
     ld a,0xbf    ; common header
 
-    ld a,0x23
+    ld wa,0x3323
     ld c,0x56
     mul wa,c    ; $BC2
     cp wa,0x23*0x56

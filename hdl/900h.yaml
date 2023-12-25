@@ -220,9 +220,9 @@ ops:
   - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIV  RR,(mem)
   - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, src: dst, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex, src: dst, swp: 1 },                                     mask: 0x3f8 } # only byte/word
-  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md,  swp:   }, mask: 0x3f8 } # MUL  RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex, src: dst, swp: 1 },                                     mask: 0x3f8 } # only byte/word
+  - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex, src: src, swp: 1 }, mask: 0x3f8 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md,  swp:   }, mask: 0x3f8 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex, src: src, swp: 1 }, mask: 0x3f8 } # only byte/word
   - { name: MULS,  op: 0x248, ctl: { alu: MULS, ex: sex, src: md,  swp:   }, mask: 0x3f8 } # MULS RR,(mem)
   - { name: DIVI,  op: 0x10a, ctl: { alu: DIV,  ex: zex, cc: v }} # r,#
   - { name: DIVSI, op: 0x10b, ctl: { alu: DIVS, ex: sex, cc: v }} # r,#
@@ -475,6 +475,14 @@ ucode:
       - inc_pc
       - waitmem, q_fetch               # guarantees that the data will be valid in all cases
       - inc_pc, rets, zex, ld1_opnd    # conditional return on byte size
+      - inc_pc, rets, alt              # conditional return on word size
+      - inc_pc
+      - inc_pc, ret_jsr
+  - name: immsex0
+    seq:
+      - inc_pc
+      - waitmem, q_fetch               # guarantees that the data will be valid in all cases
+      - inc_pc, rets, sex, ld0_opnd    # conditional return on byte size
       - inc_pc, rets, alt              # conditional return on word size
       - inc_pc
       - inc_pc, ret_jsr
@@ -827,9 +835,8 @@ ucode:
       - ni
   - mnemo: [ MULI, MULSI ]
     seq:
-      - inc_pc, s8_fetch
-      - inc_pc, ${ex}, dst_rmux, ld0_opnd
-      - inc_pc, ${ex}, md_rmux,  ld1_opnd, widen_setw
+      - immsex0_jsr
+      - ${ex}, dst_rmux, ld1_opnd, widen_setw
       - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
