@@ -167,8 +167,8 @@ ops:
   - { name: LDC,   op: 0x12f,ctl: {alu:    , cx:   , srca: cr0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LDC r,cr
   - { name: LDCF,  op: 0x12b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,r
   - { name: LDCF,  op: 0x123,ctl: {alu: BOR, cx:   , srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # #4,r
-  - { name: LDCF,  op: 0x32b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: LDCF,  op: 0x398,ctl: {alu: BOR, cx:   , srca: n31p, ld:    ,setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
+  - { name: LDCF,  op: 0x32b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
+  - { name: LDCF,  op: 0x398,ctl: {alu: BOR, cx:   , srca: n31p, ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: LDF,   op: 0x017,ctl: {alu: ,    cx:   , srca: n30pp,ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
   - { name: MIRR,  op: 0x116,ctl: {alu: MIRR,cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # only byte
   - { name: NEG,   op: 0x107,ctl: {alu: SUB, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # only byte/word
