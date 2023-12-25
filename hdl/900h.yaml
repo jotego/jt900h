@@ -855,9 +855,9 @@ ucode:
       - ni
   - mnemo: [ DIVI, DIVSI ]
     seq:
-      - inc_pc, s8_fetch
-      - inc_pc, ${ex}, md_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
-      - inc_pc, ${ex}, dst_rmux,    ld0_opnd
+      - ${ex}=sex?immsex0_jsr:imm0_jsr
+      - swp_opnd, widen_setw  # dst(q/w)÷src(w/b)
+      - ${ex}, dst_rmux,    ld0_opnd
       - div_alu, div,    ${alt}
       - div_alu, dst_ld, ${alt}, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
