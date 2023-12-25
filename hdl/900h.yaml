@@ -765,11 +765,10 @@ ucode:
       - psh_jsr
   - mnemo: [ POP, POPM, POPF, POPA, POPSR ]
     seq:
-      - inc_pc, ${setw}_setw
-      - sp_ea, waitmem, vs_fetch, spd_rmux, ld1_opnd
-      - ld0_opnd
-      - ${dst}_ld, xsp_rmux, ld0_opnd
-      - ${wr}?*, waitmem
+      - inc_pc, ${setw}_setw, dst_ral
+      - spd_rmux, ld1_opnd,            sp_ea, vs_fetch, waitmem
+      - ld0_opnd,                      sp_ea
+      - ${dst}_ld, xsp_rmux, ld0_opnd, sp_ea
       - ${wr}?*, m_ea, wr
       - add_alu, xsp_ld
       - waitmem, q_fetch
