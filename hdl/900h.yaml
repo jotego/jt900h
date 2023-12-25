@@ -619,7 +619,9 @@ ucode:
     seq:
       - ${alu}?*, ${alu}_alu, md_ld  # for BS1F, this will mirror the operand
       - ${alu}?*, ld0_opnd
-      - inc_pc, bs1b_alu, a_ld, ${cc}_cc
+      - inc_pc, bs1b_alu, ${alu}?md_ld:a_ld, ${cc}_cc
+      - ${alu}?*, md_rmux, ld0_opnd, b_setw
+      - ${alu}?*, cpl_alu, a_ld, alt
       - waitmem, q_fetch
       - ni
   - mnemo: [ DJNZ ]

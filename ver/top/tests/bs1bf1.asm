@@ -6,11 +6,10 @@
 
     ld bc,0x00 ; default (only zero)
     bs1b a,bc
-    sub a,0
-    jp ne,bad_end
+    jp nov,bad_end
+    inc 1,a     ; clear overflow bit
     bs1f a,bc
-    sub a,0
-    jp ne,bad_end
+    jp nov,bad_end
 
     ld bc,0x4000 ; bit 14 are set
     bs1b a,bc

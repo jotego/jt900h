@@ -251,8 +251,8 @@ always @(posedge clk, posedge rst) begin
             RFP_LD: rfp <= rslt[1:0];
             MD_LD:  md  <= rslt;
             A_LD:   begin
-                accs[{rfp,2'd0}][7:0] <= rslt[7:0];
-                if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];
+                accs[{rfp,2'd0}][7:0] <= {alt ? 4'd0 : rslt[7:4], rslt[3:0]};
+                if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];  // loads into BC!
             end
             BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
             OP2_LD: op2 <= rslt;
