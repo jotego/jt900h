@@ -68,8 +68,8 @@ ops:
   - { name: mem_da,   op: 0x0f1, ctl: { rd: 0, setw: , off16: 1 }}
   - { name: mem_da24, op: 0x0f2, ctl: { rd: 0, setw:            }}
   - { name: mem_r32,  op: 0x0f3, ctl: { rd: 0, setw:            }}
-  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, setw: , adr: SUB }}  # -1--'0100 (-r32)
-  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, setw: , adr:     }}  # -1--'0100 (r32+)
+  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, setw: b, adr: SUB }}  # -1--'0100 (-r32) setw needed for inc/dec
+  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, setw: b, adr:     }}  # -1--'0100 (r32+) is b_setw the good value for all cases?
 
 
   ########### instructions ###################
