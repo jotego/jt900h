@@ -217,14 +217,14 @@ ops:
   - { name: XORCF, op: 0x390,ctl: {alu: BXOR,cx: cin,srca: n31p, ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: ZCF,   op: 0x013,ctl: {alu:     ,cx:  zf,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }}
 
-  - { name: DIV,   op: 0x150, ctl: { ex: zex, src: src, swp: 1, cc: v, alt:   },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp:  , cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
-  - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp: 1, cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp:  , cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp: 1,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
-  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp:  ,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp: 1,        alt: $ }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp:  ,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
+  - { name: DIV,   op: 0x150, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt:   },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
+  - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
+  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alt: $ }, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
   - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }} # r,#
   - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }} # r,#
   - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }} # r,#
@@ -833,8 +833,8 @@ ucode:
       - ni
   - mnemo: [ MUL, MULS ]
     seq:
-      - ${swp}?*, swp_ral
-      - inc_pc, mulsel, dst_ral
+      - ${swp_ral}
+      - inc_pc, mulsel, dst_ral, ${swp_opnd}, md_ld
       - ${ex}, dst_rmux,    ld0_opnd
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
       - mul_alu, dst_ld, ${alt}
@@ -849,8 +849,8 @@ ucode:
       - ni
   - mnemo: [ DIV, DIVS ]
     seq:
-      - ${swp}?*, swp_ral
-      - inc_pc, mulsel, dst_ral, widen_setw
+      - ${swp_ral}
+      - inc_pc, mulsel, dst_ral, widen_setw, ${swp_opnd}, md_ld
       - ${ex}, dst_rmux,    ld0_opnd, shrtn_setw
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
       - div_alu, ${alt}, div
