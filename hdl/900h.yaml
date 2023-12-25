@@ -574,16 +574,16 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - dst_rmux, ld0_opnd  # set_loop isn't really needed
-      - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld, da_ea, vs_fetch, waitmem  # variable-size fetch (byte or word)
-      - a_ral
-      - src_rmux, ld0_opnd
-      - md_rmux,  ld1_opnd, waitmem
-      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
-      - zero_rmux, ld1_opnd
-      - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      - ${loop}?*, alt, v_loop  # loops while !z && v
+      - dst_rmux, ld0_opnd                    da_ea
+      - da_ld, spd_rmux, ld1_opnd,            da_ea   # SRC pointer inc/dec in parallel
+      - ${step}_alu, dst_ld,                  da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - a_ral                                 da_ea, vs_fetch
+      - src_rmux, ld0_opnd                    da_ea, vs_fetch, waitmem
+      - md_rmux,  ld1_opnd,                   da_ea
+      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd, da_ea  # prepare for BC--
+      - zero_rmux, ld1_opnd,                  da_ea
+      - sub_alu, hi_cx, bc_ld, z3v_cc,        da_ea  # v = ~z
+      - ${loop}?*, alt, v_loop                da_ea  # loops while !z && v
       - inc_pc
       - waitmem, q_fetch
       - ni

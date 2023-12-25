@@ -197,7 +197,7 @@ always @(posedge clk, posedge rst) begin
             SZH0PN0C_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
             SZH0VN0_CC:     {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
             H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
-            Z3V_CC:         {      v    } <= {              ~zi       };
+            Z3V_CC:         {      v    } <= {           ~zi          };
             default:;
         endcase
         case( fetch_sel )

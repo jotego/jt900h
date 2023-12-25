@@ -123,8 +123,9 @@ always @(posedge clk, posedge rst) begin
             (loop_sel== V_LOOP && (flags[FV] && (!alt || !flags[FZ]))) ) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni) begin
-            uaddr <= { nxgr_sel, md[7:0], 4'd0 }; // relies on nxgr specific values (!)
-            stack_bsy  <= 0;
+            uaddr     <= { nxgr_sel, md[7:0], 4'd0 }; // relies on nxgr specific values (!)
+            jsr_ret   <= { nxgr_sel, md[7:0], 4'd0 };
+            stack_bsy <= 0;
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
         if( rets&(alt?ws:bs) ) uaddr <= jsr_ret;
