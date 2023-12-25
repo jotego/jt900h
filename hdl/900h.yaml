@@ -574,7 +574,7 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - set_loop, dst_rmux, ld0_opnd  # set_loop isn't really needed
+      - dst_rmux, ld0_opnd  # set_loop isn't really needed
       - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
       - ${step}_alu, dst_ld, da_ea, vs_fetch, waitmem  # variable-size fetch (byte or word)
       - a_ral
@@ -583,24 +583,23 @@ ucode:
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
       - zero_rmux, ld1_opnd
       - sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      - ${loop}?*, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
+      - ${loop}?*, alt, v_loop  # loops while !z && v
       - inc_pc
       - waitmem, q_fetch
       - ni
-  # copy data and count up/down BC
+  # copy data scanning a table up or down while counting down on BC
   - mnemo: [ LDD, LDDR, LDI, LDIR ]
     seq: # "src" used as destination and vice versa, because of how the instruction is encoded
-      - dst_rmux, ld0_opnd, xsrc_ral
-      - da_ld, spd_rmux, ld1_opnd   # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld, da_ea  # variable-size fetch (byte or word)
-      - waitmem, vs_fetch, src_rmux, ld0_opnd
-      - da_ld, md_rmux,  ld0_opnd, swp_ral
-      - waitmem
-      - da_ea, wr, ${step}_alu, dst_ld, swp_ral
-      - zero_rmux, ld1_opnd
-      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd # prepare for BC--
-      - waitmem, sub_alu, hi_cx, bc_ld, z3v_cc # v = ~z
-      - ${loop}?*, nzv_loop  # loops while !z && v. This re-starts instruction execution. MD must not have changed!
+      - dst_rmux, ld0_opnd, xsrc_ral     da_ea
+      - da_ld, spd_rmux, ld1_opnd        da_ea            # SRC pointer inc/dec in parallel
+      - ${step}_alu, dst_ld,             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
+      - da_ld, swp_ral,                  da_ea
+      - ${step}_alu, dst_ld, swp_ral     da_ea, wr
+      - zero_rmux, ld1_opnd,             da_ea
+      - bc_rmux, ld0_opnd                da_ea # prepare for BC--
+      - sub_alu, hi_cx, bc_ld, ${cc}_cc, da_ea # v = ~z
+      - ${loop}?*, v_loop                da_ea # loops while v
       - inc_pc
       - waitmem, q_fetch
       - ni

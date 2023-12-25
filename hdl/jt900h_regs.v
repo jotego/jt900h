@@ -209,7 +209,7 @@ always @(posedge clk, posedge rst) begin
             SRC_RAL:  src <= r3sel;
             A_RAL:    src <= {2'b0,rfp,4'b0};
             DST_RAL:  dst <= alt ? fsel : (mul|is_mul) ? mulsel : r3sel;
-            XSRC_RAL: src <= dst | 8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
+            XSRC_RAL: src <= dst & ~8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
             SWP_RAL:  {src,dst}<={dst,src};
             default:;
         endcase
