@@ -217,9 +217,9 @@ ops:
   - { name: XORCF, op: 0x390,ctl: {alu: BXOR,cx: cin,srca: n31p, ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: ZCF,   op: 0x013,ctl: {alu:     ,cx:  zf,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }}
 
-  - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, src: dst, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIV  RR,(mem)
-  - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, src: dst, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIVS RR,(mem)
   - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex, src: src, swp: 1 }, mask: 0x3f8 } # MUL RR,r only byte/word
   - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md,  swp:   }, mask: 0x3f8 } # MUL RR,(mem)
@@ -696,7 +696,6 @@ ucode:
       - inc_pc, s8_fetch, w_setw      # load direct address from 16-bit immediate value
       - inc_pc, zex, ld0_opnd
       - da_ld, swp_opnd               # restores (mem)
-      - md_ld
       - waitmem
       - da_ea, wr
       - waitmem, q_fetch
@@ -847,10 +846,10 @@ ucode:
   - mnemo: [ DIV, DIVS ]
     seq:
       - ${swp}?*, swp_ral
-      - inc_pc, mulsel, dst_ral
-      - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
-      - ${ex}, dst_rmux,    ld0_opnd
-      - ${alu}_alu, div
+      - inc_pc, mulsel, dst_ral, widen_setw
+      - ${ex}, dst_rmux,    ld0_opnd, shrtn_setw
+      - ${ex}, ${src}_rmux, ld1_opnd              # dst(q/w)÷src(w/b)
+      - ${alu}_alu, div, widen_setw
       - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni

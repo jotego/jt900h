@@ -141,7 +141,7 @@ always @* begin
         MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
         SH4_ALU:  rslt = { 27'd0, op1[3:0]==0, op1[3:0] }; // convert 4'd0 to 5'd16
         DIV_ALU, DIVS_ALU: begin
-            if( bs )
+            if( ws )
                 rslt[15:0] = { div_rem[ 7:0], div_quot[ 7:0] };
             else
                 rslt[31:0] = { div_rem[15:0], div_quot[15:0] };
