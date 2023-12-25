@@ -6,26 +6,38 @@
 
     ld a,0x12
     exts wa
-    sub w,0
-    jp ne,bad_end
+    cp wa,0
+    jp m,bad_end
+    neg wa
+    jp p,bad_end
+    neg wa
+    exts xwa
+    cp xwa,0
+    jp m,bad_end
 
     or b,1
-    ld a,0x80
+    ld a,0x81
+    neg a
+    jp m,bad_end
+    neg a
     exts wa
-    sub w,0
-    jp eq,bad_end
+    cp wa,0
+    jp p,bad_end
+    exts xwa
+    cp xwa,0
+    jp p,bad_end
 
     or b,2
     ld de,0x7fff
     exts xde
-    sub xde,0x7fff
-    jp ne,bad_end
+    cp xde,0
+    jp m,bad_end
 
     or b,4
-    ld de,0x8000
+    inc 1,de    ; de=0x8000
     exts xde
-    sub xde,0
-    jp eq,bad_end
+    cp xde,0
+    jp p,bad_end
 
     or b,8
     include finish.inc
