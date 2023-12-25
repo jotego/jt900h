@@ -240,7 +240,7 @@ ops:
   - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: , ral: }} # POP r
   - { name: PUSHR2, op: 0x104 } # PUSH r
   # group 1 but limited valid addressing
-  - { name: LINK,  op: 0x10c                } # only long word
+  - { name: LINK,  op: 0x10c                            } # only long word
   - { name: MDEC1, op: 0x13c, ctl: { setw: b, alu: sub }} # only word
   - { name: MDEC2, op: 0x13d, ctl: { setw: w, alu: sub }} # only word
   - { name: MDEC4, op: 0x13e, ctl: { setw: q, alu: sub }} # only word
@@ -876,15 +876,12 @@ ucode:
       - ni
   - mnemo: [ LINK ]
     seq: # q_setw already set
-      - inc_pc, xsp_rmux, ld0_opnd, s8_fetch
-      - inc_pc, spd_rmux, ld1_opnd
-      - inc_pc, sub_alu, xsp_ld
-      - dst_rmux, ld0_opnd
-      - md_rmux,  ld1_opnd, md_ld
-      - waitmem
-      - sp_ea, wr
-      - xsp_rmux, ld0_opnd
-      - dst_ld
+      -         xsp_rmux, ld0_opnd, s8_fetch,          q_setw
+      -         spd_rmux, ld1_opnd
+      - inc_pc, dst_rmux, ld0_opnd, sub_alu, xsp_ld,   w_setw
+      - inc_pc, md_rmux,  ld1_opnd, sex                q_setw
+      - inc_pc, xsp_rmux, ld0_opnd, md_ld
+      - sp_ea, wr,                  dst_ld
       - add_alu, xsp_ld
       - waitmem, q_fetch
       - ni
