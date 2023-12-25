@@ -334,9 +334,9 @@ ucode:
       - ${rd}=0?*, da2ea, g3_nxgr,ni # EA has the address, MD keeps the OP
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
-      - ${setw}_setw, inc_pc, s8_fetch
-      - ${rd}=0?*, r32jmp, alt
-      - ${rd}=1?*, r32jmp,       # r32 jump is based on lower bits
+      - ${setw}_setw, s8_fetch
+      - ${rd}=0?*, inc_pc, r32jmp, alt   # inc_pc as last instruction improves fetcher performance
+      - ${rd}=1?*, inc_pc, r32jmp,       # r32 jump is based on lower bits
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
       - inc_pc, q_setw, s8_fetch
@@ -357,8 +357,8 @@ ucode:
       - g2_nxgr, ni
   - name: r32_00
     seq:
-      - swp_setw
-      - inc_pc, alt, dst_ral, q_setw
+      - inc_pc, swp_setw
+      - alt, dst_ral, q_setw
       - dst_rmux, ld0_opnd
       - da_ld
       - r32com_jsr
@@ -370,10 +370,10 @@ ucode:
       - g3_nxgr, ni
   - name: r32_01
     seq:
-      - swp_setw
+      - inc_pc, swp_setw
       - inc_pc, alt, dst_ral, q_setw, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
-      - inc_pc, sex, md_rmux, ld1_opnd, q_setw
+      -         sex, md_rmux, ld1_opnd, q_setw
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_01_nord
@@ -385,40 +385,40 @@ ucode:
       - g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
     seq:
-      - swp_setw
+      - inc_pc, swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - inc_pc, dst_rmux, ld0_opnd, b_setw
+      -         dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_16 # 2nd memory addressing byte code: 0000'0111
     seq:
-      - swp_setw
+      - inc_pc, swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - inc_pc, dst_rmux, ld0_opnd, w_setw
+      -         dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_8_nord # 2nd memory addressing byte code: 0000'0011
     seq:
-      - swp_setw
+      - inc_pc, swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - inc_pc, dst_rmux, ld0_opnd, b_setw
+      -         dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
       - g3_nxgr, ni
   - name: r32_16_nord # 2nd memory addressing byte code: 0000'0111
     seq:
-      - swp_setw
+      - inc_pc, swp_setw
       - inc_pc, s8_fetch, q_setw
       - inc_pc, s8_fetch, alt, dst_ral
-      - inc_pc, dst_rmux, ld0_opnd, w_setw
+      -         dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
