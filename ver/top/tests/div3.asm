@@ -6,17 +6,17 @@
 
     ; 32-bit number divided by 16-bit number
     ; xwa / bc
-    ld xwa,354236
-    ld bc,1050   ; 0x41a
+    ld xwa,0x567bc
+    ld bc,0x41a
     div xwa,bc
     jp ov,bad_end
     or ra3,1
 
-    cp wa,337
+    cp wa,0x151
     jp ne,bad_end
     or ra3,2
 
-    cp qwa0,386
+    cp qwa0,0x182
     jp ne,bad_end
     or ra3,4
 

@@ -848,8 +848,8 @@ ucode:
       - ${swp}?*, swp_ral
       - inc_pc, mulsel, dst_ral, widen_setw
       - ${ex}, dst_rmux,    ld0_opnd, shrtn_setw
-      - ${ex}, ${src}_rmux, ld1_opnd              # dst(q/w)÷src(w/b)
-      - ${alu}_alu, div, widen_setw
+      - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
+      - ${alu}_alu, div
       - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
