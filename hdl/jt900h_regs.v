@@ -137,9 +137,8 @@ always @* begin
         RFP_RMUX: rmux[1:0] = rfp;
         XSP_RMUX: rmux = ptrs[XSP];
         CC_RMUX:  rmux = {31'd0,cc};
-
         SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
-        N3_RMUX:  rmux = {29'd0,md[2:0]};
+        N3_RMUX:  rmux = {28'd0, alt&&md[2:0]==0, md[2:0]};
         N4_RMUX:  rmux = {28'd0, md[3:0]};
 
         ZERO_RMUX:rmux = 0;
@@ -179,25 +178,26 @@ always @(posedge clk, posedge rst) begin
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
-            H0N0C_CC:       {    h,  n,c} <= {      1'b0,    1'b0,ci  };
-            N0C_CC:         {        n,c} <= {               1'b0,ci  };
-            SZHVCR_CC:      {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
-            H1N1_CC:        {    h,  n  } <= {      1'b1,    1'b1     };
-            SZHVN1C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
-            V_CC:           {      v    } <= {          vi            };
-            Z2V_CC:         {      v    } <= {               zi       };
-            SZV_CC:         {s,z,  v    } <= {ni,zi,    vi            };
-            C_CC:           {          c} <= {               ci       };
-            ZCH1N0_CC:      {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
-            SZHVN0_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     };
-            SZHVN1_CC:      {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     };
-            SZHVN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
-            SZH1PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
-            SZH0PN0C0_CC:   {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
-            SZH0PN0C_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
-            SZH0VN0_CC:     {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
-            H0V3N0_CC:      {    h,v,n  } <= {      1'b0,~zi,1'b0     };
-            Z3V_CC:         {      v    } <= {           ~zi          };
+            H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
+            N0C_CC:          {        n,c} <= {               1'b0,ci  };
+            SZHVCR_CC:       {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
+            SZHVN1C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
+            V_CC:            {      v    } <= {          vi            };
+            Z2V_CC:          {      v    } <= {               zi       };
+            SZV_CC:          {s,z,  v    } <= {ni,zi,    vi            };
+            C_CC:            {          c} <= {               ci       };
+            ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
+            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
+            SZHVN1_CC:       {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN0C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
+            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
+            SZH0PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
+            SZH0PN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
+            SZH0VN0_CC:      {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
+            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            Z3V_CC:          {      v    } <= {           ~zi          };
             default:;
         endcase
         case( fetch_sel )

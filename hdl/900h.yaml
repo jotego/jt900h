@@ -5,14 +5,15 @@ config:
   auto: { min: 0x300, max: 0x3ff }
 constants:
   ADD_CC:  szhvn0c     # ADD,ADC
-  SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
-  SH_CC:   szh0pn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
-  INC_CC:  szhvn0      # INC
-  DEC_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
   AND_CC:  szh1pn0c0   # AND,
-  OR_CC:   szh0pn0c0   # OR,XOR
   BIT_CC:  zch1n0      # BIT
+  CPD_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
+  DEC_CC:  szhvn1d     # DEC, only applies to byte operands
+  INC_CC:  szhvn0      # INC, only applies to byte operands
   LD_CC:   h0v3n0      # LDD, LDDR, LDI, LDIR
+  OR_CC:   szh0pn0c0   # OR,XOR
+  SH_CC:   szh0pn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
+  SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
 # alias:
 #   - &LOW3 0x3f8
 # ctrl:
@@ -136,12 +137,12 @@ ops:
   - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP (mem),R
   - { name: CPL,   op: 0x106,ctl: {alu: CPL, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h1n1       ,ral:    }} # only byte/word
   - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhvcr     ,ral:    }}
-  - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n31p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC #3,r
-  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n31p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC #3,r
+  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: DECF,  op: 0x00d,ctl: {alu: SUB, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
   - { name: EI,    op: 0x006,ctl: {alu:    , cx:   , srca: n30pp,ld: iff,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # also serves as DI when operand is 7
-  - { name: INC,   op: 0x160,ctl: {alu: ADD, cx:   , srca: n31p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # INC #3,r
-  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n31p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: INC,   op: 0x160,ctl: {alu: ADD, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # INC #3,r
+  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
   - { name: INCF,  op: 0x00c,ctl: {alu: ADD, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
   - { name: LD,    op: 0x200,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<B> (mem),#
   - { name: LD,    op: 0x202,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<W> (mem),#
@@ -276,10 +277,10 @@ ops:
   - { name: SRAM,  op: 0x27d, ctl: { alu: SHR, cc: "${SH_CC}", cx: sa  }}
   - { name: SRLM,  op: 0x27f, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }}
   # Group 2 - string instructions
-  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${DEC_CC}", loop: 0 }}
-  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${DEC_CC}", loop: 1 }}
-  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${DEC_CC}", loop: 0 }}
-  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${DEC_CC}", loop: 1 }}
+  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${CPD_CC}", loop: 0 }}
+  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${CPD_CC}", loop: 1 }}
+  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${CPD_CC}", loop: 0 }}
+  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${CPD_CC}", loop: 1 }}
   - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
   - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
@@ -517,6 +518,9 @@ ucode:
   - name: n31p # #3 -> op1, pc+=1
     seq:
       - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr
+  - name: n81p # #3 -> op1, pc+=1, but if #3 == 0, then 8 is set instead (INC/DEC)
+    seq:
+      - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr, alt
   - name: n30pp # #3 -> op0, pc+=2
     seq:
       - inc_pc, s8_fetch
