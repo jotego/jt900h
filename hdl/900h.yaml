@@ -889,8 +889,9 @@ ucode:
     seq: # q_setw already set
       - inc_pc, xsp_ld
       - sp_ea, q_fetch, waitmem
-      - ld0_opnd, spd_rmux, ld1_opnd
-      - dst_ld,   xsp_rmux, ld0_opnd
+      - md_rmux,  ld0_opnd
+      - spd_rmux, ld1_opnd, dst_ld
+      - xsp_rmux, ld0_opnd
       - add_alu,  xsp_ld
       - waitmem,  q_fetch
       - ni
