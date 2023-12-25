@@ -286,8 +286,8 @@ ops:
   - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
   - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: szh0vn0 }} # RLD [A,](mem)
-  - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: szh0vn0 }} # RRD [A,](mem)
+  - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }} # RLD [A,](mem)
+  - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }} # RRD [A,](mem)
   - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem)
 
   # group 3 1m11'mmmm
@@ -820,8 +820,8 @@ ucode:
     seq:
       - inc_pc, a_ral
       - src_rmux, ld1_opnd
-      - ${alu}_alu, ${cc}_cc, a_ld
-      - ${alu}_alu, md_ld
+      - rrd_alu, ${alt}, ${cc}_cc, a_ld
+      - rrd_alu, ${alt}, md_ld
       - s8_fetch  # get the upper part of the ALU results
       - m_ea, wr
       - waitmem
