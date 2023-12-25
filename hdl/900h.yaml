@@ -587,8 +587,9 @@ ucode:
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
       - dst_rmux, ld0_opnd                    da_ea
-      - da_ld, spd_rmux, ld1_opnd,            da_ea   # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld,                  da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - da_ld, spd_rmux, ld1_opnd, swp_setw,  da_ea,   # SRC pointer inc/dec in parallel
+      - q_setw,                               da_ea
+      - ${step}_alu, dst_ld, swp_setw,        da_ea, vs_fetch  # variable-size fetch (byte or word)
       - a_ral                                 da_ea, vs_fetch
       - src_rmux, ld0_opnd                    da_ea, vs_fetch, waitmem
       - md_rmux,  ld1_opnd,                   da_ea
