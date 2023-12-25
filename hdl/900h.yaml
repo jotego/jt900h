@@ -86,11 +86,11 @@ ops:
   - { name: CALL16, op: 0x01c, ctl: { alu:    , ex: zex, setw: w, call24:   }}
   - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }} # only 24 bits read
   - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }}
-  - { name: POPA,   op: 0x015, ctl: { dst:  a,  setw: b, wr: }}
-  - { name: POPF,   op: 0x019, ctl: { dst: sr,  setw: b, wr: }}
-  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: }, mask: 0x3f8 } # POP R
-  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: }, mask: 0x3f8 } # POP R
-  - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: }} # POP SR
+  - { name: POPA,   op: 0x015, ctl: { dst:  a,  setw: b, wr: , ral:     }}
+  - { name: POPF,   op: 0x019, ctl: { dst: sr,  setw: b, wr: , ral:     }}
+  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: , ral: dst }, mask: 0x3f8 } # POP R
+  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: , ral: dst }, mask: 0x3f8 } # POP R
+  - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: , ral: dst }} # POP SR
   - { name: PUSHA,  op: 0x014, ctl: { pshr: 0, rmux: src, setw: b }}
   - { name: PUSHF,  op: 0x018, ctl: { pshr: 0, rmux: sr,  setw: b }}
   - { name: PUSHR,  op: 0x028, ctl: { pshr: 1, rmux: dst, setw: w }, mask: 0x3f8 } # PUSH R
@@ -236,7 +236,7 @@ ops:
   - { name: DJNZ,   op: 0x11c }
   - { name: EXTS,   op: 0x113, ctl: { ext: sex }}
   - { name: EXTZ,   op: 0x112, ctl: { ext: zex }}
-  - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: }} # POP r
+  - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: , ral: }} # POP r
   - { name: PUSHR2, op: 0x104 } # PUSH r
   # group 1 but limited valid addressing
   - { name: LINK,  op: 0x10c                } # only long word
@@ -295,8 +295,8 @@ ops:
   - { name: JPM,   op: 0x3d0, mask: 0x3f0 } # JP [cc,]mem
   # group 3 1m11'mmmm #3,(mem)
   - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0 }
-  - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b }}
-  - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w }}
+  - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b, ral: }}
+  - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w, ral: }}
 
 ucode:
   - name: intexec
@@ -773,7 +773,7 @@ ucode:
       - psh_jsr
   - mnemo: [ POP, POPM, POPF, POPA, POPSR ]
     seq:
-      - inc_pc, ${setw}_setw, dst_ral
+      - inc_pc, ${setw}_setw, ${ral}_ral
       - spd_rmux, ld1_opnd,            sp_ea, vs_fetch, waitmem
       - ld0_opnd,                      sp_ea
       - ${dst}_ld, xsp_rmux, ld0_opnd, sp_ea
