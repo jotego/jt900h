@@ -27,6 +27,7 @@ module jt900h_alu(
     input             bs,ws,qs,
 
     // control
+    input             alt,      // used for signed mul/div
     input             div,
     output            div_busy,
     input       [4:0] alu_sel,
@@ -50,7 +51,7 @@ wire [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
 wire [11:0] rdig;
 wire        daa_carry, bsel,
-            div_sign, div_v;
+            div_v;
 
 assign z = bs ? z8    : ws ? z16   : z32;
 assign n = bs ? n8    : ws ? n16   : n32;
@@ -59,7 +60,6 @@ assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
 assign c = bs ? c8 : ws ? c16 : c32;
 assign bidx = {1'b0,ws&op1[3],op1[2:0]};
 assign bsel = op0[bidx];
-assign div_sign = alu_sel==DIVS_ALU;
 assign rdig = {op1[3:0],op0[7:0]};
 
 jt900h_div u_div (
@@ -69,7 +69,7 @@ jt900h_div u_div (
     .op0  ( op0         ), // dividend
     .op1  ( op1[15:0]   ),
     .len  ( qs          ),
-    .sign ( div_sign    ),
+    .sign ( alt         ),
     .start( div         ),
     .quot ( div_quot    ),
     .rem  ( div_rem     ),
@@ -137,10 +137,9 @@ always @* begin
         OR_ALU:   rslt = op0|op1;
         XOR_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
-        MUL_ALU:  rslt = op0[15:0]*op1[15:0];
-        MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
+        MUL_ALU:  rslt = alt ? smul( op0[15:0], op1[15:0] ) : op0[15:0]*op1[15:0];
         SH4_ALU:  rslt = { 27'd0, op1[3:0]==0, op1[3:0] }; // convert 4'd0 to 5'd16
-        DIV_ALU, DIVS_ALU: begin
+        DIV_ALU: begin
             if( ws )
                 rslt[15:0] = { div_rem[ 7:0], div_quot[ 7:0] };
             else

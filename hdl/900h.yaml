@@ -217,18 +217,18 @@ ops:
   - { name: XORCF, op: 0x390,ctl: {alu: BXOR,cx: cin,srca: n31p, ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: ZCF,   op: 0x013,ctl: {alu:     ,cx:  zf,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }}
 
-  - { name: DIV,   op: 0x150, ctl: { alu: DIV,  ex: zex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIV,   op: 0x250, ctl: { alu: DIV,  ex: zex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIV  RR,(mem)
-  - { name: DIVS,  op: 0x158, ctl: { alu: DIVS, ex: sex, src: src, swp: 1, cc: v },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x258, ctl: { alu: DIVS, ex: sex, src: md,  swp:  , cc: v }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { alu: MUL,  ex: zex, src: src, swp: 1 }, mask: 0x3f8 } # MUL RR,r only byte/word
-  - { name: MUL,   op: 0x240, ctl: { alu: MUL,  ex: zex, src: md,  swp:   }, mask: 0x3f8 } # MUL RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { alu: MULS, ex: sex, src: src, swp: 1 }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { alu: MULS, ex: sex, src: md,  swp:   }, mask: 0x3f8 } # MULS RR,(mem)
-  - { name: DIVI,  op: 0x10a, ctl: { alu: DIV,  ex: zex, cc: v }} # r,#
-  - { name: DIVSI, op: 0x10b, ctl: { alu: DIVS, ex: sex, cc: v }} # r,#
-  - { name: MULI,  op: 0x108, ctl: { alu: MUL,  ex: zex        }} # r,#
-  - { name: MULSI, op: 0x109, ctl: { alu: MULS, ex: sex        }} # r,#
+  - { name: DIV,   op: 0x150, ctl: { ex: zex, src: src, swp: 1, cc: v, alt:   },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp:  , cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
+  - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp: 1, cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
+  - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp:  , cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
+  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp: 1,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp:  ,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp: 1,        alt: $ }, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp:  ,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
+  - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }} # r,#
+  - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }} # r,#
+  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }} # r,#
+  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alt: $ }} # r,#
 
   - { name: MULA,  op: 0x119, ctl: { cc: szv }}
   # group 1 - r
@@ -833,14 +833,14 @@ ucode:
       - inc_pc, mulsel, dst_ral
       - ${ex}, dst_rmux,    ld0_opnd
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
-      - ${alu}_alu, dst_ld
+      - mul_alu, dst_ld, ${alt}
       - waitmem, q_fetch
       - ni
   - mnemo: [ MULI, MULSI ]
     seq:
       - immsex0_jsr
       - ${ex}, dst_rmux, ld1_opnd, widen_setw
-      - ${alu}_alu, dst_ld
+      - mul_alu, dst_ld, ${alt}
       - waitmem, q_fetch
       - ni
   - mnemo: [ DIV, DIVS ]
@@ -849,8 +849,8 @@ ucode:
       - inc_pc, mulsel, dst_ral, widen_setw
       - ${ex}, dst_rmux,    ld0_opnd, shrtn_setw
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
-      - ${alu}_alu, div
-      - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
+      - div_alu, ${alt}, div
+      - div_alu, ${alt}, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
   - mnemo: [ DIVI, DIVSI ]
@@ -858,8 +858,8 @@ ucode:
       - inc_pc, s8_fetch
       - inc_pc, ${ex}, md_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
       - inc_pc, ${ex}, dst_rmux,    ld0_opnd
-      - ${alu}_alu, div
-      - ${alu}_alu, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
+      - div_alu, div,    ${alt}
+      - div_alu, dst_ld, ${alt}, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch
       - ni
   - mnemo: [ LDX ]
@@ -915,7 +915,7 @@ ucode:
       - inc_pc, da_ld, ld0_opnd     # OP0 = (XDE). Leave the inc_pc here to optimize mem access
       - da_ea, vs_fetch, waitmem
       - ld1_opnd, q_setw            # OP1 = (XHL)
-      - muls_alu, dst_ld, ${cc}_cc, w_setw
+      - mul_alu, alt, dst_ld, ${cc}_cc, w_setw
       - spd_rmux, ld1_opnd, dst_rmux
       - dst_rmux, ld0_opnd
       - sub_alu, dst_ld, waitmem, q_fetch

@@ -189,6 +189,7 @@ jt900h_alu u_alu(
     .qs         ( qs        ),
 
     // control
+    .alt        ( alt       ),
     .div        ( div       ),
     .div_busy   ( div_busy  ),
     .alu_sel    ( alu_sel   ),
