@@ -13,8 +13,8 @@ wire [ 1:0] ram_we;
 wire        ram_rdy;
 reg  [15:0] mem[0:2**AW-1];
 
-reg  [ 8:0] intcnt=0; // count-down for an interrupt
-reg  [ 2:0] intrq=0, nx_intrq=0;
+reg  [ 8:0] intcnt=9'h1ff; // count-down for an interrupt
+reg  [ 2:0] int_lvl=0;
 reg         irq=0;
 wire        irq_ack;
 
@@ -25,12 +25,12 @@ reg        dump_rdout, dump_2file;
 
 reg        simctrl_cs, intctrl_cs;
 // CPU registers
-wire [31:0] sim_xix = uut.u_regs.xix;
-wire [31:0] sim_xiy = uut.u_regs.xiy;
-wire [31:0] sim_xiz = uut.u_regs.xiz;
-wire [15:0] mem_xix;
-wire [15:0] mem_xiy;
-wire [15:0] mem_xiz;
+// wire [31:0] sim_xix = uut.u_regs.xix;
+// wire [31:0] sim_xiy = uut.u_regs.xiy;
+// wire [31:0] sim_xiz = uut.u_regs.xiz;
+// wire [15:0] mem_xix;
+// wire [15:0] mem_xiy;
+// wire [15:0] mem_xiz;
 
 integer    cnt,file;
 
@@ -44,12 +44,12 @@ initial begin
 end
 
 assign ram_a    = ram_addr[AW-1:0]; // short version for plotting
-assign ram_dout = mem[ram_addr[AW-1:1]];
+assign ram_dout = ram_addr[23:2]==22'h3fffc0 ? 8'd0 : mem[ram_addr[AW-1:1]]; // reset vector in FFFF00
 assign ram_win  = { ram_we[1] ? ram_din[15:8] : ram_dout[15:8],
                     ram_we[0] ? ram_din[ 7:0] : ram_dout[ 7:0] };
-assign mem_xix  = mem[sim_xix];
-assign mem_xiy  = mem[sim_xiy];
-assign mem_xiz  = mem[sim_xiz];
+// assign mem_xix  = mem[sim_xix];
+// assign mem_xiy  = mem[sim_xiy];
+// assign mem_xiz  = mem[sim_xiz];
 
 `ifndef NODUMP
 initial begin
@@ -107,19 +107,18 @@ always @* begin
     intctrl_cs = ram_addr[15:1]=='h7ff8;
 end
 
-always @(posedge uut.u_ctrl.buserror ) begin
-    $display("Bus error detected. Simulation will be interrupted.");
+always @(posedge uut.u_ctrl.dec_err ) begin
+    $display("Decode error detected. Simulation will be interrupted.");
     #100 $finish;
 end
 
-always @(posedge uut.u_ctrl.halted ) begin
-    $display("CPU Halted");
-end
+// always @(posedge uut.u_ctrl.halted ) begin
+//     $display("CPU Halted");
+// end
 
-always @(negedge uut.u_ctrl.halted ) begin
-    if( !rst ) $display("Halt released");
-end
-
+// always @(negedge uut.u_ctrl.halted ) begin
+//     if( !rst ) $display("Halt released");
+// end
 
 always @(posedge clk) begin
     `ifdef USECEN
@@ -128,24 +127,27 @@ always @(posedge clk) begin
     // update the interrupt register after a certain count
     if( !intcnt[8] ) begin
         intcnt <= intcnt - 1'd1;
-        if( intcnt[7:0]==0 ) begin
-            intrq <= nx_intrq;
-            irq   <= 1;
+        if( intcnt==0 ) begin
+            irq <= 1;
         end
     end
     if( irq_ack ) begin
-        irq   <= 0;
-        intrq <= 0;
+        irq <= 0;
     end
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
-        $display("RAM: %X written to %X (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
+        case( ram_we )
+            2'b01: $display("RAM: %02X written to %X low  (%X)",ram_win[7:0],  ram_addr&24'hffffe, ram_a>>1 );
+            2'b10: $display("RAM: %02X written to %X high (%X)",ram_win[15:8], ram_addr&24'hffffe, ram_a>>1 );
+            2'b11: $display("RAM: %04X written to %X word (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
+        endcase
         // trigger interrupts in the test bench
         if( intctrl_cs && ram_we[0] ) begin
             // write 0 to $fff0 to clear the interrupt
             // write $aa0n to cause interrupt level n after aa cycles
-            intcnt   <= {1'd0, ram_din[15:8]};
-            nx_intrq <= ram_din[2:0];
+            intcnt  <= {1'd0, ram_din[15:8]};
+            int_lvl <= ram_din[2:0];
+            irq     <= 0;
         end
 
         if( simctrl_cs && ram_we[0] ) begin
@@ -162,13 +164,15 @@ always @(posedge clk) begin
 
     if (/*ram_addr>=`END_RAM ||*/ dump_rdout ) begin
         dmp_addr <= dmp_addr+1'd1;
-        dmp_buf[ dmp_addr-1 ] <= dmp_dout;
+        dmp_buf[ dmp_addr ] <= dmp_dout;
         cen <= 0;
         if( dmp_addr==84 ) begin
             dump_2file<=1;
         end
     end
 end
+
+assign ram_addr[0]=0;
 
 jt900h uut(
     .rst        ( rst       ),
@@ -179,14 +183,15 @@ jt900h uut(
     .din        ( ram_dout  ),
     .dout       ( ram_din   ),
     .we         ( ram_we    ),
+    .rd         (           ),
     .busy       ( 1'b0      ),
 
-    .intrq      ( intrq     ),
     .irq        ( irq       ),
     .irq_ack    ( irq_ack   ),
-    .inta_en    ( 1'b0      ),
-    .int_addr   ( 8'd0      ),
+    .int_lvl    ( int_lvl   ),
+    .int_addr   ({ 3'd1, int_lvl, 2'd0 }), // interrupt vectors at 0xffff20 upwards
 
+    .dec_err    (           ),
     .dmp_addr   ( dmp_addr  ),
     .dmp_dout   ( dmp_dout  )
 );

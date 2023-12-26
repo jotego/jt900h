@@ -6,7 +6,7 @@
 
     ld xsp,stack
     ld xwa,0x1234678
-    link xwa,16
+    link xwa,-16
     cp xsp,stack-4-16
     jp ne,bad_end
     cp xwa,stack-4

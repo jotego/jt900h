@@ -25,11 +25,11 @@ after_swi:
 swi_test:
     or ra3,1
     incf
-    push sr     ; checks that IFF is set to 5
+    push sr     ; checks that IFF is set to 7 (NMI level)
     pop wa
     srl 12,wa
     and wa,7
-    cp wa,5
+    cp wa,7
     jp ne,bad_end
     or ra3,2
     ld xbc,(xsp+2)    ; checks the return address is at the right location

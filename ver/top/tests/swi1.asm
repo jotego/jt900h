@@ -8,9 +8,9 @@
 
     ; prepare the interrupt vector
     ld xwa,swi_test
-    ld (0xffff00),xwa
+    ld (0xffff00+3*4),xwa
 
-    swi 0
+    swi 3
     cp xwa,0x12340000
     jp ne,bad_end
     jp eq,end_loop

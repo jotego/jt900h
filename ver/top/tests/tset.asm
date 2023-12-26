@@ -20,7 +20,7 @@
     ld d,4
     ld (xix),d
     tset 0,(xix)
-    jp z,bad_end
+    jp nz,bad_end
     ld d,(xix)
     cp d,5
     jp ne,bad_end

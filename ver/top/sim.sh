@@ -34,10 +34,10 @@ else
     exit 1
 fi
 
-# Try linting the code first
-cd ../../hdl
-verilator --lint-only *.v --top-module jt900h || exit $?
-cd -
+if ! which jtframe; then
+    echo "Missing jtframe"
+    exit 1
+fi
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -67,6 +67,7 @@ if [ ! -e tests/${TEST}.asm ]; then
 fi
 
 if [ $BATCH = 0 ]; then
+    jtframe ucode --list --gtkwave jt900h 900h || exit $?
     cp tests/${TEST}.asm test.asm
     rm -f test.out
 
@@ -88,6 +89,9 @@ else
     FNAME=tests/$TEST
 fi
 
+# Try linting the code first
+verilator --lint-only ../../hdl/*.v --top-module jt900h -I || exit $?
+
 CODELEN=$(cat ${FNAME}.bin|wc -c)
 # The last bytes are NOPs
 CODELEN=$((CODELEN-8))
@@ -101,7 +105,7 @@ fi
 iverilog test.v -f files.f -o $SIMEXE -DSIMULATION $EXTRA \
     -DEND_RAM=$CODELEN -DHEXLEN=$(cat ${FNAME}.hex|wc -l) \
     -DFNAME=\"$FNAME\" \
-    -I../../hdl || exit $?
+    -I. || exit $?
 ./$SIMEXE -lxt
 rm -f $SIMEXE
 
@@ -140,9 +144,11 @@ else
     if [ $BATCH = 0 ]; then
         echo ======== EXPECTED =========
         cat $CMPFILE
-        echo ======== BUT GOT ==========
-        cat $FNAME.out
-        echo see $CMPFILE
+        if [ -e $FNAME.out ]; then
+            echo ======== BUT GOT ==========
+            cat $FNAME.out
+            echo see $CMPFILE
+        fi
     fi
     echo $FNAME FAIL
     exit 1

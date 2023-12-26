@@ -11,14 +11,22 @@ intctrl equ 0xfff0
 
     ; Set interrupt vectors
     ld xiy,0xffff00
-    ldw (xiy+0x00),int0
-    ldw (xiy+0x04),int1
-    ldw (xiy+0x08),int2
-    ldw (xiy+0x0C),int3
-    ldw (xiy+0x10),int4
-    ldw (xiy+0x14),int5
-    ldw (xiy+0x18),int6
-    ldw (xiy+0x1C),int7
+    ldw (xiy+0x00+0x20),int0
+    ldw (xiy+0x02+0x20),wa
+    ldw (xiy+0x04+0x20),int1
+    ldw (xiy+0x06+0x20),wa
+    ldw (xiy+0x08+0x20),int2
+    ldw (xiy+0x0a+0x20),wa
+    ldw (xiy+0x0C+0x20),int3
+    ldw (xiy+0x0e+0x20),wa
+    ldw (xiy+0x10+0x20),int4
+    ldw (xiy+0x12+0x20),wa
+    ldw (xiy+0x14+0x20),int5
+    ldw (xiy+0x16+0x20),wa
+    ldw (xiy+0x18+0x20),int6
+    ldw (xiy+0x1a+0x20),wa
+    ldw (xiy+0x1C+0x20),int7
+    ldw (xiy+0x1e+0x20),wa
     ; enable all interrupts
     ei 0
     ; trigger each interrupt and check that it was processed

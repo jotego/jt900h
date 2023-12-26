@@ -5,17 +5,17 @@
     ld a,0xbf    ; common header
 
     ; 16-bit number divided by 8-bit number
-    ld wa,1230
-    ld b,23
+    ld wa,0x4ce
+    ld b,0x17
     div wa,b
     jp ov,bad_end
     or ra3,1
 
-    cp a,53
+    cp a,0x35
     jp ne,bad_end
     or ra3,2
 
-    cp w,11
+    cp w,0xb
     jp ne,bad_end
     or ra3,4
 

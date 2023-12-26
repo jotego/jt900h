@@ -11,10 +11,10 @@
 
     incf
     ld a,0x34
-    ldw (0xffff00),0x12
-    ld bc,(0xffff00)
-    ex (0xffff00),a
-    ld e,(0xffff00)
+    ldw (0xff00),0x12
+    ld bc,(0xff00)
+    ex (0xff00),a
+    ld e,(0xff00)
     decf
 
     include finish.inc

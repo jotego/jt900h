@@ -14,316 +14,265 @@
 
     Author: Jose Tejada Gomez. https://patreon.com/jotego
     Version: 1.0
-    Date: 2-12-2021 */
+    Date: 14-12-2023 */
 
 module jt900h_regs(
     input             rst,
     input             clk,
     input             cen,
-
-    input      [15:0] sr,           // status register
-    output reg [ 1:0] rfp,          // register file pointer
-    input             inc_rfp,
-    input             dec_rfp,
-    input             rfp_we,
-    input      [ 1:0] imm,
-    output reg        bc_unity,
-    input             dec_bc,
-    input             ex_we,        // Exchange two registers
-    // stack
-    output     [31:0] xsp /* verilator public */,
-    input      [15:0] inc_xsp,
-    input      [15:0] dec_xsp,
-
-    // MULA support
-    output     [31:0] xde,
-    output     [31:0] xhl,
-    input             dec_xhl,
-
-    // DMA
-    input      [31:0] dma_reg,
-    input             dma_sel,
-    // Direct access to accumulator (RRD, RLD)
-    input             ld_high,
-    output     [31:0] acc,
-
-    // From indexed memory addresser
-    input      [ 7:0] idx_rdreg_sel,
-    input      [ 1:0] reg_step,
-    input             reg_inc,
-    input             reg_dec,
-    // LDD/LDI:
-    input             dec_xde,
-    input             dec_xix,
-    input             inc_xde,
-    input             inc_xix,
-    // offset register
-    input      [ 7:0] idx_rdreg_aux,
-    input             idx_en,
-
-    // from the memory
-    input      [31:0] alu_dout,
-    input      [31:0] ram_dout,
-    input             data_sel,
-    // read operands
-    // input       [1:0] zsel,   // length selection
-    // source register
-    input       [7:0] src,
-    output reg [31:0] src_out,
-    output reg [31:0] aux_out,
-
-    // destination register
-    input       [7:0] dst,
-    output reg [31:0] dst_out,
-    output reg [31:0] idx_out,
-
-    // write result
-    input       [2:0] ram_we,
-    input       [2:0] alu_we,
-    input             flag_only,
-    //input      [31:0] din
+    // memory unit
+    input      [23:0] ea,
+    input      [31:0] din,      // data from memory controller
+    output     [31:0] xsp,
+    output reg [31:0] md,
+    // ALU
+    input      [31:0] rslt,
+    input             zi,hi,vi,ni,ci,pi, // flag updates
+    output            no,ho,co,zo,
+    // control (from module logic)
+    input             cc,
+    output      [7:0] flags,
+    output reg  [2:0] riff,      // IFF
+    input      [ 2:0] int_lvl,
+    input      [ 7:0] int_addr,
+    // control (from ucode)
+    input             bs,
+    input             exff,
+    input             alt,
+    input             inc_pc,
+    input             mul,
+    input             mulcheck,
+    input             qs,
+    input             sex,
+    input             ws,
+    input             zex,
+    input       [1:0] opnd_sel,
+    input       [1:0] fetch_sel,
+    input       [2:0] ral_sel,
+    input       [3:0] ld_sel,
+    input       [4:0] cc_sel,
+    input       [3:0] rmux_sel,
+    // "Control Registers" (MCU MMR)
+    output reg [ 7:0] cra,
+    output reg [31:0] crin,
+    input      [31:0] cr,
+    output reg        cr_we,    // cr_rd goes directly from control unit
+    // register outputs
+    output reg [23:0] pc,
+    output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
+    output reg [31:0] op0,
+    output reg [31:0] op1,
+    output reg [31:0] op2,
     // Register dump
-    input      [7:0] dmp_addr,
-    output reg [7:0] dmp_dout
+    input      [ 7:0] dmp_addr,
+    output     [ 7:0] dmp_dout
 );
 
-localparam [3:0] CURBANK  = 4'he,
-                 PREVBANK = 4'hd;
+`include "900h_param.vh"
 
-// All registers
-reg [7:0] accs[0:63];
-reg [7:0] ptrs[0:15];
-reg [7:0] r0sel, r1sel, aux_sel, idx_sel;
+localparam [1:0] XSP=3;
+localparam [1:0] BC=1;
 
-wire [31:0] full_step, data_mux, ptr_out;
-wire [ 2:0] we;
-wire [15:0] cur_bc;
-wire [31:0] cur_xwa, cur_xde, cur_xhl, xix /* verilator public */;
+reg  [31:0] sdmux, rmux;
+reg  [31:0] accs[0:15];
+reg  [31:0] ptrs[0: 3];
+wire [31:0] dmp_mux;
+reg  [ 7:0] r3sel, fsel, sdsel, mulsel,
+            src, dst; // RALs (Register Address Latches)
+reg  [ 4:0] sdsh;
+wire [ 7:0] flags_;
+reg         s, z, h, v, n, c,    // flags (main)
+            s_,z_,h_,v_,n_,c_;   // flags (alt)
+reg  [ 1:0] rfp;        // Register File Pointer
+wire [15:0] sr;         // status register. lower byte contains the flags
+reg         is_mul;
 
-assign acc = {accs[{rfp,4'd3}],accs[{rfp,4'd2}],accs[{rfp,4'd1}],accs[{rfp,4'd0}]};
-assign cur_xwa = acc;
-assign cur_bc = { accs[{rfp,4'd5}],accs[{rfp,4'd4}] };
-assign cur_xde = {accs[{rfp,4'hb}],accs[{rfp,4'ha}],accs[{rfp,4'h9}],accs[{rfp,4'h8}]};
-assign cur_xhl = {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]};
-assign xsp = { ptrs[15], ptrs[14], ptrs[13], ptrs[12] };
-assign xix = { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] };
-assign xde = cur_xde;
-assign xhl = cur_xhl;
+assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
+assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
+assign sr      = {1'b1,riff,2'b10,rfp,flags};
+assign {no,ho,co,zo} = {n,h,c,z};
+assign xsp     = ptrs[XSP];
+
+assign dmp_mux  = dmp_addr[7:6]!=0 ? ptrs[dmp_addr[3:2]] : accs[dmp_addr[5:2]];
+assign dmp_dout = dmp_addr==8'd80 ? sr[15:8] :
+                  dmp_addr==8'd81 ? sr[ 7:0] :
+                                    dmp_mux[{dmp_addr[1:0],3'b0}+:8];
 
 `ifdef SIMULATION
-    wire [31:0] xiy /* verilator public */,xiz /* verilator public */;
-    wire [31:0] cur_xbc;
-
-    assign cur_xbc = {accs[{rfp,4'd7}],accs[{rfp,4'd6}],accs[{rfp,4'd5}],accs[{rfp,4'd4}]};
-    assign xiy = { ptrs[ 7], ptrs[ 6], ptrs[ 5], ptrs[ 4] };
-    assign xiz = { ptrs[11], ptrs[10], ptrs[ 9], ptrs[ 8] };
-
     wire [31:0] xwa0 /* verilator public */, xbc0 /* verilator public */, xde0 /* verilator public */, xhl0 /* verilator public */,
                 xwa1 /* verilator public */, xbc1 /* verilator public */, xde1 /* verilator public */, xhl1 /* verilator public */,
                 xwa2 /* verilator public */, xbc2 /* verilator public */, xde2 /* verilator public */, xhl2 /* verilator public */,
-                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */;
-
-    assign xwa0 = {accs[{2'd0,4'd3}],accs[{2'd0,4'd2}],accs[{2'd0,4'd1}],accs[{2'd0,4'd0}]};
-    assign xwa1 = {accs[{2'd1,4'd3}],accs[{2'd1,4'd2}],accs[{2'd1,4'd1}],accs[{2'd1,4'd0}]};
-    assign xwa2 = {accs[{2'd2,4'd3}],accs[{2'd2,4'd2}],accs[{2'd2,4'd1}],accs[{2'd2,4'd0}]};
-    assign xwa3 = {accs[{2'd3,4'd3}],accs[{2'd3,4'd2}],accs[{2'd3,4'd1}],accs[{2'd3,4'd0}]};
-
-    assign xbc0 = {accs[{2'd0,4'd7}],accs[{2'd0,4'd6}],accs[{2'd0,4'd5}],accs[{2'd0,4'd4}]};
-    assign xbc1 = {accs[{2'd1,4'd7}],accs[{2'd1,4'd6}],accs[{2'd1,4'd5}],accs[{2'd1,4'd4}]};
-    assign xbc2 = {accs[{2'd2,4'd7}],accs[{2'd2,4'd6}],accs[{2'd2,4'd5}],accs[{2'd2,4'd4}]};
-    assign xbc3 = {accs[{2'd3,4'd7}],accs[{2'd3,4'd6}],accs[{2'd3,4'd5}],accs[{2'd3,4'd4}]};
-
-    assign xde0 = {accs[{2'd0,4'd11}],accs[{2'd0,4'd10}],accs[{2'd0,4'd9}],accs[{2'd0,4'd8}]};
-    assign xde1 = {accs[{2'd1,4'd11}],accs[{2'd1,4'd10}],accs[{2'd1,4'd9}],accs[{2'd1,4'd8}]};
-    assign xde2 = {accs[{2'd2,4'd11}],accs[{2'd2,4'd10}],accs[{2'd2,4'd9}],accs[{2'd2,4'd8}]};
-    assign xde3 = {accs[{2'd3,4'd11}],accs[{2'd3,4'd10}],accs[{2'd3,4'd9}],accs[{2'd3,4'd8}]};
-
-    assign xhl0 = {accs[{2'd0,4'd15}],accs[{2'd0,4'd14}],accs[{2'd0,4'd13}],accs[{2'd0,4'd12}]};
-    assign xhl1 = {accs[{2'd1,4'd15}],accs[{2'd1,4'd14}],accs[{2'd1,4'd13}],accs[{2'd1,4'd12}]};
-    assign xhl2 = {accs[{2'd2,4'd15}],accs[{2'd2,4'd14}],accs[{2'd2,4'd13}],accs[{2'd2,4'd12}]};
-    assign xhl3 = {accs[{2'd3,4'd15}],accs[{2'd3,4'd14}],accs[{2'd3,4'd13}],accs[{2'd3,4'd12}]};
+                xwa3 /* verilator public */, xbc3 /* verilator public */, xde3 /* verilator public */, xhl3 /* verilator public */,
+                xix  /* verilator public */, xiy  /* verilator public */, xiz  /* verilator public */;
+    assign { xwa3, xwa2, xwa1, xwa0 } = {accs[{2'd3,2'd0}],accs[{2'd2,2'd0}],accs[{2'd1,2'd0}],accs[{2'd0,2'd0}]};
+    assign { xbc3, xbc2, xbc1, xbc0 } = {accs[{2'd3,2'd1}],accs[{2'd2,2'd1}],accs[{2'd1,2'd1}],accs[{2'd0,2'd1}]};
+    assign { xde3, xde2, xde1, xde0 } = {accs[{2'd3,2'd2}],accs[{2'd2,2'd2}],accs[{2'd1,2'd2}],accs[{2'd0,2'd2}]};
+    assign { xhl3, xhl2, xhl1, xhl0 } = {accs[{2'd3,2'd3}],accs[{2'd2,2'd3}],accs[{2'd1,2'd3}],accs[{2'd0,2'd3}]};
+    assign { xix,  xiy,  xiz } = { ptrs[0], ptrs[1], ptrs[2] };
 `endif
 
-assign data_mux = ex_we    ? src_out  :
-                  data_sel ? ram_dout :
-                  dma_sel  ? dma_reg  : alu_dout;
-assign we       = flag_only ? 3'd0 : data_sel ? ram_we : alu_we;
-assign ptr_out  = { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-                    ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] };
-assign full_step = reg_step == 1 ? 2 : reg_step==2 ? 4 : 1;
-
-// gigantic multiplexer:
 always @* begin
-    r0sel   = idx_en ? simplify(rfp,idx_rdreg_sel) : simplify(rfp,src);
-    src_out = r0sel[7:4]==4 ? 32'd0 : regmux( r0sel );
-    // aux_out is used for instructions with two index registers, like LDD
-    // the aux register is the same as src_out but with bit 2 at zero
-    aux_sel = simplify(rfp,idx_rdreg_sel) & ~8'h4;
-    aux_out =
-        aux_sel[7:4]==4 ? 32'd0 : aux_sel[7] ?
-        {   ptrs[ {aux_sel[3:2],2'b11} ], ptrs[ {aux_sel[3:2],2'b10} ],
-            ptrs[ {aux_sel[3:1],1'b1}  ], ptrs[ aux_sel[3:0] ] } :
-        {   accs[ {aux_sel[5:2],2'b11} ], accs[ {aux_sel[5:2],2'b10} ],
-            accs[ {aux_sel[5:1],1'b1}  ], accs[ aux_sel[5:0] ] };
+    // r3sel -> selects register from 3-bit R value in op
+    r3sel = bs ? {             2'd0,rfp, md[2:1],1'b0,~md[0]} : // byte register
+                 {md[2]?4'hf:{2'd0,rfp}, md[1:0],2'd0};         // word/qword register
+    mulsel = bs ? { 2'd0, rfp, md[2:1], 2'd0 } :
+          md[2] ? { 4'hf,      md[1:0], 2'd0 } :
+                  { 2'd0, rfp, md[1:0], 2'd0 } ; // pointers
+    is_mul = mulcheck && md[15:10]==6'h2; // detects MUL/DIV(s) rr,#
+    casez( md[6:4] )
+        3'b0??: fsel={2'd0,md[5:0]};
+        3'b101: fsel={2'd0,rfp-2'd1,md[3:0]}; // previous bank
+        3'b110: fsel={2'd0,rfp,     md[3:0]}; // current bank
+        default:fsel=md[7:0];
+    endcase
+    if(qs) fsel[1:0]=0;     // bs/ws/qs must be set before loading the RAL
+    if(ws) fsel[  0]=0;
+    // Register multiplexer
+    sdsel = rmux_sel==DST_RMUX ? dst : src;
+    sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
+    sdsh  = bs ? {sdsel[1:0],3'd0} : ws ? {sdsel[1],4'd0} : 5'd0; // shift to select byte/word part as data
+    case( rmux_sel )
+        BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
+        CR_RMUX:  rmux = cr;
+        SR_RMUX:  rmux = alt ? {29'd0, int_lvl  } : { 16'd0, sr };
+        PC_RMUX:  rmux = alt ? {24'd0, int_addr } : {  8'd0, pc };
+        RFP_RMUX: rmux[1:0] = rfp;
+        XSP_RMUX: rmux = ptrs[XSP];
+        CC_RMUX:  rmux = {31'd0,cc};
+        SRC_RMUX, DST_RMUX: rmux = sdmux >> sdsh;
+        N3_RMUX:  rmux = {28'd0, alt&&md[2:0]==0, md[2:0]};
+        N4_RMUX:  rmux = {28'd0, md[3:0]};
 
-    r1sel   = simplify(rfp,dst);
-    idx_sel = simplify(rfp,idx_rdreg_aux);
-    dst_out = regmux( r1sel   );
-    idx_out = regmux( idx_sel );
+        ZERO_RMUX:rmux = 0;
+        SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
+
+        EA_RMUX:  rmux = {8'd0,ea};
+        default:  rmux = md;
+    endcase
+    // extend the sign
+    if( bs & sex ) rmux[31: 8] = {24{rmux[ 7]}};
+    if( ws & sex ) rmux[31:16] = {16{rmux[15]}};
+    if( bs & zex ) rmux[31: 8] = 0;
+    if( ws & zex ) rmux[31:16] = 0;
 end
 
 always @(posedge clk, posedge rst) begin
-    if( rst ) begin
+    if(rst) begin
+        src   <= 0;
+        dst   <= 0;
+        op0   <= 0;
+        op1   <= 0;
+        op2   <= 0;
+        rfp   <= 0;
+        md    <= 0;
+        pc    <= 0;
+        da    <= 0;
+        riff  <= 7;
+        cr_we <= 0;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
         accs[12] <= 0; accs[13] <= 0; accs[14] <= 0; accs[15] <= 0;
-        accs[16] <= 0; accs[17] <= 0; accs[18] <= 0; accs[19] <= 0;
-        accs[20] <= 0; accs[21] <= 0; accs[22] <= 0; accs[23] <= 0;
-        accs[24] <= 0; accs[25] <= 0; accs[26] <= 0; accs[27] <= 0;
-        accs[28] <= 0; accs[29] <= 0; accs[30] <= 0; accs[31] <= 0;
-        accs[32] <= 0; accs[33] <= 0; accs[34] <= 0; accs[35] <= 0;
-        accs[36] <= 0; accs[37] <= 0; accs[38] <= 0; accs[39] <= 0;
-        accs[40] <= 0; accs[41] <= 0; accs[42] <= 0; accs[43] <= 0;
-        accs[44] <= 0; accs[45] <= 0; accs[46] <= 0; accs[47] <= 0;
-        accs[48] <= 0; accs[49] <= 0; accs[50] <= 0; accs[51] <= 0;
-        accs[52] <= 0; accs[53] <= 0; accs[54] <= 0; accs[55] <= 0;
-        accs[56] <= 0; accs[57] <= 0; accs[58] <= 0; accs[59] <= 0;
-        accs[60] <= 0; accs[61] <= 0; accs[62] <= 0; accs[63] <= 0;
-
-        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 0;
-        ptrs[ 4] <= 0; ptrs[ 5] <= 0; ptrs[ 6] <= 0; ptrs[ 7] <= 0;
-        ptrs[ 8] <= 0; ptrs[ 9] <= 0; ptrs[10] <= 0; ptrs[11] <= 0;
-        ptrs[12] <= 0; ptrs[13] <= 0; ptrs[14] <= 0; ptrs[15] <= 0;
-
-        bc_unity <= 0;
-        { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= 32'h100; // XSP initial value
+        ptrs[ 0] <= 0; ptrs[ 1] <= 0; ptrs[ 2] <= 0; ptrs[ 3] <= 32'h100;
+        {s, z, h, v, n, c } <= 0;
+        {s_,z_,h_,v_,n_,c_} <= 0;
     end else if(cen) begin
-        bc_unity <= cur_bc==1;
-        if( reg_inc ) begin
-            if( r0sel[7] ) // pointer
-                { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-                  ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out + full_step;
-            else // general registers are used by CPD/CPI/LDD instruction
-                { accs[ {r0sel[5:2],2'd3} ], accs[ {r0sel[5:2],2'd2} ],
-                  accs[ {r0sel[5:2],2'd1} ], accs[ {r0sel[5:2],2'd0} ] } <= src_out + full_step;
-        end
-        if( reg_dec ) begin
-            if( r0sel[7] ) // pointer
-                { ptrs[ {r0sel[3:2],2'd3} ], ptrs[ {r0sel[3:2],2'd2} ],
-                  ptrs[ {r0sel[3:2],2'd1} ], ptrs[ {r0sel[3:2],2'd0} ] } <= ptr_out - full_step;
-            else // general registers are used by CPD/CPI/LDD instruction
-                { accs[ {r0sel[5:2],2'd3} ], accs[ {r0sel[5:2],2'd2} ],
-                  accs[ {r0sel[5:2],2'd1} ], accs[ {r0sel[5:2],2'd0} ] } <= src_out - full_step;
-        end
-
-        if( dec_bc )
-            { accs[{rfp,4'd5}],accs[{rfp,4'd4}] } <= cur_bc-16'd1;
-
-        if( dec_xhl )
-            {accs[{rfp,4'hf}],accs[{rfp,4'he}],accs[{rfp,4'hd}],accs[{rfp,4'hc}]}
-                <= cur_xhl-32'd2;
-
-        // LDD
-        if( dec_xde ) begin
-            { accs[{rfp,4'hb}], accs[{rfp,4'ha}], accs[{rfp,4'h9}], accs[{rfp,4'h8}]} <= cur_xde - full_step;
-        end
-        if( dec_xix ) begin
-            { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] } <= xix - full_step;
-        end
-        if( inc_xde ) begin
-            { accs[{rfp,4'hb}], accs[{rfp,4'ha}], accs[{rfp,4'h9}], accs[{rfp,4'h8}]} <= cur_xde + full_step;
-        end
-        if( inc_xix ) begin
-            { ptrs[ 3], ptrs[ 2], ptrs[ 1], ptrs[ 0] } <= xix + full_step;
-        end
-
-        // Stack
-        if( dec_xsp != 0 )
-            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp - { 16'd0, dec_xsp };
-        if( inc_xsp != 0 )
-            { ptrs[15], ptrs[14], ptrs[13], ptrs[12] } <= xsp + { 16'd0, inc_xsp };
-
-        // Register writes from ALU/RAM
-        if( we[0] ) begin
-            if( r1sel[7] )
-                ptrs[r1sel[3:0]] <= data_mux[7:0];
-            else begin
-                // ld_high is used by the RLD/RRD instructions
-                accs[r1sel[5:0]] <= ld_high ? data_mux[15:8] : data_mux[7:0];
-            end
-            if( ex_we ) begin
-                if( r0sel[7] )
-                    ptrs[r0sel[3:0]] <= dst_out[7:0];
-                else begin
-                    // ld_high is used by the RLD/RRD instructions
-                    accs[r0sel[5:0]] <= dst_out[7:0];
+        cr_we <= 0;
+        if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
+        if(inc_pc) pc <= pc + 24'd1;
+        case( cc_sel )
+            H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
+            N0C_CC:          {        n,c} <= {               1'b0,ci  };
+            SZHVCR_CC:       {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
+            SZHVN1C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
+            V_CC:            {      v    } <= {          vi            };
+            Z2V_CC:          {      v    } <= {               zi       };
+            SZV_CC:          {s,z,  v    } <= {ni,zi,    vi            };
+            C_CC:            {          c} <= {               ci       };
+            ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
+            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
+            SZHVN1_CC:       {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN0C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
+            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
+            SZH0PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
+            SZH0PN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
+            SZH0VN0_CC:      {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
+            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            Z3V_CC:          {      v    } <= {           ~zi          };
+            default:;
+        endcase
+        case( fetch_sel )
+            VS_FETCH, Q_FETCH: md <= din;
+            S8_FETCH:          md <= md>>8;
+            default:;
+        endcase
+        case( ral_sel ) // Register Address Latch
+            SRC_RAL:  src <= r3sel;
+            A_RAL:    src <= {2'b0,rfp,4'b0};
+            DST_RAL:  dst <= alt ? fsel : (mul|is_mul) ? mulsel : r3sel;
+            XSRC_RAL: src <= dst & ~8'h04; // if dst=XHL, src<-XDE, if dst=XIY, src<-XIX
+            XDE_RAL:  src <= {2'b0,rfp,4'h8};
+            XHL_RAL:  src <= {2'b0,rfp,4'hc};
+            SWP_RAL:  {src,dst}<={dst,src};
+            default:;
+        endcase
+        case( opnd_sel )
+            LD0_OPND: op0 <= rmux;
+            LD1_OPND: op1 <= rmux;
+            SWP_OPND: {op0,op1} <= {op1,op0};
+            default:;
+        endcase
+        case( ld_sel )
+            DST_LD: begin
+                if( bs ) begin
+                    if( dst[7] ) case(dst[1:0])
+                        0: ptrs[dst[3:2]][ 7: 0] <= rslt[7:0];
+                        1: ptrs[dst[3:2]][15: 8] <= rslt[7:0];
+                        2: ptrs[dst[3:2]][23:16] <= rslt[7:0];
+                        3: ptrs[dst[3:2]][31:24] <= rslt[7:0];
+                    endcase else case(dst[1:0])
+                        0: accs[dst[5:2]][ 7: 0] <= rslt[7:0];
+                        1: accs[dst[5:2]][15: 8] <= rslt[7:0];
+                        2: accs[dst[5:2]][23:16] <= rslt[7:0];
+                        3: accs[dst[5:2]][31:24] <= rslt[7:0];
+                    endcase
+                end else if( ws ) begin
+                    if( dst[7] ) case(dst[1])
+                        0: ptrs[dst[3:2]][15: 0] <= rslt[15:0];
+                        1: ptrs[dst[3:2]][31:16] <= rslt[15:0];
+                    endcase else case(dst[1])
+                        0: accs[dst[5:2]][15: 0] <= rslt[15:0];
+                        1: accs[dst[5:2]][31:16] <= rslt[15:0];
+                    endcase
+                end else begin
+                    if( dst[7] )
+                        ptrs[dst[3:2]] <= rslt;
+                    else
+                        accs[dst[5:2]] <= rslt;
                 end
             end
-        end
-        if( we[1] ) begin
-            if( r1sel[7] )
-                { ptrs[{r1sel[3:1],1'b1}], ptrs[r1sel[3:0]] } <= data_mux[15:0];
-            else
-                { accs[{r1sel[5:1],1'b1}], accs[r1sel[5:0]] } <= data_mux[15:0];
-            if( ex_we ) begin
-                if( r0sel[7] )
-                    { ptrs[{r0sel[3:1],1'b1}], ptrs[r0sel[3:0]] } <= dst_out[15:0];
-                else
-                    { accs[{r0sel[5:1],1'b1}], accs[r0sel[5:0]] } <= dst_out[15:0];
+            RFP_LD: rfp <= rslt[1:0];
+            MD_LD:  md  <= rslt;
+            A_LD:   begin
+                accs[{rfp,2'd0}][7:0] <= {alt ? 4'd0 : rslt[7:4], rslt[3:0]};
+                if( ws ) accs[{rfp,2'd1}][15:8] <= rslt[15:8];  // loads into BC!
             end
-        end
-        if( we[2] ) begin
-            if( r1sel[7] )
-                { ptrs[{r1sel[3:2],2'd3}], ptrs[{r1sel[3:2],2'd2}],
-                  ptrs[{r1sel[3:2],2'd1}], ptrs[{r1sel[3:2],2'd0}] } <= data_mux;
-            else
-                { accs[{r1sel[5:2],2'd3}], accs[{r1sel[5:2],2'd2}],
-                  accs[{r1sel[5:2],2'd1}], accs[{r1sel[5:2],2'd0}] } <= data_mux;
-        end
-    end
-end
-
-function [7:0] simplify;
-    input [1:0] rfp;
-    input [7:0] rsel;
-    simplify = {
-               rsel[7:4]==CURBANK  ? { 2'd0, rfp } :
-               rsel[7:4]==PREVBANK ? { 2'd0, rfp-2'd1 } : rsel[7:4],
-               rsel[3:0] };
-endfunction
-
-function [31:0] regmux;
-    input [7:0] sel;
-    regmux = sel[7] ?
-        {   ptrs[ {sel[3:2],2'b11} ], ptrs[ {sel[3:2],2'b10} ],
-            ptrs[ {sel[3:1],1'b1}  ], ptrs[ sel[3:0] ] } :
-        {   accs[ {sel[5:2],2'b11} ], accs[ {sel[5:2],2'b10} ],
-            accs[ {sel[5:1],1'b1}  ], accs[ sel[5:0] ] };
-endfunction
-
-always @(posedge clk, posedge rst) begin
-    if( rst ) begin
-        rfp <= 0;
-    end else if(cen) begin
-        if( inc_rfp ) rfp <= rfp+2'd1;
-        if( dec_rfp ) rfp <= rfp-2'd1;
-        if( rfp_we  ) rfp <= imm;
-    end
-end
-
-// Status dump
-always @(posedge clk) begin
-    if( dmp_addr < 8'h40 )
-        dmp_dout <= accs[dmp_addr[5:0]];
-    else if( dmp_addr < 8'h50 )
-        dmp_dout <= ptrs[dmp_addr[3:0]];
-    else begin
-        case( dmp_addr )
-            8'h51: dmp_dout <= sr[ 7:0];
-            8'h50: dmp_dout <= sr[15:8];
-            default: dmp_dout <= 0;
+            BC_LD:  accs[{rfp,BC}][15:0] <= rslt[15:0];
+            OP2_LD: op2 <= rslt;
+            SR_LD:  begin
+                if( ws ) {riff,rfp} <= {rslt[14:12],rslt[9:8]};
+                {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
+            end
+            PC_LD:  pc <= rslt[23:0];
+            XSP_LD: ptrs[XSP] <= rslt;
+            IFF_LD: riff <= alt&&rslt[2:0]==0 ? 3'b111 : rslt[2:0];
+            DA_LD:  da <= { qs ? rslt[23:16]:8'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
+            CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
+            default:;
         endcase
     end
 end
+
 endmodule

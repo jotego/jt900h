@@ -10,7 +10,7 @@
 
     ; prepare the interrupt vector
     ld xwa,level0
-    ld (0xffff00+4*0),xwa   ; int level 0
+    ld (0xffff00+4*6),xwa   ; int level 6
 
     ld xwa,swi_test
     ld (0xffff00+4*4),xwa   ; int level 4
@@ -30,19 +30,17 @@ after_swi:
     cp wa,2
     jp ne,bad_end
 
-    ; contrary to hardware interrupts, level 0 is possible
-    ; the level in IFF seems to affect hardware interrupts only
-    swi 0       ; should be parsed
+    swi 6       ; should be parsed
     jp end_loop
 
 swi_test:
     or ra3,1
     incf
-    push sr     ; checks that IFF is set to 5
+    push sr     ; checks that IFF is set to 7
     pop wa
     srl 12,wa
     and wa,7
-    cp wa,5
+    cp wa,7
     jp ne,bad_end
     or ra3,2
     ld xbc,(xsp+2)    ; checks the return address is at the right location
