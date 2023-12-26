@@ -108,7 +108,9 @@ always @* begin
     endcase
 
     {c32,c16,c8}={3{cx}};
+    {v32,v16,v8}= 3'd0;
     rslt = op0;
+    h    = 0;
     case(alu_sel)
         ADD_ALU: begin
             { h,   rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx };

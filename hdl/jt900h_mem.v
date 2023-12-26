@@ -23,6 +23,7 @@ module jt900h_mem(
     // external interface
     output     [23:0] bus_addr,
     input      [15:0] bus_dout,
+    input             bus_busy,
     output reg [15:0] bus_din,
     output reg [ 1:0] bus_we,
     output reg        bus_rd,
@@ -88,9 +89,11 @@ always @(posedge clk or posedge rst) begin
         wrl        <= 0;
         {ql,wl,bl} <= 0;
     end else if(cen) begin
-        bus_we <= 0;
-        wp     <= wp<<1;
-        rp     <= rp<<1;
+        if( !bus_busy ) begin
+            bus_we <= 0;
+            wp     <= wp<<1;
+            rp     <= rp<<1;
+        end
         if( da2ea ) ea <= da;
         if( !wrk ) begin
             wrl <= wr;
@@ -113,7 +116,7 @@ always @(posedge clk or posedge rst) begin
                 rp         <= 1;
                 {ql,wl,bl} <= ea_sel==0 ? 3'b100 : {qs,ws,bs}; // always reads 32 bits for PC fetches
             end
-        end else begin
+        end else if( !bus_busy ) begin
             if( wp[0] ) begin
                 adelta    <= bus_addr[0] ? 2'b01 : 2'b10;
                 bus_din  <= nx_din[15:0];

@@ -132,9 +132,9 @@ always @(posedge clk, posedge rst) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni|(halt&irq_en)) begin
             irq_ack   <= irq_en;
+            stack_bsy <= irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
-            stack_bsy <= 0;
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
         if( rets&(alt?ws:bs) ) uaddr <= jsr_ret;
@@ -152,7 +152,7 @@ always @(posedge clk, posedge rst) begin
                     1: uaddr <= alt ? R32_16_NORD_SEQA : R32_16_SEQA;
                     4: uaddr <= R32_LDAR_SEQA;
                 endcase
-                default: $stop;   // to do: signal a decode error
+                default: `ifdef SIMULATION $stop `endif ;   // to do: signal a decode error
             endcase
         end
     end

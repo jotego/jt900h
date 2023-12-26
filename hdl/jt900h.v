@@ -224,6 +224,7 @@ jt900h_mem u_mem(
     .bus_din    ( dout      ),
     .bus_we     ( we        ),
     .bus_rd     ( rd        ),
+    .bus_busy   ( busy      ),
     // from ucode
     .fetch_sel  ( fetch_sel ),
     .ea_sel     ( ea_sel    ),

@@ -80,7 +80,6 @@ wire [31:0] dmp_mux;
 reg  [ 7:0] r3sel, fsel, sdsel, mulsel,
             src, dst; // RALs (Register Address Latches)
 reg  [ 4:0] sdsh;
-wire [ 7:0] flags_;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_;   // flags (alt)
 reg  [ 1:0] rfp;        // Register File Pointer
@@ -88,7 +87,6 @@ wire [15:0] sr;         // status register. lower byte contains the flags
 reg         is_mul;
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
-assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,riff,2'b10,rfp,flags};
 assign {no,ho,co,zo} = {n,h,c,z};
 assign xsp     = ptrs[XSP];
@@ -131,6 +129,7 @@ always @* begin
     sdsel = rmux_sel==DST_RMUX ? dst : src;
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
     sdsh  = bs ? {sdsel[1:0],3'd0} : ws ? {sdsel[1],4'd0} : 5'd0; // shift to select byte/word part as data
+    rmux  = md;
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
