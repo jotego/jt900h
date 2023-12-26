@@ -121,9 +121,9 @@ end
 // end
 
 always @(posedge clk) begin
-    `ifdef USECEN
+    // `ifdef USECEN
     cen<=~cen;
-    `endif
+    // `endif
     // update the interrupt register after a certain count
     if( !intcnt[8] ) begin
         intcnt <= intcnt - 1'd1;

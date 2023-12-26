@@ -110,7 +110,7 @@ The NeoGeo Pocket seems to start operation from FF1800, which does not agree wit
 
 Compiled on MiSTer
 
-| Version    | Usage                |
-| ---------- | -------------------- |
-| Old        | ~7000 LE and no BRAM |
-| microcoded | TBD                  |
+| Version    | Usage                 |
+| ---------- | --------------------- |
+| Old        | ~7000 LE and no BRAM  |
+| microcoded | ~2240 LE and 114 M10K |

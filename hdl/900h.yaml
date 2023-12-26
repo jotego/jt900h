@@ -1,6 +1,7 @@
 config:
   entries: 1024
   entry_len: 16
+  latch_ucode: true
   #  per_chunk_cycles: true
   auto: { min: 0x300, max: 0x3ff }
 constants:
