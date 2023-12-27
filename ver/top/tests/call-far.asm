@@ -2,12 +2,15 @@
     maxmode on
     relaxed on
     org 0
-    ld xsp,$3FFF
+    ld xsp,$4000
     calr far
-    ld hl,0x12
+    cp hl,0x34
+    jp ne,bad_end
+    cp bc,0x55
+    jp ne,bad_end
 
     include finish.inc
-    db 0x1FF dup (0)
+    db 0x1F00 dup (0)
     jp bad_end
 far:
     ld bc,0x55

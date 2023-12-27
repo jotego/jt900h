@@ -2,12 +2,12 @@
 
 module test;
 
-localparam AW=12;
+localparam AW=14;
 
 reg         rst, clk;
 reg         cen;
 wire [23:0] ram_addr;
-wire [11:0] ram_a;
+wire [AW-1:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
 wire        ram_rdy;
