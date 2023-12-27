@@ -101,6 +101,7 @@ The _alt_ signal enables an alternative meaning to the signal it goes with:
 | r32jmp  | read data       | do not read data         |
 | rets    | byte size       | word size                |
 | v_loop  | only V          | V and Z                  |
+| s_setw  | s used in LDAR  | zz used in (r32+)        |
 
 ## PC at Reset
 
