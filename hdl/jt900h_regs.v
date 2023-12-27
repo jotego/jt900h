@@ -267,7 +267,7 @@ always @(posedge clk, posedge rst) begin
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: riff <= alt&&rslt[2:0]==0 ? 3'b111 : rslt[2:0];
-            DA_LD:  da <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
+            DA_LD:  da <= { qs|alt ? rslt[31:16]:16'd0, (qs|ws|alt) ? rslt[15:8]:8'd0, rslt[7:0] };
             CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase

@@ -309,7 +309,7 @@ ucode:
       - md_rmux, zex, ld1_opnd,q_setw # OP1 = IV byte
       - shl8_jsr, b_setw              # OP0 = FFFF00
       - q_setw
-      - or_alu, da_ld
+      - or_alu, da_ld, alt
       - da_ea, q_fetch, waitmem
       - da_ea, ld0_opnd
       - da_ea, pc_ld
@@ -635,7 +635,7 @@ ucode:
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
       - dst_rmux, ld0_opnd
-      - da_ld, spd_rmux, ld1_opnd, swp_setw,         # SRC pointer inc/dec in parallel
+      - da_ld, spd_rmux, ld1_opnd, swp_setw, alt     # SRC pointer inc/dec in parallel
       - q_setw,
       - ${step}_alu, dst_ld, swp_setw,               # variable-size fetch (byte or word)
       - a_ral
@@ -652,11 +652,11 @@ ucode:
   - mnemo: [ LDD, LDDR, LDI, LDIR ]
     seq: # "src" used as destination and vice versa, because of how the instruction is encoded
       - dst_rmux, ld0_opnd, xsrc_ral
-      - da_ld, spd_rmux, ld1_opnd               swp_setw  # SRC pointer inc/dec in parallel
+      - da_ld, spd_rmux, ld1_opnd, alt,         swp_setw  # SRC pointer inc/dec in parallel
       - q_setw,
       - ${step}_alu, dst_ld,                    swp_setw  # variable-size fetch (byte or word)
       - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
-      - da_ld, swp_ral,                  da_ea            # data remains in MD, no need to pass it through ALU
+      - da_ld, swp_ral, alt,             da_ea            # data remains in MD, no need to pass it through ALU
       - ${step}_alu, dst_ld, swp_ral     da_ea, wr
       - zero_rmux, ld1_opnd,             da_ea
       - bc_rmux, ld0_opnd                da_ea # prepare for BC--
@@ -918,8 +918,8 @@ ucode:
     seq:
       - inc_pc, s8_fetch
       - inc_pc, s8_fetch
-      - inc_pc, ld0_opnd
-      - inc_pc, da_ld, b_setw
+      - inc_pc, ld0_opnd, b_setw
+      - inc_pc, da_ld
       - waitmem, vs_fetch       # get only the next byte in (PC) for now
       - inc_pc, da_ea, wr
       - inc_pc
@@ -960,13 +960,13 @@ ucode:
       - ni
   - mnemo: [ MULA ]
     seq:
-      - xde_ral, w_setw               # SRC = XDE
+      - xde_ral, w_setw                 # SRC = XDE
       - src_rmux, ld0_opnd, xhl_ral
-      - da_ld, src_rmux, ld0_opnd     # SRC = XHL
+      - da_ld, src_rmux, ld0_opnd, alt  # SRC = XHL
       - da_ea, vs_fetch, waitmem
-      - da_ea, da_ld, ld0_opnd        # OP0 = (XDE)
+      - da_ea, da_ld, ld0_opnd, alt     # OP0 = (XDE)
       - da_ea, vs_fetch, waitmem
-      - inc_pc, ld1_opnd, q_setw      # OP1 = (XHL)
+      - inc_pc, ld1_opnd, q_setw        # OP1 = (XHL)
       - mul_alu, alt, md_ld, ${cc}_cc, dst_rmux, ld0_opnd
       - md_rmux, ld1_opnd
       - add_alu, dst_ld, swp_ral, w_setw  # R=(XDE)*(XHL)+R, DST = XHL

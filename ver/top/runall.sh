@@ -32,7 +32,7 @@ if [ $FAIL = 0 ]; then
     fi
 else
     echo Some tests failed:
-    grep FAIL runall.log
+    grep "tests/.*FAIL" runall.log | sed "s/tests\///"
     echo $FAIL
 fi
 

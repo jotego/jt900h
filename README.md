@@ -90,6 +90,7 @@ The _alt_ signal enables an alternative meaning to the signal it goes with:
 | signal  | alt=0           | alt=1                    |
 | ------- | --------------- | ------------------------ |
 | a_ld    | read full byte  | set upper nibble to zero |
+| da_ld   | bs/ws gate data | full data read           |
 | iff_ld  | regular read    | set to 7 if read is zero |
 | div     | unsigned        | signed                   |
 | dst_ral | quick selection | use full 8-bit address   |
