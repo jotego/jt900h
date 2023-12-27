@@ -399,10 +399,9 @@ ucode:
       - ${rd}=1?*, inc_pc, r32jmp,       # r32 jump is based on lower bits
   - name: r32_00
     seq:
-      - inc_pc, swp_setw
-      - alt, dst_ral, q_setw
+      - inc_pc, alt, dst_ral
       - dst_rmux, ld0_opnd
-      - da_ld
+      - da_ld, alt
       - r32com_jsr
   - name: r32_00_nord
     seq:
@@ -420,10 +419,10 @@ ucode:
       - r32com_jsr
   - name: r32_01_nord
     seq:
-      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, alt, dst_ral, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
-      - inc_pc, sex, md_rmux, ld1_opnd, q_setw
-      - add_alu, da_ld, waitmem, q_fetch
+      - inc_pc, sex, md_rmux, ld1_opnd
+      - add_alu, da_ld, alt, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
     seq:
