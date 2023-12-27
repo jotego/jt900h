@@ -25,13 +25,13 @@ ops:
   # First byte contains either r or (mem). Second byte is OP and R. Same OP for both addressing modes
   # bit 3 set in OP makes (mem) the destination: OR (mem),R
   # R,r register in lower 3 bits  11zz'1rrr
-  - { name: rzzB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
-  - { name: rzzW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
-  - { name: rzzQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
+  - { name: regB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
+  - { name: regW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
+  - { name: regQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
   # R,r register in next byte
-  - { name: frzzB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
-  - { name: frzzW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
-  - { name: frzzQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
+  - { name: fregB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
+  - { name: fregW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
+  - { name: fregQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
 
   # Group 2 R,(mem) and (mem),R
   # R,(mem). Page 43 of 900H CPU Book
@@ -346,18 +346,18 @@ ucode:
     seq:               # (XWA+d8), 8-bit indexing
       - q_setw,
       - dst_ral, s8_fetch
-      - inc_pc, dst_rmux, ld0_opnd, ${d8}?b_setw:q_setw
-      - ${d8}?*, inc_pc, sex, ld1_opnd, q_setw, s8_fetch
-      - ${d8}?add_alu, da_ld, ${setw}_setw
+      - inc_pc, dst_rmux, ld0_opnd, ${d8}?b_setw
+      - ${d8}?*, inc_pc, sex, ld1_opnd, s8_fetch
+      - ${d8}?add_alu, da_ld, alt, ${setw}_setw
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da ]
     seq:
       - inc_pc, b_setw, s8_fetch      # #8 by default
       - ${off16}?*, inc_pc, w_setw    # #16 if off16 is set
-      - inc_pc, s8_fetch, zex, ld0_opnd, q_setw
+      - inc_pc, s8_fetch, zex, ld0_opnd
       - ${off16}?*, s8_fetch
-      - da_ld, ${setw}_setw
+      - da_ld, alt, ${setw}_setw
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da24 ]
@@ -391,7 +391,7 @@ ucode:
   - name: da2ea2g3
     seq: # sets ea, and md contains the next op
       - waitmem, q_fetch        # refresh OP data
-      - da2ea                   # op-code data is held in op0
+      - da2ea
       - g3_nxgr, ni
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
@@ -604,13 +604,13 @@ ucode:
       - inc_pc, ea_rmux, ld0_opnd, ret_jsr
   ########################################################
   # Load op0 operand (destination)
-  - mnemo: [ rzzB, rzzW, rzzQ ]
+  - mnemo: [ regB, regW, regQ ]
     seq:
       - inc_pc, ${setw}_setw, mulcheck
       - dst_ral
       - waitmem, q_fetch
       - g1_nxgr, ni, dst_rmux, ld0_opnd
-  - mnemo: [ frzzB, frzzW, frzzQ ]
+  - mnemo: [ fregB, fregW, fregQ ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
       - inc_pc, alt, dst_ral, s8_fetch

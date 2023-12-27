@@ -24,7 +24,7 @@
 
     ; (r32+r16) signed
     ld xwa,0x12345678
-    ld de,0x23
+    ld de,0x231
     lda xbc,(xwa+de)
     exts xde
     add xwa,xde
@@ -32,7 +32,7 @@
     jp ne,bad_end
 
     ld xwa,0x12345678
-    ld de,-0x23
+    ld de,-0x231
     lda xbc,(xwa+de)
     exts xde
     add xwa,xde

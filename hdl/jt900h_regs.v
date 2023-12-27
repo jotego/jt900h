@@ -153,6 +153,7 @@ always @* begin
     if( ws & sex ) rmux[31:16] = {16{rmux[15]}};
     if( bs & zex ) rmux[31: 8] = 0;
     if( ws & zex ) rmux[31:16] = 0;
+    // if( qs & zex & alt) rmux[31:24] = 0; // used for loading #24 addresses
 end
 
 always @(posedge clk, posedge rst) begin
