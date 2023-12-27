@@ -122,7 +122,7 @@ always @(posedge clk, posedge rst) begin
             WIDEN_SETW: {qs,ws,bs} <= {qs,ws,bs}<<1;
             SHRTN_SETW: {qs,ws,bs} <= {qs,ws,bs}>>1;
             SWP_SETW:   {altss,qs,ws,bs}<={qs,ws,bs,altss};
-            S_SETW:     {qs,ws,bs} <= md[4] ? 3'b100 : 3'b010;
+            S_SETW:     {qs,ws,bs} <= alt ? 3'b001 << md[1:0] : md[4] ? 3'b100 : 3'b010;
             default:;
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;

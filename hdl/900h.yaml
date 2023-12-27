@@ -55,12 +55,12 @@ ops:
   - { name: mem_r32,  op: 0x0d3, ctl: { rd: 1, setw: w }}
   - { name: mem_r32,  op: 0x0e3, ctl: { rd: 1, setw: q }}
 
-  - { name: mem_iter, op: 0x0c4, ctl: { rd: 1, alu: SUB, setw: b, adr: SUB }}  # -1--'0100 (-r32)
-  - { name: mem_iter, op: 0x0d4, ctl: { rd: 1, alu: SUB, setw: w, adr: SUB }}
-  - { name: mem_iter, op: 0x0e4, ctl: { rd: 1, alu: SUB, setw: q, adr: SUB }}
-  - { name: mem_iter, op: 0x0c5, ctl: { rd: 1, alu: ADD, setw: b, adr:     }}  # -1--'0100 (r32+)
-  - { name: mem_iter, op: 0x0d5, ctl: { rd: 1, alu: ADD, setw: w, adr:     }}
-  - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, setw: q, adr:     }}
+  - { name: mem_iter, op: 0x0c4, ctl: { rd: 1, alu: SUB, adr: SUB } }  # -1--'0100 (-r32) setw comes from second byte
+  - { name: mem_iter, op: 0x0c5, ctl: { rd: 1, alu: ADD, adr:     } }  # -1--'0100 (r32+)
+  - { name: mem_iter, op: 0x0d4, ctl: { rd: 1, alu: SUB, adr: SUB } }  # -1--'0100 (-r32) setw comes from second byte
+  - { name: mem_iter, op: 0x0d5, ctl: { rd: 1, alu: ADD, adr:     } }  # -1--'0100 (r32+)
+  - { name: mem_iter, op: 0x0e4, ctl: { rd: 1, alu: SUB, adr: SUB } }  # -1--'0100 (-r32) setw comes from second byte
+  - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, adr:     } }  # -1--'0100 (r32+)
 
   # Group 3 #3,(mem) 1m11'mmmm except RET cc and LDAR
   - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw: , d8: 0 }, mask: 0x3f8, cycles: 5 }
@@ -69,8 +69,8 @@ ops:
   - { name: mem_da,   op: 0x0f1, ctl: { rd: 0, setw: , off16: 1 }}
   - { name: mem_da24, op: 0x0f2, ctl: { rd: 0, setw:            }}
   - { name: mem_r32,  op: 0x0f3, ctl: { rd: 0, setw:            }}
-  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, setw: b, adr: SUB }}  # -1--'0100 (-r32) setw needed for inc/dec
-  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, setw: b, adr:     }}  # -1--'0100 (r32+) is b_setw the good value for all cases?
+  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, adr: SUB }}  # -1--'0100 (-r32) setw comes from second byte
+  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, adr:     }}  # -1--'0100 (r32+)
 
 
   ########### instructions ###################
@@ -372,12 +372,12 @@ ucode:
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
       - inc_pc, q_setw, s8_fetch
-      - inc_pc, dst_ral, alt, s8_fetch
-      - dst_rmux, ld0_opnd, ${setw}_setw
-      - spd_rmux, ld1_opnd, q_setw
+      - inc_pc, dst_ral, alt
+      - dst_rmux, ld0_opnd, s_setw, alt, s8_fetch
+      - spd_rmux, ld1_opnd, swp_setw
+      - q_setw
       - ${alu}_alu, dst_ld
-      - ${adr}_alu, da_ld
-      - ${setw}_setw
+      - ${adr}_alu, da_ld, swp_setw
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - name: da2ea2md
