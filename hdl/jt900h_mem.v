@@ -36,12 +36,12 @@ module jt900h_mem(
     // from control unit
     input             bs, ws, qs,
     // from register unit
-    input      [23:0] da,
+    input      [31:0] da,
     input      [23:0] pc,
     input      [31:0] xsp,
     input      [31:0] md,
     // outputs
-    output reg [23:0] ea,           // address calculated from memory addressing instructions
+    output reg [31:0] ea,           // address calculated from memory addressing instructions
     output reg [31:0] mdata,
     output            busy
 );
@@ -66,9 +66,9 @@ assign part     = fetch_sel==VS_FETCH && (bl|wl);
 
 always @* begin
     case( ea_sel )
-        DA_EA:   nx_addr = da;
+        DA_EA:   nx_addr = da[23:0];
         SP_EA:   nx_addr = xsp[23:0];
-        M_EA:    nx_addr = ea;
+        M_EA:    nx_addr = ea[23:0];
         default: nx_addr = pc;
     endcase
 end

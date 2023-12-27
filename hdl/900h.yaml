@@ -433,7 +433,7 @@ ucode:
       - inc_pc, s8_fetch, alt, dst_ral
       -         dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_rmux, sex, ld1_opnd, q_setw
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_16 # 2nd memory addressing byte code: 0000'0111
@@ -443,7 +443,7 @@ ucode:
       - inc_pc, s8_fetch, alt, dst_ral
       -         dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_rmux, sex, ld1_opnd, q_setw
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_8_nord # 2nd memory addressing byte code: 0000'0011
@@ -453,7 +453,7 @@ ucode:
       - inc_pc, s8_fetch, alt, dst_ral
       -         dst_rmux, ld0_opnd, b_setw
       - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_rmux, sex, ld1_opnd, q_setw
       - add_alu, da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_16_nord # 2nd memory addressing byte code: 0000'0111
@@ -463,7 +463,7 @@ ucode:
       - inc_pc, s8_fetch, alt, dst_ral
       -         dst_rmux, ld0_opnd, w_setw
       - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_rmux, sex, ld1_opnd, q_setw
       - add_alu, da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_ldar  # 2nd byte: 0001'0011, don't increment PC and jump to LDAR

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Tue Dec 26 15:30:11 2023
+[*] Wed Dec 27 08:44:56 2023
 [*]
 [dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/top/test.lxt"
-[dumpfile_mtime] "Tue Dec 26 15:15:37 2023"
-[dumpfile_size] 46807
+[dumpfile_mtime] "Wed Dec 27 08:12:52 2023"
+[dumpfile_size] 20843
 [savefile] "/home/jtejada/jtcores/modules/jt900h/ver/top/st.gtkw"
-[timestart] 47100
+[timestart] 810000
 [size] 1920 1052
 [pos] -1 -1
-*-15.298614 94600 9065000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.614840 1585000 9065000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] test.
 [treeopen] test.uut.
 [treeopen] test.uut.u_alu.
@@ -34,14 +34,10 @@ test.uut.u_regs.fetch_sel[1:0]
 test.uut.u_regs.riff[2:0]
 @28
 test.uut.u_ctrl.irq[0]
-@22
-test.uut.u_ctrl.ucode_data[57:0]
-@28
-test.uut.u_ctrl.clk[0]
-@29
-test.uut.u_ctrl.rst[0]
 @200
 -
+@28
+test.uut.u_regs.sex[0]
 @24
 [color] 5
 test.uut.u_regs.rfp[1:0]
@@ -197,15 +193,13 @@ test.uut.u_regs.xde1[31:0]
 test.uut.u_regs.xhl1[31:0]
 test.uut.u_regs.xwa3[31:0]
 test.uut.u_regs.xix[31:0]
+test.uut.u_regs.xiy[31:0]
 @28
 test.uut.u_mem.bus_we[1:0]
 @22
 test.uut.u_regs.xsp[31:0]
 @200
 -
-@22
-[color] 3
-test.uut.u_regs.da[23:0]
 @2022
 [color] 2
 ^3 /home/jtejada/jtcores/modules/jt900h/ver/top/RAL.st
@@ -223,6 +217,8 @@ test.uut.u_alu.alu_sel[4:0]
 test.uut.u_mem.ea_sel[1:0]
 @200
 -
+@23
+test.uut.u_regs.da[31:0]
 @22
 test.uut.u_regs.src[7:0]
 @c00022

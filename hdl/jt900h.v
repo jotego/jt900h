@@ -62,8 +62,8 @@ wire [ 4:0] alu_sel;
 wire [ 4:0] cc_sel;
 wire [ 3:0] rmux_sel;
 // memory unit
-wire [23:0] ea, da, pc;
-wire [31:0] mdata;
+wire [23:0] pc;
+wire [31:0] ea, da, mdata;
 wire        mem_busy, nc;
 // ALU
 wire [31:0] op0, op1, op2, rslt;

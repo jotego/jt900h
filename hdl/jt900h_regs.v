@@ -21,7 +21,7 @@ module jt900h_regs(
     input             clk,
     input             cen,
     // memory unit
-    input      [23:0] ea,
+    input      [31:0] ea,
     input      [31:0] din,      // data from memory controller
     output     [31:0] xsp,
     output reg [31:0] md,
@@ -59,7 +59,7 @@ module jt900h_regs(
     output reg        cr_we,    // cr_rd goes directly from control unit
     // register outputs
     output reg [23:0] pc,
-    output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
+    output reg [31:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
     output reg [31:0] op0,
     output reg [31:0] op1,
     output reg [31:0] op2,
@@ -145,7 +145,7 @@ always @* begin
         ZERO_RMUX:rmux = 0;
         SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
 
-        EA_RMUX:  rmux = {8'd0,ea};
+        EA_RMUX:  rmux = ea;
         default:  rmux = md;
     endcase
     // extend the sign
@@ -267,7 +267,7 @@ always @(posedge clk, posedge rst) begin
             PC_LD:  pc <= rslt[23:0];
             XSP_LD: ptrs[XSP] <= rslt;
             IFF_LD: riff <= alt&&rslt[2:0]==0 ? 3'b111 : rslt[2:0];
-            DA_LD:  da <= { qs ? rslt[23:16]:8'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
+            DA_LD:  da <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
             CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase
