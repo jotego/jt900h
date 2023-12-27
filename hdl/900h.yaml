@@ -410,7 +410,7 @@ ucode:
       - inc_pc, alt, dst_ral, q_setw
       - dst_rmux, ld0_opnd
       - da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_01
     seq:
       - inc_pc, swp_setw
@@ -425,7 +425,7 @@ ucode:
       - inc_pc, dst_rmux, ld0_opnd, w_setw
       - inc_pc, sex, md_rmux, ld1_opnd, q_setw
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
     seq:
       - inc_pc, swp_setw
@@ -455,7 +455,7 @@ ucode:
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_16_nord # 2nd memory addressing byte code: 0000'0111
     seq:
       - inc_pc, swp_setw
@@ -465,7 +465,7 @@ ucode:
       - alt, dst_ral
       - dst_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_ldar  # 2nd byte: 0001'0011, don't increment PC and jump to LDAR
     seq:
       - g3_nxgr, ni
