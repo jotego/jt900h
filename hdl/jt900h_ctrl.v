@@ -83,7 +83,7 @@ assign nx_ualo = uaddr[3:0] + 4'd1;
 assign dec_err = 0;     // temptative
 assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
 assign newa    = irq_en ? INTPSH_SEQA : { nxgr_sel, md[7:0], 4'd0 };
-assign irq_en  = irq && int_lvl>riff;
+assign irq_en  = irq && int_lvl>=riff; // it looks like the manual, which poitns to a > comparison, is wrong
 
 always @* begin
     case( md[3:0] )                                 // 4-bit cc conditions
@@ -131,7 +131,7 @@ always @(posedge clk, posedge rst) begin
             (loop_sel== V_LOOP && (flags[FV] && (!alt || !flags[FZ]))) ) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni|(halt&irq_en)) begin
-            irq_ack   <= irq_en;
+            irq_ack   <= stack_bsy; // delay irq_ack until IFF has been loaded
             stack_bsy <= irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
