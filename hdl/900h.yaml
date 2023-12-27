@@ -8,7 +8,7 @@ constants:
   ADD_CC:  szhvn0c     # ADD,ADC
   AND_CC:  szh1pn0c0   # AND,
   BIT_CC:  zch1n0      # BIT
-  CPD_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
+  CPD_CC:  szhn1       # CPD,CPDR,CPI,CPIR,DEC, V is updated separatedly
   DEC_CC:  szhvn1d     # DEC, only applies to byte operands
   INC_CC:  szhvn0      # INC, only applies to byte operands
   LD_CC:   h0v3n0      # LDD, LDDR, LDI, LDIR
