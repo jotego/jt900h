@@ -384,7 +384,7 @@ ucode:
     seq: # loads operand data in op0, sets ea, and md contains the next op
       - waitmem, q_fetch        # refresh OP data
       - da2ea, md_rmux,ld0_opnd # op-code data is held in op0
-      - m_ea, q_fetch, waitmem  # loads data in md
+      - m_ea, vs_fetch, waitmem # loads data in md
       - ld1_opnd                # operand data in md
       - md_ld, swp_opnd         # restores md to have op code, operand data in op0
       - g2_nxgr, ni
