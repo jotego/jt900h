@@ -363,8 +363,8 @@ ucode:
   - mnemo: [ mem_da24 ]
     seq:
       - inc_pc, q_setw, s8_fetch
-      - inc_pc, ld0_opnd
-      - inc_pc, da_ld
+      - inc_pc, zex, alt, ld0_opnd
+      - inc_pc, da_ld, alt
       - inc_pc
       - ${setw}_setw
       - ${rd}=1?*, da2ea2md_jsr
@@ -391,8 +391,7 @@ ucode:
   - name: da2ea2g3
     seq: # sets ea, and md contains the next op
       - waitmem, q_fetch        # refresh OP data
-      - da2ea
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
       - ${setw}_setw, s8_fetch
