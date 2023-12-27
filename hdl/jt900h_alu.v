@@ -134,7 +134,7 @@ always @* begin
         BAND_ALU: begin {c32,c16,c8} =  {3{bsel & cx}}; rslt[bidx]=c8; end
         BOR_ALU:  begin {c32,c16,c8} =  {3{bsel | cx}}; rslt[bidx]=c8; end
         BXOR_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=c8; end
-        BSET_ALU: begin {c32,c16,c8} = ~{3{bsel}}; rslt[bidx]=cx;    end
+        BSET_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=cx; end
         AND_ALU:  rslt = op0&op1;
         OR_ALU:   rslt = op0|op1;
         XOR_ALU:  rslt = op0^op1;
