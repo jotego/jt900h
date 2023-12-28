@@ -290,7 +290,7 @@ ops:
   # group 2 1m00'mmmm limited byte size
   - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }} # RLD [A,](mem)
   - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }} # RRD [A,](mem)
-  - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem)
+  - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem) byte/word
 
   # group 3 1m11'mmmm
   - { name: RETcc, op: 0x3f0, ctl: { retd: 0, ncc: ncc }, mask: 0x3f0 } # Decoded in control unit directly as a 12-bit OP
@@ -743,10 +743,10 @@ ucode:
       - ni
   - mnemo: [ LDM2DA ] # LD<W> (#16),(mem)
     seq:
-      - inc_pc, swp_opnd              # moves (mem) from op0 to op1
+      - inc_pc, swp_opnd, swp_setw    # moves (mem) from op0 to op1
       - inc_pc, s8_fetch, w_setw      # load direct address from 16-bit immediate value
       - inc_pc, zex, ld0_opnd
-      - da_ld, swp_opnd               # restores (mem)
+      - da_ld, swp_opnd, swp_setw     # restores (mem)
       - waitmem, md_ld
       - da_ea, wr
       - waitmem, q_fetch
