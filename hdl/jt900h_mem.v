@@ -102,7 +102,7 @@ always @(posedge clk or posedge rst) begin
                 adelta     <= 0;
                 bus_din    <= wdadj[15:0];
                 nx_din     <= wdadj[39-:24];
-                bus_we     <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])};
+                bus_we     <= !nx_addr[0] ? { qs|ws, 1'b1 } : 2'b10;
                 {ql,wl,bl} <= {qs,ws,bs};
                 if( (ws & nx_addr[0]) | qs ) begin
                     wp  <= 1;
