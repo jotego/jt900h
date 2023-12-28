@@ -82,7 +82,7 @@ assign still   = div_busy | (waitmem & mem_busy) | halt | dec_err;
 assign nx_ualo = uaddr[3:0] + 4'd1;
 assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
 assign newa    = irq_en ? INTPSH_SEQA : { nxgr_sel, md[7:0], 4'd0 };
-assign irq_en  = irq && int_lvl>=riff; // it looks like the manual, which points to a > comparison, is wrong
+assign irq_en  = irq && int_lvl>=riff && nxgr_sel==0; // it looks like the manual, which points to a > comparison, is wrong
 
 always @* begin
     case( md[3:0] )                                 // 4-bit cc conditions
