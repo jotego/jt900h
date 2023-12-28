@@ -29,7 +29,7 @@ module jt900h_ctrl(
     output reg        ws,
     output reg        qs,
     output reg        cc,       // condition code
-    output            dec_err,  // decode error
+    output reg        dec_err,  // decode error, will halt forever
     // interrupts
     input             irq,
     output reg        irq_ack,
@@ -78,12 +78,11 @@ wire  [2:0] setw_sel;
 wire        ni, r32jmp, rets,
             waitmem;
 
-assign still   = div_busy | (waitmem & mem_busy) | halt;
+assign still   = div_busy | (waitmem & mem_busy) | halt | dec_err;
 assign nx_ualo = uaddr[3:0] + 4'd1;
-assign dec_err = 0;     // temptative
 assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
 assign newa    = irq_en ? INTPSH_SEQA : { nxgr_sel, md[7:0], 4'd0 };
-assign irq_en  = irq && int_lvl>=riff; // it looks like the manual, which poitns to a > comparison, is wrong
+assign irq_en  = irq && int_lvl>=riff; // it looks like the manual, which points to a > comparison, is wrong
 
 always @* begin
     case( md[3:0] )                                 // 4-bit cc conditions
@@ -114,7 +113,9 @@ always @(posedge clk, posedge rst) begin
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
         altss      <= 0;
+        dec_err    <= 0;
     end else if(cen) begin
+        if( halt && alt ) dec_err <= 1;
         case( setw_sel )
             B_SETW:     {qs,ws,bs} <= 3'b001;
             W_SETW:     {qs,ws,bs} <= 3'b010;
@@ -135,6 +136,7 @@ always @(posedge clk, posedge rst) begin
             stack_bsy <= irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
+            // $display("uA = %X",newa>>4);
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
         if( rets&(alt?ws:bs) ) uaddr <= jsr_ret;
