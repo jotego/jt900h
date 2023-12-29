@@ -128,7 +128,7 @@ always @* begin
     // Register multiplexer
     sdsel = rmux_sel==DST_RMUX ? dst : src;
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
-    sdsh  = bs ? {sdsel[1:0],3'd0} : ws ? {sdsel[1],4'd0} : 5'd0; // shift to select byte/word part as data
+    sdsh  = qs | alt ? 5'd0 : bs ? {sdsel[1:0],3'd0} : {sdsel[1],4'd0}; // shift to select byte/word part as data. alt selects long word
     rmux  = md;
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
@@ -253,6 +253,7 @@ always @(posedge clk, posedge rst) begin
                         accs[dst[5:2]] <= rslt;
                 end
             end
+            DSTQ_LD: if(dst[7]) ptrs[dst[3:2]] <= rslt; else accs[dst[5:2]] <= rslt;
             RFP_LD: rfp <= rslt[1:0];
             MD_LD:  md  <= rslt;
             A_LD:   begin
@@ -265,10 +266,12 @@ always @(posedge clk, posedge rst) begin
                 if( ws ) {riff,rfp} <= {rslt[14:12],rslt[9:8]};
                 {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
             end
-            PC_LD:  pc <= rslt[23:0];
-            XSP_LD: ptrs[XSP] <= rslt;
-            IFF_LD: riff <= alt&&rslt[2:0]==0 ? 3'b111 : rslt[2:0];
-            DA_LD:  da <= { qs|alt ? rslt[31:16]:16'd0, (qs|ws|alt) ? rslt[15:8]:8'd0, rslt[7:0] };
+            PC_LD:   pc <= rslt[23:0];
+            XSP_LD:  ptrs[XSP] <= rslt;
+            IFF_LD:  riff <= rslt[2:0];
+            IFF7_LD: riff <= rslt[2:0]==0 ? 3'b111 : rslt[2:0];
+            DA_LD:   da   <= rslt;
+            DAS_LD:  da   <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
             CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase

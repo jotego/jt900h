@@ -117,13 +117,15 @@ always @(posedge clk, posedge rst) begin
     end else if(cen) begin
         if( halt && alt ) dec_err <= 1;
         case( setw_sel )
-            B_SETW:     {qs,ws,bs} <= 3'b001;
-            W_SETW:     {qs,ws,bs} <= 3'b010;
-            Q_SETW:     {qs,ws,bs} <= 3'b100;
+            // can modify altss
+            B_SETW:     begin {qs,ws,bs} <= 3'b001; if(alt) altss <= 3'b001; end
+            W_SETW:     begin {qs,ws,bs} <= 3'b010; if(alt) altss <= 3'b010; end
+            Q_SETW:     begin {qs,ws,bs} <= 3'b100; if(alt) altss <= 3'b100; end
+            S_SETW:     {altss,qs,ws,bs} <= {2{alt ? 3'b001 << md[1:0] : md[4] ? 3'b100 : 3'b010}};
+            // only modify working ss
             WIDEN_SETW: {qs,ws,bs} <= {qs,ws,bs}<<1;
             SHRTN_SETW: {qs,ws,bs} <= {qs,ws,bs}>>1;
-            SWP_SETW:   {altss,qs,ws,bs}<={qs,ws,bs,altss};
-            S_SETW:     {qs,ws,bs} <= alt ? 3'b001 << md[1:0] : md[4] ? 3'b100 : 3'b010;
+            RLD_SETW:   {qs,ws,bs} <= altss;
             default:;
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;

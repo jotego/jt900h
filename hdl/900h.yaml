@@ -223,14 +223,14 @@ ops:
   - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
   - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
-  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alt: $ }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
+  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alu: MUL  }, mask: 0x3f8 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alu: MUL  }, mask: 0x3f8 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alu: MULS }, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alu: MULS }, mask: 0x3f8 } # MULS RR,(mem)
   - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }} # r,#
   - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }} # r,#
-  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }} # r,#
-  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alt: $ }} # r,#
+  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alu: MUL  }} # r,#
+  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alu: MULS }} # r,#
 
   - { name: MULA,  op: 0x119, ctl: { cc: szv }}
   # group 1 - r
@@ -288,8 +288,8 @@ ops:
   - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
   - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }} # RLD [A,](mem)
-  - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }} # RRD [A,](mem)
+  - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: szh0vn0 }} # RLD [A,](mem)
+  - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: szh0vn0 }} # RRD [A,](mem)
   - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem) byte/word
 
   # group 3 1m11'mmmm
@@ -310,7 +310,7 @@ ucode:
       - md_rmux, zex, ld1_opnd,q_setw # OP1 = IV byte
       - shl8_jsr, b_setw              # OP0 = FFFF00
       - q_setw
-      - or_alu, da_ld, alt
+      - or_alu, da_ld
       - da_ea, q_fetch, waitmem
       - da_ea, ld0_opnd
       - da_ea, pc_ld
@@ -324,7 +324,7 @@ ucode:
       - md_ld, psh_jsr
       - zero_rmux, ld1_opnd
       - sr_rmux, alt, ld0_opnd
-      - add_alu, hi_cx, iff_ld, alt   # sets IFF level to input level+1 (saturates at 7)
+      - add_alu, hi_cx, iff7_ld   # sets IFF level to input level+1 (saturates at 7)
       - pc_rmux, alt, ld0_opnd, intexec_jsr
   - name: swi2pc
     seq:  # interrupt number in op0
@@ -349,7 +349,7 @@ ucode:
       - dst_ral, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, ${d8}?b_setw
       - ${d8}?*, inc_pc, sex, ld1_opnd, s8_fetch
-      - ${d8}?add_alu, da_ld, alt, ${setw}_setw
+      - ${d8}?add_alu, da_ld, ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da ]
@@ -358,16 +358,16 @@ ucode:
       - ${off16}?*, inc_pc, w_setw    # #16 if off16 is set
       - inc_pc, s8_fetch, zex, ld0_opnd
       - ${off16}?*, s8_fetch
-      - da_ld, alt, ${setw}_setw
+      - da_ld, ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da24 ]
     seq:
       - inc_pc, q_setw, s8_fetch
       - inc_pc, zex, alt, ld0_opnd
-      - inc_pc, da_ld, alt
+      - inc_pc, da_ld
       - inc_pc
-      - ${setw}_setw
+      - ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_iter ]
@@ -375,10 +375,9 @@ ucode:
       - inc_pc, q_setw, s8_fetch
       - inc_pc, dst_ral, alt
       - dst_rmux, ld0_opnd, s_setw, alt, s8_fetch
-      - spd_rmux, ld1_opnd, swp_setw
-      - q_setw
+      - spd_rmux, ld1_opnd, q_setw
       - ${alu}_alu, dst_ld
-      - ${adr}_alu, da_ld, swp_setw
+      - ${adr}_alu, da_ld, rld_setw
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - name: da2ea2md
@@ -395,74 +394,74 @@ ucode:
       - da2ea, g3_nxgr, ni
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
-      - ${setw}_setw, s8_fetch
+      - ${setw}_setw, alt, s8_fetch
       - ${rd}=0?*, inc_pc, r32jmp, alt   # inc_pc as last instruction improves fetcher performance
       - ${rd}=1?*, inc_pc, r32jmp,       # r32 jump is based on lower bits
   - name: r32_00
     seq:
-      - inc_pc, alt, dst_ral
+      - inc_pc, dst_ral, alt
       - dst_rmux, ld0_opnd
-      - da_ld, alt
+      - da_ld
       - r32com_jsr
   - name: r32_00_nord
     seq:
-      - inc_pc, alt, dst_ral, q_setw
+      - inc_pc, dst_ral, alt, q_setw
       - dst_rmux, ld0_opnd
       - da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_01
     seq:
-      - inc_pc, swp_setw
-      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, q_setw
+      - inc_pc, dst_ral, alt, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
-      -         sex, md_rmux, ld1_opnd, q_setw
+      -         sex, md_rmux, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_01_nord
     seq:
-      - inc_pc, alt, dst_ral, s8_fetch
+      - inc_pc, dst_ral, alt, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
       - inc_pc, sex, md_rmux, ld1_opnd
-      - add_alu, da_ld, alt, waitmem, q_fetch
+      - add_alu, da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, b_setw
-      - alt, dst_ral
-      - dst_rmux, sex, ld1_opnd, q_setw
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_16 # 2nd memory addressing byte code: 0000'0111
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, w_setw
-      - alt, dst_ral
-      - dst_rmux, sex, ld1_opnd, q_setw
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_8_nord # 2nd memory addressing byte code: 0000'0011
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, b_setw
-      - alt, dst_ral
-      - dst_rmux, sex, ld1_opnd, q_setw
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_16_nord # 2nd memory addressing byte code: 0000'0111
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, w_setw
-      - alt, dst_ral
-      - dst_rmux, sex, ld1_opnd, q_setw
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
       - da2ea, g3_nxgr, ni
   - name: r32_ldar  # 2nd byte: 0001'0011, don't increment PC and jump to LDAR
@@ -470,7 +469,7 @@ ucode:
       - g3_nxgr, ni
   - name: r32com
     seq:
-      - da2ea, swp_setw
+      - da2ea, rld_setw
       - m_ea, q_fetch, waitmem
       - ld0_opnd
       - waitmem, q_fetch
@@ -561,7 +560,7 @@ ucode:
       - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr
   - name: n81p # #3 -> op1, pc+=1, but if #3 == 0, then 8 is set instead (INC/DEC)
     seq:
-      - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr, alt
+      - inc_pc, n3_rmux, alt, ld1_opnd, s8_fetch, ret_jsr
   - name: n30pp # #3 -> op0, pc+=2
     seq:
       - inc_pc, s8_fetch
@@ -592,10 +591,10 @@ ucode:
       - sp_ea, wr, ret_jsr
   - name: dir16
     seq: # loads data from 16-bit address into MD. Does not set EA
-      - s8_fetch, swp_setw      # load direct address from 16-bit immediate value
+      - s8_fetch                # load direct address from 16-bit immediate value
       - inc_pc, w_setw
       - inc_pc, zex, ld0_opnd
-      - inc_pc, da_ld, swp_setw
+      - inc_pc, das_ld, rld_setw
       - da_ea, waitmem, vs_fetch
       - ret_jsr
   - name: ea0
@@ -621,7 +620,7 @@ ucode:
               MIRR, NEG, NOP, OR, ORCF, PAA, RCF, RES,
               SBC, SCC, SCF, SET, STCF, SUB, TSET, XOR, XORCF, ZCF ]
     seq:
-      - ${setw}_setw
+      - ${setw}_setw, alt
       - ${ral}_ral, ${srca}_jsr
       - ${rd}?*, m_ea, vs_fetch, waitmem
       - ${swp_opnd}, ${swp_ral}, ${rd}?ld0_opnd
@@ -633,16 +632,14 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - dst_rmux, ld0_opnd                       da_ea
-      - da_ld, spd_rmux, ld1_opnd, swp_setw, alt,da_ea # SRC pointer inc/dec in parallel
-      - q_setw,                                  da_ea
-      - ${step}_alu, dst_ld, swp_setw,           da_ea  # variable-size fetch (byte or word)
-      - a_ral                                    da_ea
-      - src_rmux, ld0_opnd                       da_ea, vs_fetch, waitmem
+      - dst_rmux, alt, ld0_opnd,                 da_ea
+      - da_ld, spd_rmux, ld1_opnd,               da_ea            # SRC pointer inc/dec in parallel
+      - ${step}_alu, dstq_ld, a_ral,             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - src_rmux, ld0_opnd,                      da_ea, vs_fetch, waitmem
       - md_rmux,  ld1_opnd,                      da_ea
       - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd,    da_ea  # prepare for BC--
-      - zero_rmux, ld1_opnd,                     da_ea
-      - sub_alu, hi_cx, bc_ld, z3v_cc,           da_ea  # v = ~z
+      - zero_rmux, ld1_opnd, w_setw,             da_ea  # w needed for flags in BC--
+      - sub_alu, hi_cx, bc_ld, z3v_cc, rld_setw, da_ea  # v = ~z
       - ${loop}?*, alt, v_loop                   da_ea  # loops while !z && v
       - inc_pc
       - waitmem, q_fetch
@@ -650,17 +647,16 @@ ucode:
   # copy data scanning a table up or down while counting down on BC
   - mnemo: [ LDD, LDDR, LDI, LDIR ]
     seq: # "src" used as destination and vice versa, because of how the instruction is encoded
-      - dst_rmux, ld0_opnd, xsrc_ral,    da_ea
-      - da_ld, spd_rmux, ld1_opnd, alt,  da_ea            # SRC pointer inc/dec in parallel
-      - ${step}_alu, dst_ld,             da_ea            # variable-size fetch (byte or word)
-      - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
-      - da_ld, swp_ral, alt,             da_ea            # data remains in MD, no need to pass it through ALU
-      -                      swp_setw,   da_ea, wr
-      -                        q_setw,   da_ea,
-      - ${step}_alu, dst_ld, swp_ral,    da_ea, zero_rmux, ld1_opnd
+      - dst_rmux,alt, ld0_opnd, xsrc_ral,da_ea, rld_setw
+      - da_ld, spd_rmux, ld1_opnd,       da_ea, vs_fetch  # SRC pointer inc/dec in parallel
+      - ${step}_alu, dstq_ld             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - src_rmux,alt, ld0_opnd,          da_ea, vs_fetch, waitmem
+      - da_ld, swp_ral,                  da_ea            # data remains in MD, no need to pass it through ALU
+      -                                  da_ea, wr
+      - ${step}_alu, dstq_ld, swp_ral,   da_ea, zero_rmux, ld1_opnd
       - bc_rmux, ld0_opnd,     w_setw,   da_ea # prepare for BC--
       - sub_alu, hi_cx, bc_ld, ${cc}_cc, da_ea # v = ~z
-      - ${loop}?*, v_loop, swp_setw      da_ea # loops while v
+      - ${loop}?*, v_loop, rld_setw      da_ea # loops while v
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -735,7 +731,7 @@ ucode:
     seq:
       - inc_pc, b_setw, s8_fetch      # load direct address from 8-bit immediate value
       - ld0_opnd
-      - da_ld
+      - das_ld
       - ${setw}_setw, imm1_jsr
       - waitmem
       - da_ea, wr
@@ -743,10 +739,10 @@ ucode:
       - ni
   - mnemo: [ LDM2DA ] # LD<W> (#16),(mem)
     seq:
-      - inc_pc, swp_opnd, swp_setw    # moves (mem) from op0 to op1
+      - inc_pc, swp_opnd              # moves (mem) from op0 to op1
       - inc_pc, s8_fetch, w_setw      # load direct address from 16-bit immediate value
       - inc_pc, zex, ld0_opnd
-      - da_ld, swp_opnd, swp_setw     # restores (mem)
+      - das_ld, swp_opnd, rld_setw     # restores (mem)
       - waitmem, md_ld
       - da_ea, wr
       - waitmem, q_fetch
@@ -871,8 +867,8 @@ ucode:
     seq:
       - inc_pc, a_ral
       - src_rmux, ld1_opnd
-      - rrd_alu, ${alt}, ${cc}_cc, a_ld
-      - rrd_alu, ${alt}, md_ld
+      - ${alu}_alu, ${cc}_cc, a_ld
+      - ${alu}_alu, md_ld
       - s8_fetch  # get the upper part of the ALU results
       - m_ea, wr
       - waitmem
@@ -884,14 +880,14 @@ ucode:
       - inc_pc, mulsel, dst_ral, ${swp_opnd}, md_ld
       - ${ex}, dst_rmux,    ld0_opnd
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
-      - mul_alu, dst_ld, ${alt}
+      - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ MULI, MULSI ]
     seq:
       - immsex0_jsr
       - ${ex}, dst_rmux, ld1_opnd, widen_setw
-      - mul_alu, dst_ld, ${alt}
+      - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ DIV, DIVS ]
@@ -918,7 +914,7 @@ ucode:
       - inc_pc, s8_fetch
       - inc_pc, s8_fetch
       - inc_pc, ld0_opnd, b_setw
-      - inc_pc, da_ld
+      - inc_pc, das_ld
       - waitmem, vs_fetch       # get only the next byte in (PC) for now
       - inc_pc, da_ea, wr
       - inc_pc
@@ -961,14 +957,14 @@ ucode:
     seq:
       - xde_ral, w_setw                 # SRC = XDE
       - src_rmux, ld0_opnd, xhl_ral
-      - da_ld, src_rmux, ld0_opnd, alt  # SRC = XHL
+      - da_ld, src_rmux, ld0_opnd       # SRC = XHL
       - da_ea, vs_fetch, waitmem
-      - da_ea, da_ld, ld0_opnd, alt     # OP0 = (XDE)
+      - da_ea, da_ld, ld0_opnd          # OP0 = (XDE)
       - da_ea, vs_fetch, waitmem
       - inc_pc, ld1_opnd, q_setw        # OP1 = (XHL)
-      - mul_alu, alt, md_ld, ${cc}_cc, dst_rmux, ld0_opnd
+      - muls_alu, md_ld, dst_rmux, ld0_opnd
       - md_rmux, ld1_opnd
-      - add_alu, dst_ld, swp_ral, w_setw  # R=(XDE)*(XHL)+R, DST = XHL
+      - add_alu, dst_ld, ${cc}_cc, swp_ral, w_setw  # R=(XDE)*(XHL)+R, DST = XHL
       - spd_rmux, ld1_opnd, q_setw
       - dst_rmux, ld0_opnd
       - sub_alu, dst_ld
