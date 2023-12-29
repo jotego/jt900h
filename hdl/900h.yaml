@@ -26,22 +26,22 @@ ops:
   # First byte contains either r or (mem). Second byte is OP and R. Same OP for both addressing modes
   # bit 3 set in OP makes (mem) the destination: OR (mem),R
   # R,r register in lower 3 bits  11zz'1rrr
-  - { name: regB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
-  - { name: regW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
-  - { name: regQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
+  - { name: regB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b } }
+  - { name: regW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w } }
+  - { name: regQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q } }
   # R,r register in next byte
-  - { name: fregB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
-  - { name: fregW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
-  - { name: fregQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
+  - { name: fregB, op: 0x0c7,              ctl: { setw: b } }
+  - { name: fregW, op: 0x0d7,              ctl: { setw: w } }
+  - { name: fregQ, op: 0x0e7,              ctl: { setw: q } }
 
   # Group 2 R,(mem) and (mem),R
   # R,(mem). Page 43 of 900H CPU Book
-  - { name: mem_reg,  op: 0x080, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 0 }, cycles: 3 }
-  - { name: mem_reg,  op: 0x090, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 0 }, cycles: 3 }
-  - { name: mem_reg,  op: 0x0a0, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 0 }, cycles: 5 }
-  - { name: mem_reg,  op: 0x088, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 1 }, cycles: 3 }
-  - { name: mem_reg,  op: 0x098, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 1 }, cycles: 3 }
-  - { name: mem_reg,  op: 0x0a8, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 1 }, cycles: 5 }
+  - { name: mem_reg,  op: 0x080, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 0 } }
+  - { name: mem_reg,  op: 0x090, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 0 } }
+  - { name: mem_reg,  op: 0x0a0, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 0 } }
+  - { name: mem_reg,  op: 0x088, mask: 0x3f8, ctl: { rd: 1, setw: b, d8: 1 } }
+  - { name: mem_reg,  op: 0x098, mask: 0x3f8, ctl: { rd: 1, setw: w, d8: 1 } }
+  - { name: mem_reg,  op: 0x0a8, mask: 0x3f8, ctl: { rd: 1, setw: q, d8: 1 } }
 
   - { name: mem_da,   op: 0x0c0, ctl: { rd: 1, setw: b, off16:   }}  # -1--'000 (#8)
   - { name: mem_da,   op: 0x0d0, ctl: { rd: 1, setw: w, off16:   }}
@@ -64,8 +64,8 @@ ops:
   - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, adr:     } }  # -1--'0100 (r32+)
 
   # Group 3 #3,(mem) 1m11'mmmm except RET cc and LDAR
-  - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw: , d8: 0 }, mask: 0x3f8, cycles: 5 }
-  - { name: mem_reg,  op: 0x0b8, ctl: { rd: 0, setw: , d8: 1 }, mask: 0x3f8, cycles: 3 }
+  - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw: , d8: 0 }, mask: 0x3f8 }
+  - { name: mem_reg,  op: 0x0b8, ctl: { rd: 0, setw: , d8: 1 }, mask: 0x3f8 }
   - { name: mem_da,   op: 0x0f0, ctl: { rd: 0, setw: , off16: 0 }}
   - { name: mem_da,   op: 0x0f1, ctl: { rd: 0, setw: , off16: 1 }}
   - { name: mem_da24, op: 0x0f2, ctl: { rd: 0, setw:            }}
@@ -77,229 +77,229 @@ ops:
   ########### instructions ###################
 
   # group 0 instructions
-  - { name: EXFF,   op: 0x016 } # EX F,F'
-  - { name: HALT,   op: 0x005 }
-  - { name: JP,     op: 0x01a, ctl: { srca: imm1,  setw: w }} # JP #16
-  - { name: JP,     op: 0x01b, ctl: { srca: imm24, setw: q }} # JP #24
-  - { name: JR,     op: 0x060, ctl: { setw: b, jr16:   }, mask: 0x3f0 } # JR [cc,]
-  - { name: JR,     op: 0x070, ctl: { setw: w, jr16: 1 }, mask: 0x3f0 } # JRL [cc,]
-  - { name: LD8,    op: 0x008, ctl: { setw: b }} # LD<B> (#8),#
-  - { name: LD8,    op: 0x00a, ctl: { setw: w }} # LD<W> (#8),#
-  - { name: LDX,    op: 0x0f7 }
-  - { name: CALL16, op: 0x01c, ctl: { alu:    , ex: zex, setw: w, call24:   }}
-  - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }} # only 24 bits read
-  - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }}
-  - { name: POPA,   op: 0x015, ctl: { dst:  a,  setw: b, wr: , ral:     }}
-  - { name: POPF,   op: 0x019, ctl: { dst: sr,  setw: b, wr: , ral:     }}
-  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: , ral: dst }, mask: 0x3f8 } # POP R
-  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: , ral: dst }, mask: 0x3f8 } # POP R
-  - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: , ral: dst }} # POP SR
-  - { name: PUSHA,  op: 0x014, ctl: { pshr: 0, rmux: src, setw: b }}
-  - { name: PUSHF,  op: 0x018, ctl: { pshr: 0, rmux: sr,  setw: b }}
-  - { name: PUSHR,  op: 0x028, ctl: { pshr: 1, rmux: dst, setw: w }, mask: 0x3f8 } # PUSH R
-  - { name: PUSHR,  op: 0x038, ctl: { pshr: 1, rmux: dst, setw: q }, mask: 0x3f8 } # PUSH R
-  - { name: PUSHSR, op: 0x002, ctl: { pshr: 0, rmux: sr,  setw: w }} # PUSH SR
-  - { name: PUSHW,  op: 0x009, ctl: { setw: b }}
-  - { name: PUSHW,  op: 0x00b, ctl: { setw: w }}
-  - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }}
-  - { name: RETD,   op: 0x00f, ctl: { retd: 1, ncc: }}
-  - { name: RETI,   op: 0x007 }
-  - { name: SWI,    op: 0x0f8, mask: 0x3f8 }
+  - { name: EXFF,   op: 0x016, cycles: 2 } # EX F,F'
+  - { name: HALT,   op: 0x005, cycles: 6 }
+  - { name: JP,     op: 0x01a, ctl: { srca: imm1,  setw: w }, cycles: 5 } # JP #16
+  - { name: JP,     op: 0x01b, ctl: { srca: imm24, setw: q }, cycles: 6 } # JP #24
+  - { name: JR,     op: 0x060, ctl: { setw: b, jr16:   }, mask: 0x3f0, cycles: 5 } # JR [cc,] # 5/2 (T/F)
+  - { name: JR,     op: 0x070, ctl: { setw: w, jr16: 1 }, mask: 0x3f0, cycles: 5 } # JRL [cc,] # 5/2 (T/F)
+  - { name: LD8,    op: 0x008, ctl: { setw: b }, cycles: 5 } # LD<B> (#8),#
+  - { name: LD8,    op: 0x00a, ctl: { setw: w }, cycles: 6 } # LD<W> (#8),#
+  - { name: LDX,    op: 0x0f7, cycles: 8 }
+  - { name: CALL16, op: 0x01c, ctl: { alu:    , ex: zex, setw: w, call24:   }, cycles: 9 }
+  - { name: CALL24, op: 0x01d, ctl: { alu:    , ex: zex, setw: q, call24: 1 }, cycles: 10 } # only 24 bits read
+  - { name: CALR,   op: 0x01e, ctl: { alu: add, ex: sex, setw: w, call24:   }, cycles: 10 }
+  - { name: POPA,   op: 0x015, ctl: { dst:  a,  setw: b, wr: , ral:     }, cycles: 4 }
+  - { name: POPF,   op: 0x019, ctl: { dst: sr,  setw: b, wr: , ral:     }, cycles: 4 }
+  - { name: POP,    op: 0x048, ctl: { dst: dst, setw: w, wr: , ral: dst }, mask: 0x3f8, cycles: 4 } # POP R
+  - { name: POP,    op: 0x058, ctl: { dst: dst, setw: q, wr: , ral: dst }, mask: 0x3f8, cycles: 6 } # POP R
+  - { name: POPSR,  op: 0x003, ctl: { dst:  sr, setw: w, wr: , ral: dst }, cycles: 4 } # POP SR
+  - { name: PUSHA,  op: 0x014, ctl: { pshr: 0, rmux: src, setw: b }, cycles: 3 }
+  - { name: PUSHF,  op: 0x018, ctl: { pshr: 0, rmux: sr,  setw: b }, cycles: 3 }
+  - { name: PUSHR,  op: 0x028, ctl: { pshr: 1, rmux: dst, setw: w }, mask: 0x3f8, cycles: 3 } # PUSH R
+  - { name: PUSHR,  op: 0x038, ctl: { pshr: 1, rmux: dst, setw: q }, mask: 0x3f8, cycles: 5 } # PUSH R
+  - { name: PUSHSR, op: 0x002, ctl: { pshr: 0, rmux: sr,  setw: w }, cycles: 3 } # PUSH SR
+  - { name: PUSHW,  op: 0x009, ctl: { setw: b }, cycles: 4 }
+  - { name: PUSHW,  op: 0x00b, ctl: { setw: w }, cycles: 5 }
+  - { name: RET,    op: 0x00e, ctl: { retd: 0, ncc: }, cycles: 9 }
+  - { name: RETD,   op: 0x00f, ctl: { retd: 1, ncc: }, cycles: 11 }
+  - { name: RETI,   op: 0x007, cycles: 12 }
+  - { name: SWI,    op: 0x0f8, mask: 0x3f8, cycles: 19 }
 
   # Solved in the main template
-  - { name: ADC,   op: 0x190,ctl: {alu: ADD, cx: cin,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
-  - { name: ADC,   op: 0x1c9,ctl: {alu: ADD, cx: cin,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }} # r,#
-  - { name: ADC,   op: 0x239,ctl: {alu: ADD, cx: cin,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }} # <W> (mem),#
-  - { name: ADC,   op: 0x290,ctl: {alu: ADD, cx: cin,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: ADC,   op: 0x298,ctl: {alu: ADD, cx: cin,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: ADD,   op: 0x180,ctl: {alu: ADD, cx:    ,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
-  - { name: ADD,   op: 0x1c8,ctl: {alu: ADD, cx:    ,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }} # r,#
-  - { name: ADD,   op: 0x238,ctl: {alu: ADD, cx:    ,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }} # <W> (mem),#
-  - { name: ADD,   op: 0x280,ctl: {alu: ADD, cx:    ,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: ADD,   op: 0x288,ctl: {alu: ADD, cx:    ,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: AND,   op: 0x1c0,ctl: {alu: AND, cx:    ,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${AND_CC}",ral:    }, mask: 0x3f8 }            # R,r
-  - { name: AND,   op: 0x1cc,ctl: {alu: AND, cx:    ,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }} # r,#
-  - { name: AND,   op: 0x23c,ctl: {alu: AND, cx:    ,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }} # <W> (mem),#
-  - { name: AND,   op: 0x2c0,ctl: {alu: AND, cx:    ,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, mask: 0x3f8 } # R,(mem) / (mem),R
-  - { name: AND,   op: 0x2c8,ctl: {alu: AND, cx:    ,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, mask: 0x3f8 } # R,(mem) / (mem),R
-  - { name: ANDCF, op: 0x128,ctl: {alu: BAND,cx: cin,srca: acc,  ld:   , setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,r
-  - { name: ANDCF, op: 0x120,ctl: {alu: BAND,cx: cin,srca: n41pp,ld:   , setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # #4,r
-  - { name: ANDCF, op: 0x328,ctl: {alu: BAND,cx: cin,srca: acc,  ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: ANDCF, op: 0x380,ctl: {alu: BAND,cx: cin,srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: BIT,   op: 0x133,ctl: {alu: BXOR,cx: hi, srca: n41pp,ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }} # #4,r
-  - { name: BIT,   op: 0x3c8,ctl: {alu: BXOR,cx: hi, srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: CCF,   op: 0x012,ctl: {alu:     ,cx: com,srca: zero, ld:   , setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }}
-  - { name: CHG,   op: 0x132,ctl: {alu: BXOR,cx: hi, srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: CHG,   op: 0x3c0,ctl: {alu: BXOR,cx: hi, srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: CP,    op: 0x1cf,ctl: {alu: SUB, cx:   , srca: imm1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # CP r,#
-  - { name: CP,    op: 0x1d8,ctl: {alu: SUB, cx:   , srca: n31p, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # r,#
-  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 }            # R,r
-  - { name: CP,    op: 0x23f,ctl: {alu: SUB, cx:   , srca: imm1, ld:  md,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
-  - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,(mem)
-  - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP (mem),R
-  - { name: CPL,   op: 0x106,ctl: {alu: CPL, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h1n1       ,ral:    }} # only byte/word
-  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhvcr     ,ral:    }}
-  - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC #3,r
-  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
-  - { name: DECF,  op: 0x00d,ctl: {alu: SUB, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
-  - { name: EI,    op: 0x006,ctl: {alu:    , cx:   , srca: n30pp,ld: iff,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # also serves as DI when operand is 7
-  - { name: INC,   op: 0x160,ctl: {alu: ADD, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # INC #3,r
-  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
-  - { name: INCF,  op: 0x00c,ctl: {alu: ADD, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
-  - { name: LD,    op: 0x200,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<B> (mem),#
-  - { name: LD,    op: 0x202,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<W> (mem),#
-  - { name: LD,    op: 0x020,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
-  - { name: LD,    op: 0x030,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: w, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
-  - { name: LD,    op: 0x040,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: q, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8 } # LD R,# zzz encoding
-  - { name: LD,    op: 0x103,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LD r,# # r,#
-  - { name: LD,    op: 0x188,ctl: {alu:    , cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral: $,cc:            ,ral:    }, mask: 0x3f8 } # LD R,r
-  - { name: LD,    op: 0x198,ctl: {alu:    , cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr: , swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD r,R
-  - { name: LD,    op: 0x1a8,ctl: {alu:    , cx:   , srca: n31p, ld: dst,setw:  , rd:  ,wr: , swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD r,#3 #
-  - { name: LD,    op: 0x220,ctl: {alu:    , cx:   , srca: dst1, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD R,(mem)
-  - { name: LD,    op: 0x300,ctl: {alu:    , cx:   , srca: imm0, ld: md, setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LD<W> (mem),#
-  - { name: LD,    op: 0x302,ctl: {alu:    , cx:   , srca: imm0, ld: md, setw: w, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LD<W> (mem),#
-  - { name: LD,    op: 0x314,ctl: {alu:    , cx:   , srca: dir16,ld:   , setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LD<B> (mem),(#16)
-  - { name: LD,    op: 0x316,ctl: {alu:    , cx:   , srca: dir16,ld:   , setw: w, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LD<W> (mem),(#16)
-  - { name: LD,    op: 0x340,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD (mem),R
-  - { name: LD,    op: 0x350,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: w, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD (mem),R
-  - { name: LD,    op: 0x360,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: q, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # LD (mem),R
-  - { name: LDA,   op: 0x320,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: w, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8 }
-  - { name: LDA,   op: 0x330,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: q, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8 }
-  - { name: LDC,   op: 0x12e,ctl: {alu:    , cx:   , srca: cr1,  ld: cr ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LDC cr,r
-  - { name: LDC,   op: 0x12f,ctl: {alu:    , cx:   , srca: cr0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # LDC r,cr
-  - { name: LDCF,  op: 0x12b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,r
-  - { name: LDCF,  op: 0x123,ctl: {alu: BOR, cx:   , srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # #4,r
-  - { name: LDCF,  op: 0x32b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: LDCF,  op: 0x398,ctl: {alu: BOR, cx:   , srca: n31p, ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: LDF,   op: 0x017,ctl: {alu: ,    cx:   , srca: n30pp,ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
-  - { name: MIRR,  op: 0x116,ctl: {alu: MIRR,cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # only byte
-  - { name: NEG,   op: 0x107,ctl: {alu: SUB, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # only byte/word
-  - { name: NOP,   op: 0x000,ctl: {alu: ,    cx:   , srca: zero, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
-  - { name: OR,    op: 0x1ce,ctl: {alu: OR,  cx:   , srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # r,#
-  - { name: OR,    op: 0x1e0,ctl: {alu: OR,  cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8 }            # R,r
-  - { name: OR,    op: 0x23e,ctl: {alu: OR,  cx:   , srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # <W> (mem),#
-  - { name: OR,    op: 0x2e0,ctl: {alu: OR,  cx:   , srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8 } # R,(mem) / (mem),R
-  - { name: OR,    op: 0x2e8,ctl: {alu: OR,  cx:   , srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8 } # R,(mem) / (mem),R
-  - { name: ORCF,  op: 0x129,ctl: {alu: BOR, cx: cin,srca: acc,  ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,r
-  - { name: ORCF,  op: 0x121,ctl: {alu: BOR, cx: cin,srca: n41pp,ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # #4,r
-  - { name: ORCF,  op: 0x329,ctl: {alu: BOR, cx: cin,srca: acc,  ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: ORCF,  op: 0x388,ctl: {alu: BOR, cx: cin,srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: PAA,   op: 0x114,ctl: {alu: ADD, cx:  b0,srca: zero, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # PAA r
-  - { name: RCF,   op: 0x010,ctl: {alu: BAND,cx:    ,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }}
-  - { name: RES,   op: 0x130,ctl: {alu: BSET,cx:    ,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: RES,   op: 0x3b0,ctl: {alu: BSET,cx:    ,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: SBC,   op: 0x1b0,ctl: {alu: SUB, cx: cin,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
-  - { name: SBC,   op: 0x1cb,ctl: {alu: SUB, cx: cin,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # SBC r,#
-  - { name: SBC,   op: 0x23b,ctl: {alu: SUB, cx: cin,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
-  - { name: SBC,   op: 0x2b0,ctl: {alu: SUB, cx: cin,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SBC R,(mem)
-  - { name: SBC,   op: 0x2b8,ctl: {alu: SUB, cx: cin,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SBC (mem),R
-  - { name: SCC,   op: 0x170,ctl: {alu:     ,cx:    ,srca: cc0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: , cc:            ,ral:    }, mask: 0x3f0 } # SCC cc,r cc = #4
-  - { name: SCF,   op: 0x011,ctl: {alu:     ,cx:  hi,srca: zero, ld:   , setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }}
-  - { name: SET,   op: 0x131,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: SET,   op: 0x3b8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: STCF,  op: 0x124,ctl: {alu: BSET,cx: cin,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
-  - { name: STCF,  op: 0x12c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: dst,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # STCF A,r
-  - { name: STCF,  op: 0x32c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: STCF,  op: 0x3a0,ctl: {alu: BSET,cx: cin,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: SUB,   op: 0x1a0,ctl: {alu: SUB, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
-  - { name: SUB,   op: 0x1ca,ctl: {alu: SUB, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # SUB r,#
-  - { name: SUB,   op: 0x23a,ctl: {alu: SUB, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
-  - { name: SUB,   op: 0x2a0,ctl: {alu: SUB, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB R,(mem)
-  - { name: SUB,   op: 0x2a8,ctl: {alu: SUB, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB (mem),R
-  - { name: TSET,  op: 0x134,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }} # #4,r
-  - { name: TSET,  op: 0x3a8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    },  mask: 0x3f8 } # #3,(mem)
-  - { name: XOR,   op: 0x1cd,ctl: {alu: XOR, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # r,#
-  - { name: XOR,   op: 0x1d0,ctl: {alu: XOR, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 1 } # R,r
-  - { name: XOR,   op: 0x23d,ctl: {alu: XOR, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }} # <W> (mem),#
-  - { name: XOR,   op: 0x2d0,ctl: {alu: XOR, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: XOR,   op: 0x2d8,ctl: {alu: XOR, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 1 } # R,(mem) / (mem),R
-  - { name: XORCF, op: 0x12A,ctl: {alu: BXOR,cx: cin,srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,r
-  - { name: XORCF, op: 0x122,ctl: {alu: BXOR,cx: cin,srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # #4,r
-  - { name: XORCF, op: 0x32a,ctl: {alu: BXOR,cx: cin,srca: acc,  ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }} # A,(mem) 1'm11'mmmm
-  - { name: XORCF, op: 0x390,ctl: {alu: BXOR,cx: cin,srca: n31p, ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: ZCF,   op: 0x013,ctl: {alu:     ,cx:  zf,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }}
+  - { name: ADC,   op: 0x190,ctl: {alu: ADD, cx: cin,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # R,r
+  - { name: ADC,   op: 0x1c9,ctl: {alu: ADD, cx: cin,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, cycles: 3 } # r,#
+  - { name: ADC,   op: 0x239,ctl: {alu: ADD, cx: cin,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: ADC,   op: 0x290,ctl: {alu: ADD, cx: cin,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # R,(mem) / (mem),R
+  - { name: ADC,   op: 0x298,ctl: {alu: ADD, cx: cin,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # R,(mem) / (mem),R
+  - { name: ADD,   op: 0x180,ctl: {alu: ADD, cx:    ,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # R,r
+  - { name: ADD,   op: 0x1c8,ctl: {alu: ADD, cx:    ,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, cycles: 3 } # r,#
+  - { name: ADD,   op: 0x238,ctl: {alu: ADD, cx:    ,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: ADD,   op: 0x280,ctl: {alu: ADD, cx:    ,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # R,(mem) / (mem),R
+  - { name: ADD,   op: 0x288,ctl: {alu: ADD, cx:    ,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${ADD_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # R,(mem) / (mem),R
+  - { name: AND,   op: 0x1c0,ctl: {alu: AND, cx:    ,srca: src1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${AND_CC}",ral:    }, mask: 0x3f8, cycles: 2 }            # R,r
+  - { name: AND,   op: 0x1cc,ctl: {alu: AND, cx:    ,srca: imm1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, cycles: 3 } # r,#
+  - { name: AND,   op: 0x23c,ctl: {alu: AND, cx:    ,srca: imm1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: AND,   op: 0x2c0,ctl: {alu: AND, cx:    ,srca: dst1, ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # R,(mem) / (mem),R
+  - { name: AND,   op: 0x2c8,ctl: {alu: AND, cx:    ,srca: dst1, ld: md, setw: ,  rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${AND_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # R,(mem) / (mem),R
+  - { name: ANDCF, op: 0x128,ctl: {alu: BAND,cx: cin,srca: acc,  ld:   , setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # A,r
+  - { name: ANDCF, op: 0x120,ctl: {alu: BAND,cx: cin,srca: n41pp,ld:   , setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # #4,r
+  - { name: ANDCF, op: 0x328,ctl: {alu: BAND,cx: cin,srca: acc,  ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 6 } # A,(mem) 1'm11'mmmm
+  - { name: ANDCF, op: 0x380,ctl: {alu: BAND,cx: cin,srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8, cycles: 6 } # #3,(mem)
+  - { name: BIT,   op: 0x133,ctl: {alu: BXOR,cx: hi, srca: n41pp,ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }, cycles: 3 } # #4,r
+  - { name: BIT,   op: 0x3c8,ctl: {alu: BXOR,cx: hi, srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # #3,(mem)
+  - { name: CCF,   op: 0x012,ctl: {alu:     ,cx: com,srca: zero, ld:   , setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }, cycles: 2 }
+  - { name: CHG,   op: 0x132,ctl: {alu: BXOR,cx: hi, srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # #4,r
+  - { name: CHG,   op: 0x3c0,ctl: {alu: BXOR,cx: hi, srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 7 } # #3,(mem)
+  - { name: CP,    op: 0x1cf,ctl: {alu: SUB, cx:   , srca: imm1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 3 } # CP r,#
+  - { name: CP,    op: 0x1d8,ctl: {alu: SUB, cx:   , srca: n31p, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # r,#
+  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 2 }            # R,r
+  - { name: CP,    op: 0x23f,ctl: {alu: SUB, cx:   , srca: imm1, ld:  md,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 5 } # <W> (mem),#
+  - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # CP R,(mem)
+  - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # CP (mem),R
+  - { name: CPL,   op: 0x106,ctl: {alu: CPL, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h1n1       ,ral:    }, cycles: 2 } # only byte/word
+  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhvcr     ,ral:    }, cycles: 4 }
+  - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # DEC #3,r
+  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # inc<w> #3,(mem)
+  - { name: DECF,  op: 0x00d,ctl: {alu: SUB, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 2 }
+  - { name: EI,    op: 0x006,ctl: {alu:    , cx:   , srca: n30pp,ld: iff,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # also serves as DI when operand is 7
+  - { name: INC,   op: 0x160,ctl: {alu: ADD, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # INC #3,r
+  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # inc<w> #3,(mem)
+  - { name: INCF,  op: 0x00c,ctl: {alu: ADD, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 2 }
+  - { name: LD,    op: 0x200,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}, cycles: 5 } # LD<B> (mem),#
+  - { name: LD,    op: 0x202,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}, cycles: 5 } # LD<W> (mem),#
+  - { name: LD,    op: 0x020,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 2 } # LD R,# zzz encoding
+  - { name: LD,    op: 0x030,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: w, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 3 } # LD R,# zzz encoding
+  - { name: LD,    op: 0x040,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw: q, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 4 } # LD R,# zzz encoding
+  - { name: LD,    op: 0x103,ctl: {alu:    , cx:   , srca: imm0, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LD r,# # r,#
+  - { name: LD,    op: 0x188,ctl: {alu:    , cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral: $,cc:            ,ral:    }, mask: 0x3f8, cycles: 2 } # LD R,r
+  - { name: LD,    op: 0x198,ctl: {alu:    , cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr: , swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 2 } # LD r,R
+  - { name: LD,    op: 0x1a8,ctl: {alu:    , cx:   , srca: n31p, ld: dst,setw:  , rd:  ,wr: , swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 2 } # LD r,#3 #
+  - { name: LD,    op: 0x220,ctl: {alu:    , cx:   , srca: dst1, ld: dst,setw:  , rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 4 } # LD R,(mem)
+  - { name: LD,    op: 0x300,ctl: {alu:    , cx:   , srca: imm0, ld: md, setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 5 } # LD<W> (mem),#
+  - { name: LD,    op: 0x302,ctl: {alu:    , cx:   , srca: imm0, ld: md, setw: w, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 5 } # LD<W> (mem),#
+  - { name: LD,    op: 0x314,ctl: {alu:    , cx:   , srca: dir16,ld:   , setw: b, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 8 } # LD<B> (mem),(#16)
+  - { name: LD,    op: 0x316,ctl: {alu:    , cx:   , srca: dir16,ld:   , setw: w, rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 8 } # LD<W> (mem),(#16)
+  - { name: LD,    op: 0x340,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 4 } # LD (mem),R
+  - { name: LD,    op: 0x350,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: w, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 4 } # LD (mem),R
+  - { name: LD,    op: 0x360,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: q, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 4 } # LD (mem),R
+  - { name: LDA,   op: 0x320,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: w, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 4 }
+  - { name: LDA,   op: 0x330,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: q, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 4 }
+  - { name: LDC,   op: 0x12e,ctl: {alu:    , cx:   , srca: cr1,  ld: cr ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LDC cr,r
+  - { name: LDC,   op: 0x12f,ctl: {alu:    , cx:   , srca: cr0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LDC r,cr
+  - { name: LDCF,  op: 0x12b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # A,r
+  - { name: LDCF,  op: 0x123,ctl: {alu: BOR, cx:   , srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # #4,r
+  - { name: LDCF,  op: 0x32b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 6 } # A,(mem) 1'm11'mmmm
+  - { name: LDCF,  op: 0x398,ctl: {alu: BOR, cx:   , srca: n31p, ld:    ,setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8, cycles: 6 } # #3,(mem)
+  - { name: LDF,   op: 0x017,ctl: {alu: ,    cx:   , srca: n30pp,ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 2 }
+  - { name: MIRR,  op: 0x116,ctl: {alu: MIRR,cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # only byte
+  - { name: NEG,   op: 0x107,ctl: {alu: SUB, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 2 } # only byte/word
+  - { name: NOP,   op: 0x000,ctl: {alu: ,    cx:   , srca: zero, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 2 }
+  - { name: OR,    op: 0x1ce,ctl: {alu: OR,  cx:   , srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, cycles: 3 } # r,#
+  - { name: OR,    op: 0x1e0,ctl: {alu: OR,  cx:   , srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 2 }            # R,r
+  - { name: OR,    op: 0x23e,ctl: {alu: OR,  cx:   , srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: OR,    op: 0x2e0,ctl: {alu: OR,  cx:   , srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 4 } # R,(mem) / (mem),R
+  - { name: OR,    op: 0x2e8,ctl: {alu: OR,  cx:   , srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 6 } # R,(mem) / (mem),R
+  - { name: ORCF,  op: 0x129,ctl: {alu: BOR, cx: cin,srca: acc,  ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # A,r
+  - { name: ORCF,  op: 0x121,ctl: {alu: BOR, cx: cin,srca: n41pp,ld:   , setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # #4,r
+  - { name: ORCF,  op: 0x329,ctl: {alu: BOR, cx: cin,srca: acc,  ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 6 } # A,(mem) 1'm11'mmmm
+  - { name: ORCF,  op: 0x388,ctl: {alu: BOR, cx: cin,srca: n31p, ld:   , setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8, cycles: 6 } # #3,(mem)
+  - { name: PAA,   op: 0x114,ctl: {alu: ADD, cx:  b0,srca: zero, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 4 } # PAA r
+  - { name: RCF,   op: 0x010,ctl: {alu: BAND,cx:    ,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }, cycles: 2 }
+  - { name: RES,   op: 0x130,ctl: {alu: BSET,cx:    ,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # #4,r
+  - { name: RES,   op: 0x3b0,ctl: {alu: BSET,cx:    ,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 7 } # #3,(mem)
+  - { name: SBC,   op: 0x1b0,ctl: {alu: SUB, cx: cin,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # R,r
+  - { name: SBC,   op: 0x1cb,ctl: {alu: SUB, cx: cin,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 3 } # SBC r,#
+  - { name: SBC,   op: 0x23b,ctl: {alu: SUB, cx: cin,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: SBC,   op: 0x2b0,ctl: {alu: SUB, cx: cin,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # SBC R,(mem)
+  - { name: SBC,   op: 0x2b8,ctl: {alu: SUB, cx: cin,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # SBC (mem),R
+  - { name: SCC,   op: 0x170,ctl: {alu:     ,cx:    ,srca: cc0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: , cc:            ,ral:    }, mask: 0x3f0, cycles: 2 } # SCC cc,r cc = #4
+  - { name: SCF,   op: 0x011,ctl: {alu:     ,cx:  hi,srca: zero, ld:   , setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }, cycles: 2 }
+  - { name: SET,   op: 0x131,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw: ,  rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # #4,r
+  - { name: SET,   op: 0x3b8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 7 } # #3,(mem)
+  - { name: STCF,  op: 0x124,ctl: {alu: BSET,cx: cin,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # #4,r
+  - { name: STCF,  op: 0x12c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: dst,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # STCF A,r
+  - { name: STCF,  op: 0x32c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 7 } # A,(mem) 1'm11'mmmm
+  - { name: STCF,  op: 0x3a0,ctl: {alu: BSET,cx: cin,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 7 } # #3,(mem)
+  - { name: SUB,   op: 0x1a0,ctl: {alu: SUB, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 2 } # R,r
+  - { name: SUB,   op: 0x1ca,ctl: {alu: SUB, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 3 } # SUB r,#
+  - { name: SUB,   op: 0x23a,ctl: {alu: SUB, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: SUB,   op: 0x2a0,ctl: {alu: SUB, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 4 } # SUB R,(mem)
+  - { name: SUB,   op: 0x2a8,ctl: {alu: SUB, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 6 } # SUB (mem),R
+  - { name: TSET,  op: 0x134,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }, cycles: 4 } # #4,r
+  - { name: TSET,  op: 0x3a8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    },  mask: 0x3f8, cycles: 7 } # #3,(mem)
+  - { name: XOR,   op: 0x1cd,ctl: {alu: XOR, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, cycles: 3 } # r,#
+  - { name: XOR,   op: 0x1d0,ctl: {alu: XOR, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 2 } # R,r
+  - { name: XOR,   op: 0x23d,ctl: {alu: XOR, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, cycles: 7 } # <W> (mem),#
+  - { name: XOR,   op: 0x2d0,ctl: {alu: XOR, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 4 } # R,(mem) / (mem),R
+  - { name: XOR,   op: 0x2d8,ctl: {alu: XOR, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${OR_CC}" ,ral:    }, mask: 0x3f8, cycles: 6 } # R,(mem) / (mem),R
+  - { name: XORCF, op: 0x12A,ctl: {alu: BXOR,cx: cin,srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # A,r
+  - { name: XORCF, op: 0x122,ctl: {alu: BXOR,cx: cin,srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # #4,r
+  - { name: XORCF, op: 0x32a,ctl: {alu: BXOR,cx: cin,srca: acc,  ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 6 } # A,(mem) 1'm11'mmmm
+  - { name: XORCF, op: 0x390,ctl: {alu: BXOR,cx: cin,srca: n31p, ld:    ,setw: b, rd: 1,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, mask: 0x3f8, cycles: 6 } # #3,(mem)
+  - { name: ZCF,   op: 0x013,ctl: {alu:     ,cx:  zf,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: n0c        ,ral:    }, cycles: 2 }
 
-  - { name: DIV,   op: 0x150, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt:   },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
-  - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
-  - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
-  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alt: $ }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
-  - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }} # r,#
-  - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }} # r,#
-  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }} # r,#
-  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alt: $ }} # r,#
+  - { name: DIV,   op: 0x150, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt:   },                                          mask: 0x3f8, cycles: 15 } # only byte/word
+  - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt:   }, mask: 0x3f8, cycles: 16 } # DIV  RR,(mem)
+  - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt: $ },                                          mask: 0x3f8, cycles: 18 } # only byte/word
+  - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt: $ }, mask: 0x3f8, cycles: 19 } # DIVS RR,(mem)
+  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alt:   }, mask: 0x3f8, cycles: 11 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alt:   }, mask: 0x3f8, cycles: 13 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alt: $ }, mask: 0x3f8, cycles: 9 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alt: $ }, mask: 0x3f8, cycles: 11 } # MULS RR,(mem)
+  - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }, cycles: 15 } # r,#
+  - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }, cycles: 18 } # r,#
+  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }, cycles: 12 } # r,#
+  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alt: $ }, cycles: 10 } # r,#
 
-  - { name: MULA,  op: 0x119, ctl: { cc: szv }}
+  - { name: MULA,  op: 0x119, ctl: { cc: szv }, cycles: 19 }
   # group 1 - r
-  - { name: BS1B,   op: 0x10f, ctl: { alu:      , cc: z2v }}
-  - { name: BS1F,   op: 0x10e, ctl: { alu: MIRR , cc: z2v }}
-  - { name: DJNZ,   op: 0x11c }
-  - { name: EXTS,   op: 0x113, ctl: { ext: sex }}
-  - { name: EXTZ,   op: 0x112, ctl: { ext: zex }}
-  - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: , ral: }} # POP r
-  - { name: PUSHR2, op: 0x104 } # PUSH r
+  - { name: BS1B,   op: 0x10f, ctl: { alu:      , cc: z2v }, cycles: 3 }
+  - { name: BS1F,   op: 0x10e, ctl: { alu: MIRR , cc: z2v }, cycles: 3 }
+  - { name: DJNZ,   op: 0x11c, cycles: 6 } # 6 (r!=0), 4 (r=0)
+  - { name: EXTS,   op: 0x113, ctl: { ext: sex }, cycles: 3 }
+  - { name: EXTZ,   op: 0x112, ctl: { ext: zex }, cycles: 3 }
+  - { name: POP,    op: 0x105, ctl: { dst: dst, setw: , wr: , ral: }, cycles: 5 } # POP r
+  - { name: PUSHR2, op: 0x104, cycles: 4 } # PUSH r
   # group 1 but limited valid addressing
-  - { name: LINK,  op: 0x10c                            } # only long word
-  - { name: MDEC1, op: 0x13c, ctl: { setw: b, alu: sub }} # only word
-  - { name: MDEC2, op: 0x13d, ctl: { setw: w, alu: sub }} # only word
-  - { name: MDEC4, op: 0x13e, ctl: { setw: q, alu: sub }} # only word
-  - { name: MINC1, op: 0x138, ctl: { setw: b, alu: add }} # only word
-  - { name: MINC2, op: 0x139, ctl: { setw: w, alu: add }} # only word
-  - { name: MINC4, op: 0x13a, ctl: { setw: q, alu: add }} # only word
-  - { name: RLA,   op: 0x1fa, ctl: { alu: SHL, srca: acc, cx: cin,cc: "${SH_CC}" }} # register A always used RL  A,r
-  - { name: RRA,   op: 0x1fb, ctl: { alu: SHR, srca: acc, cx: cin,cc: "${SH_CC}" }} # register A always used RR  A,r
-  - { name: RLCA,  op: 0x1f8, ctl: { alu: SHL, srca: acc, cx: sa, cc: "${SH_CC}" }} # register A always used RLC A,r
-  - { name: RRCA,  op: 0x1f9, ctl: { alu: SHR, srca: acc, cx: sh, cc: "${SH_CC}" }} # register A always used RRC A,r
-  - { name: SLAA,  op: 0x1fc, ctl: { alu: SHL, srca: acc, cx:   , cc: "${SH_CC}"  }, mask: 0x3fd } # register A always used SLL A,r SLA=SLL
-  - { name: SRAA,  op: 0x1fd, ctl: { alu: SHR, srca: acc, cx: sa, cc: "${SH_CC}"  }} # register A always used SRA A,r
-  - { name: SRLA,  op: 0x1ff, ctl: { alu: SHR, srca: acc, cx:   , cc: "${SH_CC}"  }} # register A always used SRL A,r
-  - { name: UNLK,  op: 0x10d                } # first byte always 0xe8 & 0xf8
+  - { name: LINK,  op: 0x10c, cycles: 8 } # only long word
+  - { name: MDEC1, op: 0x13c, ctl: { setw: b, alu: sub }, cycles: 4 } # only word
+  - { name: MDEC2, op: 0x13d, ctl: { setw: w, alu: sub }, cycles: 4 } # only word
+  - { name: MDEC4, op: 0x13e, ctl: { setw: q, alu: sub }, cycles: 4 } # only word
+  - { name: MINC1, op: 0x138, ctl: { setw: b, alu: add }, cycles: 5 } # only word
+  - { name: MINC2, op: 0x139, ctl: { setw: w, alu: add }, cycles: 5 } # only word
+  - { name: MINC4, op: 0x13a, ctl: { setw: q, alu: add }, cycles: 5 } # only word
+  - { name: RLA,   op: 0x1fa, ctl: { alu: SHL, srca: acc, cx: cin,cc: "${SH_CC}" }, cycles: 3 } # register A always used RL  A,r # 3+n/4
+  - { name: RRA,   op: 0x1fb, ctl: { alu: SHR, srca: acc, cx: cin,cc: "${SH_CC}" }, cycles: 3 } # register A always used RR  A,r # 3+n/4
+  - { name: RLCA,  op: 0x1f8, ctl: { alu: SHL, srca: acc, cx: sa, cc: "${SH_CC}" }, cycles: 3 } # register A always used RLC A,r # 3+n/4
+  - { name: RRCA,  op: 0x1f9, ctl: { alu: SHR, srca: acc, cx: sh, cc: "${SH_CC}" }, cycles: 3 } # register A always used RRC A,r # 3+n/4
+  - { name: SLAA,  op: 0x1fc, ctl: { alu: SHL, srca: acc, cx:   , cc: "${SH_CC}"  }, mask: 0x3fd, cycles: 3 } # register A always used SLL A,r SLA=SLL # 3+n/4
+  - { name: SRAA,  op: 0x1fd, ctl: { alu: SHR, srca: acc, cx: sa, cc: "${SH_CC}"  }, cycles: 3 } # register A always used SRA A,r # 3+n/4
+  - { name: SRLA,  op: 0x1ff, ctl: { alu: SHR, srca: acc, cx:   , cc: "${SH_CC}"  }, cycles: 3 } # register A always used SRL A,r # 3+n/4
+  - { name: UNLK,  op: 0x10d, cycles: 7 } # first byte always 0xe8 & 0xf8
   # #4,r
-  - { name: RL,    op: 0x1ea, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx: cin }}
-  - { name: RLC,   op: 0x1e8, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx: sa  }}
-  - { name: RR,    op: 0x1eb, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: cin }}
-  - { name: RRC,   op: 0x1e9, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: sh  }}
-  - { name: SLA,   op: 0x1ec, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx:     }, mask: 0x3fd } # SLA=SLL
-  - { name: SRA,   op: 0x1ed, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: sa  }}
-  - { name: SRL,   op: 0x1ef, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx:     }}
+  - { name: RL,    op: 0x1ea, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx: cin }, cycles: 3 } # 3+n/4
+  - { name: RLC,   op: 0x1e8, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx: sa  }, cycles: 3 } # 3+n/4
+  - { name: RR,    op: 0x1eb, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: cin }, cycles: 3 } # 3+n/4
+  - { name: RRC,   op: 0x1e9, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: sh  }, cycles: 3 } # 3+n/4
+  - { name: SLA,   op: 0x1ec, ctl: { alu: SHL,  srca: n41pp, cc: "${SH_CC}", cx:     }, mask: 0x3fd, cycles: 3 } # SLA=SLL # 3+n/4
+  - { name: SRA,   op: 0x1ed, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx: sa  }, cycles: 3 } # 3+n/4
+  - { name: SRL,   op: 0x1ef, ctl: { alu: SHR,  srca: n41pp, cc: "${SH_CC}", cx:     }, cycles: 3 } # 3+n/4
 
-  - { name: EXR,   op: 0x1b8, mask: 0x3f8 } # EX R,r
-  - { name: EXM,   op: 0x230, mask: 0x3f8 } # EX (mem),r
+  - { name: EXR,   op: 0x1b8, mask: 0x3f8, cycles: 3 } # EX R,r
+  - { name: EXM,   op: 0x230, mask: 0x3f8, cycles: 6 } # EX (mem),r
 
   # group 2 - R,(mem) - (mem),R
-  - { name: PUSHM, op: 0x204 } # PUSH<W> (mem)
-  - { name: RLCM,  op: 0x278, ctl: { alu: SHL, cc: "${SH_CC}", cx: sa  }}
-  - { name: RRCM,  op: 0x279, ctl: { alu: SHR, cc: "${SH_CC}", cx: sh  }}
-  - { name: RLM,   op: 0x27a, ctl: { alu: SHL, cc: "${SH_CC}", cx: cin }}
-  - { name: RRM,   op: 0x27b, ctl: { alu: SHR, cc: "${SH_CC}", cx: cin }}
-  - { name: SLAM,  op: 0x27c, ctl: { alu: SHL, cc: "${SH_CC}", cx:     }, mask: 0x3fd } # SLA=SLM
-  - { name: SRAM,  op: 0x27d, ctl: { alu: SHR, cc: "${SH_CC}", cx: sa  }}
-  - { name: SRLM,  op: 0x27f, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }}
+  - { name: PUSHM, op: 0x204, cycles: 6 } # PUSH<W> (mem)
+  - { name: RLCM,  op: 0x278, ctl: { alu: SHL, cc: "${SH_CC}", cx: sa  }, cycles: 6 }
+  - { name: RRCM,  op: 0x279, ctl: { alu: SHR, cc: "${SH_CC}", cx: sh  }, cycles: 6 }
+  - { name: RLM,   op: 0x27a, ctl: { alu: SHL, cc: "${SH_CC}", cx: cin }, cycles: 6 }
+  - { name: RRM,   op: 0x27b, ctl: { alu: SHR, cc: "${SH_CC}", cx: cin }, cycles: 6 }
+  - { name: SLAM,  op: 0x27c, ctl: { alu: SHL, cc: "${SH_CC}", cx:     }, mask: 0x3fd, cycles: 6 } # SLA=SLM
+  - { name: SRAM,  op: 0x27d, ctl: { alu: SHR, cc: "${SH_CC}", cx: sa  }, cycles: 6 }
+  - { name: SRLM,  op: 0x27f, ctl: { alu: SHR, cc: "${SH_CC}", cx:     }, cycles: 6 }
   # Group 2 - string instructions
-  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${CPD_CC}", loop: 0 }}
-  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${CPD_CC}", loop: 1 }}
-  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${CPD_CC}", loop: 0 }}
-  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${CPD_CC}", loop: 1 }}
-  - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
-  - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
-  - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
-  - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
+  - { name: CPD,   op: 0x216, ctl: { step: SUB, cc: "${CPD_CC}", loop: 0 }, cycles: 6 }
+  - { name: CPDR,  op: 0x217, ctl: { step: SUB, cc: "${CPD_CC}", loop: 1 }, cycles: 6 } # 6n+1
+  - { name: CPI,   op: 0x214, ctl: { step: ADD, cc: "${CPD_CC}", loop: 0 }, cycles: 6 }
+  - { name: CPIR,  op: 0x215, ctl: { step: ADD, cc: "${CPD_CC}", loop: 1 }, cycles: 6 } # 6n+1
+  - { name: LDD,   op: 0x212, ctl: { step: SUB, cc: "${LD_CC}" , loop: 0 }, cycles: 8 } # XDE,XHL or XIX,XIY is based on the first byte. v becomes ~z_out
+  - { name: LDDR,  op: 0x213, ctl: { step: SUB, cc: "${LD_CC}" , loop: 1 }, cycles: 7 } # v3, becomes v0 at the end of the instruction # 7n+1
+  - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }, cycles: 8 } # XDE,XHL or XIX,XIY is based on the first byte
+  - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }, cycles: 7 } # v3, becomes v0 at the end of the instruction # 7n+1
   # group 2 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }} # RLD [A,](mem)
-  - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }} # RRD [A,](mem)
+  - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }, cycles: 14 } # RLD [A,](mem)
+  - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }, cycles: 14 } # RRD [A,](mem)
   - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem)
 
   # group 3 1m11'mmmm
-  - { name: RETcc, op: 0x3f0, ctl: { retd: 0, ncc: ncc }, mask: 0x3f0 } # Decoded in control unit directly as a 12-bit OP
-  - { name: LDAR,  op: 0x313 }
-  - { name: JPM,   op: 0x3d0, mask: 0x3f0 } # JP [cc,]mem
+  - { name: RETcc, op: 0x3f0, ctl: { retd: 0, ncc: ncc }, mask: 0x3f0, cycles: 12 } # Decoded in control unit directly as a 12-bit OP # 12/4 (T/F)
+  - { name: LDAR,  op: 0x313, cycles: 7 }
+  - { name: JPM,   op: 0x3d0, mask: 0x3f0, cycles: 7 } # JP [cc,]mem # 12/4 (T/F)
   # group 3 1m11'mmmm #3,(mem)
-  - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0 }
-  - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b, ral: }}
-  - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w, ral: }}
+  - { name: CALLcc,op: 0x3e0,                                                    mask: 0x3f0, cycles: 12 } # 12/4 (T/F)
+  - { name: POPM,  op: 0x304, ctl: { dst: md, wr: 1, setw: b, ral: }, cycles: 7 }
+  - { name: POPM,  op: 0x306, ctl: { dst: md, wr: 1, setw: w, ral: }, cycles: 7 }
 
 ucode:
   - name: intexec
