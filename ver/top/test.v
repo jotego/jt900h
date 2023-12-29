@@ -97,7 +97,7 @@ initial begin
     dump_rdout=0;
     $display("Simulating up to RAM address %X",`END_RAM);
     #100 rst=0;
-    #1000_000
+    #3000_000
     $display("Time over");
     dump_rdout=1;
 end
