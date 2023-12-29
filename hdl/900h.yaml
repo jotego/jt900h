@@ -657,10 +657,10 @@ ucode:
       - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
       - da_ld, swp_ral, alt,             da_ea            # data remains in MD, no need to pass it through ALU
       - ${step}_alu, dst_ld, swp_ral     da_ea, wr
-      - zero_rmux, ld1_opnd,             da_ea
-      - bc_rmux, ld0_opnd                da_ea # prepare for BC--
+      - zero_rmux, ld1_opnd, swp_setw    da_ea
+      - bc_rmux, ld0_opnd, w_setw        da_ea # prepare for BC--
       - sub_alu, hi_cx, bc_ld, ${cc}_cc, da_ea # v = ~z
-      - ${loop}?*, v_loop                da_ea # loops while v
+      - ${loop}?*, v_loop, swp_setw      da_ea # loops while v
       - inc_pc
       - waitmem, q_fetch
       - ni
