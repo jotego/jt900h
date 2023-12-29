@@ -40,6 +40,7 @@
     ld w,0x10
     cp a,w
     jp eq,bad_end
+    jp c,bad_end
     cp a,(xix)
     jp ne,bad_end
 
@@ -48,6 +49,14 @@
     ld de,(xix)
     cp wa,de
     jp ne,bad_end
+
+    ld qh,6
+    ld wa,(xix)
+    dec 1,wa
+    cp wa,(xix)
+    jp nc,bad_end
+    cp (xix),wa
+    jp c,bad_end
 
     include finish.inc
 data:
