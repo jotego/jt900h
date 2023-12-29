@@ -133,7 +133,7 @@ ops:
   - { name: CHG,   op: 0x3c0,ctl: {alu: BXOR,cx: hi, srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: CP,    op: 0x1cf,ctl: {alu: SUB, cx:   , srca: imm1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # CP r,#
   - { name: CP,    op: 0x1d8,ctl: {alu: SUB, cx:   , srca: n31p, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # r,#
-  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 }            # R,r
+  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 }            # R,r
   - { name: CP,    op: 0x23f,ctl: {alu: SUB, cx:   , srca: imm1, ld:  md,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
   - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,(mem)
   - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP (mem),R

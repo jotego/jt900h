@@ -2,40 +2,48 @@
     maxmode on
     relaxed on
     org 0
-    ld a,0xbf    ; common header
 
     ld a,0x10
     ld w,3
     cp a,w
     jp eq, bad_end
+    jp lt, bad_end
+    jp le, bad_end
+    jp ult, bad_end
+    jp ov, bad_end
 
-    or b,1
+    ld qh,1
     ld w,0x10
+    ld a,0x11
     cp w,a
-    jp ne,bad_end
-
-    or b,2
-    cp a,9
     jp eq,bad_end
+    jp pl,bad_end
+    jp nc,bad_end
+    jp ov,bad_end
 
-    or b,4
-    cp a,0x10
+    ld qh,2
+    ld a,10
+    dec 1,a
+    cp a,9
     jp ne,bad_end
 
-    or b,8
+    ld qh,3
+    ld a,0x80
+    ld b,1
+    cp a,b
+    jp eq,bad_end
+    jp nov,bad_end
+
+    ld qh,4
     ld xix,data
     ld a,(xix)
     ld w,0x10
     cp a,w
     jp eq,bad_end
+    cp a,(xix)
+    jp ne,bad_end
 
-    or b,0x10
-    ld a,(xix)
-    ld w,9
-    cp a,w
-    jp eq,bad_end
-
-    or b,0x20
+    ld qh,5
     ld wa,(xix)
     ld de,(xix)
     cp wa,de
