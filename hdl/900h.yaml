@@ -139,7 +139,7 @@ ops:
   - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,(mem)
   - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP (mem),R
   - { name: CPL,   op: 0x106,ctl: {alu: CPL, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h1n1       ,ral:    }} # only byte/word
-  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhvcr     ,ral:    }}
+  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhpcr     ,ral:    }}
   - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC #3,r
   - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC<w> #3,(mem)
   - { name: DECF,  op: 0x00d,ctl: {alu: SUB, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
