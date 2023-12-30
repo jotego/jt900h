@@ -16,6 +16,7 @@ constants:
   OR_CC:   szh0pn0c0   # OR,XOR
   SH_CC:   szh0pn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
   SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
+  RXD_CC:  szh0pn0     # RLD/RRD
 # alias:
 #   - &LOW3 0x3f8
 # ctrl:
@@ -288,8 +289,8 @@ ops:
   - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
   - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: szh0vn0 }} # RLD [A,](mem)
-  - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: szh0vn0 }} # RRD [A,](mem)
+  - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: "${RXD_CC}" }} # RLD [A,](mem)
+  - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: "${RXD_CC}" }} # RRD [A,](mem)
   - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem) byte/word
 
   # group 3 1m11'mmmm

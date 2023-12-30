@@ -181,27 +181,27 @@ always @(posedge clk, posedge rst) begin
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
-            H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
-            N0C_CC:          {        n,c} <= {               1'b0,ci  };
-            SZHVCR_CC:       {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
-            H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
-            SZHVN1C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
-            V_CC:            {      v    } <= {          vi            };
-            Z2V_CC:          {      v    } <= {               zi       };
-            SZV_CC:          {s,z,  v    } <= {ni,zi,    vi            };
+            0:;
             C_CC:            {          c} <= {               ci       };
-            ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
-            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
-            SZHN1_CC:        {s,z,h,  n  } <= {ni,zi,hi,      1'b1     };
-            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
-            SZHVN0C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
-            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
+            H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
+            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
+            N0C_CC:          {        n,c} <= {               1'b0,ci  };
+            SZH0PN0_CC:      {s,z,h,v,n  } <= {ni,zi,1'b0, pi,1'b0     };
             SZH0PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
             SZH0PN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
-            SZH0VN0_CC:      {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
-            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
+            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
+            SZHN1_CC:        {s,z,h,  n  } <= {ni,zi,hi,      1'b1     };
+            SZHVCR_CC:       {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
+            SZHVN0C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
+            SZHVN1C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
+            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZV_CC:          {s,z,  v    } <= {ni,zi,    vi            };
+            V_CC:            {      v    } <= {          vi            };
+            Z2V_CC:          {      v    } <= {               zi       };
             Z3V_CC:          {      v    } <= {           ~zi          }; // CPD/CPI
-            default:;
+            ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
         endcase
         case( fetch_sel )
             VS_FETCH, Q_FETCH: md <= din;

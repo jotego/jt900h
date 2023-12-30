@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Fri Dec 29 08:28:05 2023
+[*] Sat Dec 30 16:13:36 2023
 [*]
 [dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/top/test.lxt"
-[dumpfile_mtime] "Fri Dec 29 07:57:21 2023"
-[dumpfile_size] 6065552
+[dumpfile_mtime] "Sat Dec 30 16:10:04 2023"
+[dumpfile_size] 53321
 [savefile] "/home/jtejada/jtcores/modules/jt900h/ver/top/st.gtkw"
-[timestart] 791381000
+[timestart] 0
 [size] 1920 1052
 [pos] -1 -1
-*-17.431358 -1 9065000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.658918 6505000 9065000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] test.
 [treeopen] test.uut.
 [treeopen] test.uut.u_alu.
 [sst_width] 223
 [signals_width] 260
 [sst_expanded] 1
-[sst_vpaned_height] 428
+[sst_vpaned_height] 657
 @22
 test.uut.u_regs.pc[23:0]
 [color] 2
@@ -189,6 +189,9 @@ test.uut.u_regs.xde0[31:0]
 test.uut.u_regs.xhl0[31:0]
 [color] 2
 test.uut.u_regs.xwa1[31:0]
+@23
+test.uut.u_regs.xbc1[31:0]
+@22
 test.uut.u_regs.xde1[31:0]
 test.uut.u_regs.xhl1[31:0]
 test.uut.u_regs.xwa3[31:0]

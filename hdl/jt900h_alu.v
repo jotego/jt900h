@@ -60,7 +60,7 @@ assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
 assign c = bs ? c8 : ws ? c16 : c32;
 assign bidx = {1'b0,ws&op1[3],op1[2:0]};
 assign bsel = op0[bidx];
-assign rdig = {op1[3:0],op0[7:0]};
+assign rdig = {op1[3:0],op0[7:0]}; // op1=A, op0=mem
 
 jt900h_div u_div (
     .rst  ( rst         ),
@@ -160,8 +160,8 @@ always @* begin
             if( ws ) rslt[15] = cx;
             {c32,c16} = {2{op2[0]}};
         end
-        RRD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[3:0],rdig[11:4]}; // op0=mem, op1=A
-        RLD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[7:0],rdig[11:8]}; // op0=mem, op1=A
+        RRD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[3:0],rdig[11:4]}; // op1=A
+        RLD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[7:0],rdig[11:8]}; // op1=A
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15] };
