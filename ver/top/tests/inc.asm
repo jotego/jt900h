@@ -26,7 +26,7 @@
 
     ldf 3
     ldw (xix),0
-    incw 3,(xix)
+    incw bp3,(xix)
     ld bc,(xix)
     cpw (xix),3
     jp ne,bad_end

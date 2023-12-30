@@ -194,9 +194,11 @@ always @(posedge clk, posedge rst) begin
             SZHN1_CC:        {s,z,h,  n  } <= {si,zi,hi,      1'b1     };
             SZHPCR_CC:       {s,z,h,v,  c} <= {si,zi,hi, pi,     c|ci  };
             SZHVN0_CC: if(bs){s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
+            SZHVN0X_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC on memory
             SZHVN0C_CC:      {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
             SZHVN1C_CC:      {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b1,ci  };
             SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN1DX_CC:     {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     }; // DEC on memory
             SZV_CC:          {s,z,  v    } <= {si,zi,    vi            };
             V_CC:            {      v    } <= {          vi            };
             Z2V_CC:          {      v    } <= {               zi       };
