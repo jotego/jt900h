@@ -28,7 +28,7 @@
     ldw (xix),0
     incw 3,(xix)
     ld bc,(xix)
-    cp (xix),3
+    cpw (xix),3
     jp ne,bad_end
     or ra3,8
 
