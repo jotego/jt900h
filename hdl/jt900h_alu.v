@@ -34,7 +34,7 @@ module jt900h_alu(
     input       [2:0] cx_sel,
 
     input             nin, hin, cin, zin,
-    output            n,z,p,c,v,
+    output            s,z,p,c,v,
     output reg        h,
     output reg [31:0] rslt
 );
@@ -45,7 +45,7 @@ reg  cx,
      c8, c16, c32,
      z8, z16, z32,
      v8, v16, v32,
-     n8, n16, n32;
+     s8, s16, s32;
 reg  [ 7:0] daa;
 wire [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
@@ -53,11 +53,11 @@ wire [11:0] rdig;
 wire        daa_carry, bsel,
             div_v;
 
-assign z = bs ? z8    : ws ? z16   : z32;
-assign n = bs ? n8    : ws ? n16   : n32;
-assign v = bs ? v8    : ws ? v16   : v32;
-assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
+assign z = bs ? z8 : ws ? z16 : z32;
+assign s = bs ? s8 : ws ? s16 : s32;
+assign v = bs ? v8 : ws ? v16 : v32;
 assign c = bs ? c8 : ws ? c16 : c32;
+assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
 assign bidx = {1'b0,ws&op1[3],op1[2:0]};
 assign bsel = op0[bidx];
 assign rdig = {op1[3:0],op0[7:0]}; // op1=A, op0=mem
@@ -190,9 +190,9 @@ always @* begin
     z8  = rslt[ 7: 0]==0;
     z16 = rslt[15: 8]==0 && z8;     // comparing all 16 bits would result in faster logic, but this is smaller
     z32 = rslt[31:16]==0 && z16;
-    n8  = rslt[ 7];
-    n16 = rslt[15];
-    n32 = rslt[31];
+    s8  = rslt[ 7];
+    s16 = rslt[15];
+    s32 = rslt[31];
 end
 
 endmodule

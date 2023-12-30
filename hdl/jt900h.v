@@ -68,7 +68,7 @@ wire        mem_busy, nc;
 // ALU
 wire [31:0] op0, op1, op2, rslt;
 wire        div_busy;
-wire        zu,hu,vu,nu,cu,pu;
+wire        zu,hu,vu,su,cu,pu;
 // "Control Registers" (MCU MMR)
 wire [ 7:0] cra;
 wire [31:0] crin;
@@ -134,7 +134,7 @@ jt900h_regs u_regs(
     .zi         ( zu        ),
     .hi         ( hu        ),
     .vi         ( vu        ),
-    .ni         ( nu        ),
+    .si         ( su        ),
     .ci         ( cu        ),
     .pi         ( pu        ),
     .no         ( n         ),
@@ -208,7 +208,7 @@ jt900h_alu u_alu(
     .z          ( zu        ),
     .h          ( hu        ),
     .v          ( vu        ),
-    .n          ( nu        ),
+    .s          ( su        ),
     .c          ( cu        ),
     .p          ( pu        ),
     .rslt       ( rslt      )
