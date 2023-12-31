@@ -614,13 +614,13 @@ ucode:
       - inc_pc, ${setw}_setw, mulcheck
       - dst_ral
       - waitmem, q_fetch
-      - g1_nxgr, ni, dst_rmux, ld0_opnd
+      - g1_nxgr, ni, zex, dst_rmux, ld0_opnd
   - mnemo: [ fregB, fregW, fregQ ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
       - inc_pc, alt, dst_ral, s8_fetch
       - waitmem, q_fetch
-      - g1_nxgr, ni, dst_rmux, ld0_opnd
+      - g1_nxgr, ni, zex, dst_rmux, ld0_opnd
 # instructions
   - mnemo: [  ADC, ADD, AND, ANDCF, BIT, CCF, CHG, CP, CPL,
               DAA, DEC, DECF, EI, INC, INCF, LD, LDA, LDC, LDCF, LDF,

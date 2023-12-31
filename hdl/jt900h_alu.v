@@ -58,7 +58,7 @@ assign s = bs ? s8 : ws ? s16 : s32;
 assign v = bs ? v8 : ws ? v16 : v32;
 assign c = bs ? c8 : ws ? c16 : c32;
 assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
-assign bidx = {1'b0,ws&op1[3],op1[2:0]};
+assign bidx = {1'b0,op1[3:0]};
 assign bsel = op0[bidx];
 assign rdig = {op1[3:0],op0[7:0]}; // op1=A, op0=mem
 
