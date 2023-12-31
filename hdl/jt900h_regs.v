@@ -183,6 +183,7 @@ always @(posedge clk, posedge rst) begin
         case( cc_sel )
             0:;
             C_CC:            {          c} <= {               ci       };
+            COR_CC:          {          c} <= {             c|ci       };
             H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
             H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
             H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
@@ -192,7 +193,7 @@ always @(posedge clk, posedge rst) begin
             SZH0PN0C_CC:     {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,ci  };
             SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {si,zi,1'b1, pi,1'b0,1'b0};
             SZHN1_CC:        {s,z,h,  n  } <= {si,zi,hi,      1'b1     };
-            SZHPCR_CC:       {s,z,h,v,  c} <= {si,zi,hi, pi,     c|ci  };
+            SZHP_CC:         {s,z,h,v    } <= {si,zi,hi, pi            };
             SZHVN0_CC: if(bs){s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
             SZHVN0X_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC on memory
             SZHVN0C_CC:      {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };

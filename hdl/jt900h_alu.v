@@ -52,6 +52,8 @@ wire [ 4:0] bidx;
 wire [11:0] rdig;
 wire        daa_carry, bsel,
             div_v;
+reg         upper02, upper03, upper08, upper09, upperaf, upper9f,
+            upper7f, upper6f, lower09, loweraf, lower03, lower6f, cdaa;
 
 assign z = bs ? z8 : ws ? z16 : z32;
 assign s = bs ? s8 : ws ? s16 : s32;
@@ -83,15 +85,34 @@ endfunction
 
 // daa is the value to add during the DAA instruction
 always @* begin
-    daa = 0;
-    if( nin ) begin
-        if( !cin && hin && op0[7:4]<9 && op0[3:0]>=6 ) daa=8'hfa;
-        if(  cin && ( op0[7:4]>=7 && !hin && op0[3:0]<10 )) daa=8'ha0;
-        if(  cin && ( op0[7:4]>=6 &&  hin && op0[3:0]>=6 )) daa=8'h9a;
-    end else begin
-        if ((cin || op0[7:4] > 9) || (op0[7:4] > 8) && op0[3:0] > 9) daa[7:4] =  4'd6;
-        if  (hin || op0[3:0] > 9) daa[3:0] = 6;
-    end
+    {cdaa,daa} = 0;
+    upper02 = op0[7:4]<=2;
+    upper03 = op0[7:4]<=3;
+    upper08 = op0[7:4]<=8;
+    upper09 = op0[7:4]<=9;
+    upperaf = ~upper09;
+    upper9f = ~upper08;
+    upper7f = op0[7:4]>=7;
+    upper6f = op0[7:4]>=6;
+
+    lower09 = op0[3:0]<=9;
+    loweraf = ~lower09;
+    lower03 = op0[3:0]<=3;
+    lower6f = op0[3:0]>=6;
+    if( !nin && !cin && upper09 && !hin && lower09 ) { cdaa, daa } = 9'h000;
+    if( !nin && !cin && upper08 && !hin && loweraf ) { cdaa, daa } = 9'h006;
+    if( !nin && !cin && upper09 &&  hin && lower03 ) { cdaa, daa } = 9'h006;
+    if( !nin && !cin && upperaf && !hin && lower09 ) { cdaa, daa } = 9'h160;
+    if( !nin && !cin && upper9f && !hin && loweraf ) { cdaa, daa } = 9'h166;
+    if( !nin && !cin && upperaf &&  hin && lower03 ) { cdaa, daa } = 9'h166;
+    if( !nin &&  cin && upper02 && !hin && lower09 ) { cdaa, daa } = 9'h160;
+    if( !nin &&  cin && upper02 && !hin && loweraf ) { cdaa, daa } = 9'h166;
+    if( !nin &&  cin && upper03 &&  hin && lower03 ) { cdaa, daa } = 9'h166;
+
+    if(  nin && !cin && upper09 && !hin && lower09 ) { cdaa, daa } = 9'h000;
+    if(  nin && !cin && upper08 &&  hin && lower6f ) { cdaa, daa } = 9'h0fa;
+    if(  nin &&  cin && upper7f && !hin && lower09 ) { cdaa, daa } = 9'h1a0;
+    if(  nin &&  cin && upper6f &&  hin && lower6f ) { cdaa, daa } = 9'h19a;
 end
 
 always @* begin
@@ -130,7 +151,7 @@ always @* begin
             v16 = &{op0[15],~op1[15],~rslt[15]}|&{~op0[15],op1[15],rslt[15]};
             v32 = &{op0[31],~op1[31],~rslt[31]}|&{~op0[31],op1[31],rslt[31]};
         end
-        DAA_ALU: rslt[7:0] = daa;
+        DAA_ALU:  {c8, rslt[7:0]}= {cdaa,daa};
         BAND_ALU: begin {c32,c16,c8} =  {3{bsel & cx}}; rslt[bidx]=c8; end
         BOR_ALU:  begin {c32,c16,c8} =  {3{bsel | cx}}; rslt[bidx]=c8; end
         BXOR_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=c8; end
