@@ -12,7 +12,7 @@ done
 
 jtframe ucode --list --gtkwave jt900h 900h
 parallel sim.sh {} $* --batch ::: $ALLTEST > runall.log
-FAIL=$(grep FAIL runall.log | wc -l)
+FAIL=$(grep "tests/.*FAIL" runall.log | wc -l)
 
 if [ $FAIL = 0 ]; then
     figlet PASS
@@ -32,7 +32,7 @@ if [ $FAIL = 0 ]; then
     fi
 else
     echo Some tests failed:
-    grep FAIL runall.log
+    grep "tests/.*FAIL" runall.log | sed "s/tests\///"
     echo $FAIL
 fi
 

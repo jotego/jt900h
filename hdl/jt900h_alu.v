@@ -27,14 +27,14 @@ module jt900h_alu(
     input             bs,ws,qs,
 
     // control
-    input             alt,      // used for signed mul/div
+    input             div_sign,      // used for signed mul/div
     input             div,
     output            div_busy,
     input       [4:0] alu_sel,
     input       [2:0] cx_sel,
 
     input             nin, hin, cin, zin,
-    output            n,z,p,c,v,
+    output            s,z,p,c,v,
     output reg        h,
     output reg [31:0] rslt
 );
@@ -45,22 +45,24 @@ reg  cx,
      c8, c16, c32,
      z8, z16, z32,
      v8, v16, v32,
-     n8, n16, n32;
+     s8, s16, s32;
 reg  [ 7:0] daa;
 wire [15:0] div_quot, div_rem;
 wire [ 4:0] bidx;
 wire [11:0] rdig;
 wire        daa_carry, bsel,
             div_v;
+reg         upper02, upper03, upper08, upper09, upperaf, upper9f,
+            upper7f, upper6f, lower09, loweraf, lower03, lower6f, cdaa;
 
-assign z = bs ? z8    : ws ? z16   : z32;
-assign n = bs ? n8    : ws ? n16   : n32;
-assign v = bs ? v8    : ws ? v16   : v32;
-assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
+assign z = bs ? z8 : ws ? z16 : z32;
+assign s = bs ? s8 : ws ? s16 : s32;
+assign v = bs ? v8 : ws ? v16 : v32;
 assign c = bs ? c8 : ws ? c16 : c32;
-assign bidx = {1'b0,ws&op1[3],op1[2:0]};
+assign p = bs ? ~^rslt[7:0] : ~^rslt[15:0];
+assign bidx = {1'b0,op1[3:0]};
 assign bsel = op0[bidx];
-assign rdig = {op1[3:0],op0[7:0]};
+assign rdig = {op1[3:0],op0[7:0]}; // op1=A, op0=mem
 
 jt900h_div u_div (
     .rst  ( rst         ),
@@ -69,7 +71,7 @@ jt900h_div u_div (
     .op0  ( op0         ), // dividend
     .op1  ( op1[15:0]   ),
     .len  ( qs          ),
-    .sign ( alt         ),
+    .sign ( div_sign    ),
     .start( div         ),
     .quot ( div_quot    ),
     .rem  ( div_rem     ),
@@ -83,15 +85,34 @@ endfunction
 
 // daa is the value to add during the DAA instruction
 always @* begin
-    daa = 0;
-    if( nin ) begin
-        if( !cin && hin && op0[7:4]<9 && op0[3:0]>=6 ) daa=8'hfa;
-        if(  cin && ( op0[7:4]>=7 && !hin && op0[3:0]<10 )) daa=8'ha0;
-        if(  cin && ( op0[7:4]>=6 &&  hin && op0[3:0]>=6 )) daa=8'h9a;
-    end else begin
-        if ((cin || op0[7:4] > 9) || (op0[7:4] > 8) && op0[3:0] > 9) daa[7:4] =  4'd6;
-        if  (hin || op0[3:0] > 9) daa[3:0] = 6;
-    end
+    {cdaa,daa} = 0;
+    upper02 = op0[7:4]<=2;
+    upper03 = op0[7:4]<=3;
+    upper08 = op0[7:4]<=8;
+    upper09 = op0[7:4]<=9;
+    upperaf = ~upper09;
+    upper9f = ~upper08;
+    upper7f = op0[7:4]>=7;
+    upper6f = op0[7:4]>=6;
+
+    lower09 = op0[3:0]<=9;
+    loweraf = ~lower09;
+    lower03 = op0[3:0]<=3;
+    lower6f = op0[3:0]>=6;
+    if( !nin && !cin && upper09 && !hin && lower09 ) { cdaa, daa } = 9'h000;
+    if( !nin && !cin && upper08 && !hin && loweraf ) { cdaa, daa } = 9'h006;
+    if( !nin && !cin && upper09 &&  hin && lower03 ) { cdaa, daa } = 9'h006;
+    if( !nin && !cin && upperaf && !hin && lower09 ) { cdaa, daa } = 9'h160;
+    if( !nin && !cin && upper9f && !hin && loweraf ) { cdaa, daa } = 9'h166;
+    if( !nin && !cin && upperaf &&  hin && lower03 ) { cdaa, daa } = 9'h166;
+    if( !nin &&  cin && upper02 && !hin && lower09 ) { cdaa, daa } = 9'h160;
+    if( !nin &&  cin && upper02 && !hin && loweraf ) { cdaa, daa } = 9'h166;
+    if( !nin &&  cin && upper03 &&  hin && lower03 ) { cdaa, daa } = 9'h166;
+
+    if(  nin && !cin && upper09 && !hin && lower09 ) { cdaa, daa } = 9'h000;
+    if(  nin && !cin && upper08 &&  hin && lower6f ) { cdaa, daa } = 9'h0fa;
+    if(  nin &&  cin && upper7f && !hin && lower09 ) { cdaa, daa } = 9'h1a0;
+    if(  nin &&  cin && upper6f &&  hin && lower6f ) { cdaa, daa } = 9'h19a;
 end
 
 always @* begin
@@ -108,7 +129,9 @@ always @* begin
     endcase
 
     {c32,c16,c8}={3{cx}};
+    {v32,v16,v8}= 3'd0;
     rslt = op0;
+    h    = 0;
     case(alu_sel)
         ADD_ALU: begin
             { h,   rslt[ 3: 0] } = {1'b0,op0[ 3: 0]}+{1'b0,op1[ 3: 0]}+{ 4'd0,cx };
@@ -128,16 +151,17 @@ always @* begin
             v16 = &{op0[15],~op1[15],~rslt[15]}|&{~op0[15],op1[15],rslt[15]};
             v32 = &{op0[31],~op1[31],~rslt[31]}|&{~op0[31],op1[31],rslt[31]};
         end
-        DAA_ALU: rslt[7:0] = daa;
+        DAA_ALU:  {c8, rslt[7:0]}= {cdaa,daa};
         BAND_ALU: begin {c32,c16,c8} =  {3{bsel & cx}}; rslt[bidx]=c8; end
         BOR_ALU:  begin {c32,c16,c8} =  {3{bsel | cx}}; rslt[bidx]=c8; end
         BXOR_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=c8; end
-        BSET_ALU: begin {c32,c16,c8} = ~{3{bsel}}; rslt[bidx]=cx;    end
+        BSET_ALU: begin {c32,c16,c8} =  {3{bsel ^ cx}}; rslt[bidx]=cx; end
         AND_ALU:  rslt = op0&op1;
         OR_ALU:   rslt = op0|op1;
         XOR_ALU:  rslt = op0^op1;
         CPL_ALU:  rslt[15:0] = ~op0[15:0];
-        MUL_ALU:  rslt = alt ? smul( op0[15:0], op1[15:0] ) : op0[15:0]*op1[15:0];
+        MUL_ALU:  rslt = op0[15:0]*op1[15:0];
+        MULS_ALU: rslt = smul( op0[15:0], op1[15:0] );
         SH4_ALU:  rslt = { 27'd0, op1[3:0]==0, op1[3:0] }; // convert 4'd0 to 5'd16
         DIV_ALU: begin
             if( ws )
@@ -157,7 +181,8 @@ always @* begin
             if( ws ) rslt[15] = cx;
             {c32,c16} = {2{op2[0]}};
         end
-        RRD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], alt ? {rdig[7:0],rdig[11:8]} : {rdig[3:0],rdig[11:4]}}; // op0=mem, op1=A
+        RRD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[3:0],rdig[11:4]}; // op1=A
+        RLD_ALU: {rslt[7:0],rslt[15:8]}={op1[7:4], rdig[7:0],rdig[11:8]}; // op1=A
         MIRR_ALU: rslt[15:0] = {
                 op0[0], op0[1], op0[2], op0[3], op0[4], op0[5], op0[6], op0[7],
                 op0[8], op0[9], op0[10], op0[11], op0[12], op0[13], op0[14], op0[15] };
@@ -186,9 +211,9 @@ always @* begin
     z8  = rslt[ 7: 0]==0;
     z16 = rslt[15: 8]==0 && z8;     // comparing all 16 bits would result in faster logic, but this is smaller
     z32 = rslt[31:16]==0 && z16;
-    n8  = rslt[ 7];
-    n16 = rslt[15];
-    n32 = rslt[31];
+    s8  = rslt[ 7];
+    s16 = rslt[15];
+    s32 = rslt[31];
 end
 
 endmodule

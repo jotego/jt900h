@@ -2,10 +2,11 @@
     maxmode on
     relaxed on
     org 0
+
     ld a,0xbf    ; common header
 
     ld xhl,data
-    ld xde,copy
+    ld xde,0x400
     ld bc,8
 
     ldirb (xde+),(xhl+)
@@ -14,10 +15,10 @@
     cp bc,0
     jp ne,bad_end
 
-    ; check the copy
+    ; check the 0x400
     ld bc,4
     ld xhl,data+3*2
-    ld xde,copy+3*2
+    ld xde,0x400+3*2
 loop:
     ld wa,(xhl)
     sub xhl,2
@@ -37,7 +38,5 @@ bad_end:
     jp bad_end
 data:
     dw 0x0011,0x2233,0x4455,0x6677,0x8899,0x0000,0x0000,0x0000
-    dw 0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
-copy:
     dw 0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
     end

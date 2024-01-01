@@ -23,6 +23,7 @@ module jt900h_mem(
     // external interface
     output     [23:0] bus_addr,
     input      [15:0] bus_dout,
+    input             bus_busy,
     output reg [15:0] bus_din,
     output reg [ 1:0] bus_we,
     output reg        bus_rd,
@@ -35,12 +36,12 @@ module jt900h_mem(
     // from control unit
     input             bs, ws, qs,
     // from register unit
-    input      [23:0] da,
+    input      [31:0] da,
     input      [23:0] pc,
     input      [31:0] xsp,
     input      [31:0] md,
     // outputs
-    output reg [23:0] ea,           // address calculated from memory addressing instructions
+    output reg [31:0] ea,           // address calculated from memory addressing instructions
     output reg [31:0] mdata,
     output            busy
 );
@@ -65,9 +66,9 @@ assign part     = fetch_sel==VS_FETCH && (bl|wl);
 
 always @* begin
     case( ea_sel )
-        DA_EA:   nx_addr = da;
+        DA_EA:   nx_addr = da[23:0];
         SP_EA:   nx_addr = xsp[23:0];
-        M_EA:    nx_addr = ea;
+        M_EA:    nx_addr = ea[23:0];
         default: nx_addr = pc;
     endcase
 end
@@ -88,9 +89,11 @@ always @(posedge clk or posedge rst) begin
         wrl        <= 0;
         {ql,wl,bl} <= 0;
     end else if(cen) begin
-        bus_we <= 0;
-        wp     <= wp<<1;
-        rp     <= rp<<1;
+        if( !bus_busy ) begin
+            bus_we <= 0;
+            wp     <= wp<<1;
+            rp     <= rp<<1;
+        end
         if( da2ea ) ea <= da;
         if( !wrk ) begin
             wrl <= wr;
@@ -99,7 +102,7 @@ always @(posedge clk or posedge rst) begin
                 adelta     <= 0;
                 bus_din    <= wdadj[15:0];
                 nx_din     <= wdadj[39-:24];
-                bus_we     <= { qs | ws | (bs&nx_addr[0]), qs | ((ws|bs)&~nx_addr[0])};
+                bus_we     <= !nx_addr[0] ? { qs|ws, 1'b1 } : 2'b10;
                 {ql,wl,bl} <= {qs,ws,bs};
                 if( (ws & nx_addr[0]) | qs ) begin
                     wp  <= 1;
@@ -113,7 +116,7 @@ always @(posedge clk or posedge rst) begin
                 rp         <= 1;
                 {ql,wl,bl} <= ea_sel==0 ? 3'b100 : {qs,ws,bs}; // always reads 32 bits for PC fetches
             end
-        end else begin
+        end else if( !bus_busy ) begin
             if( wp[0] ) begin
                 adelta    <= bus_addr[0] ? 2'b01 : 2'b10;
                 bus_din  <= nx_din[15:0];

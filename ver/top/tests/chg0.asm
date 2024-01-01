@@ -9,9 +9,9 @@
     ld a,(xix)
     chg 1,(xix)
     ld w,(xix)
-    cp (xix),0xfc
+    cp (xix),0x21
     jp eq,bad_end
-    or ra3,2
+    or ra3,1
 
     ; chg #3,(mem)
     incf
@@ -19,8 +19,9 @@
     ld a,(xiy)
     chg 0,(xiy)
     ld w,(xiy)
-    cp (xiy),0xfc
-    jp eq,bad_end
+    xor a,w
+    cp a,1
+    jp ne,bad_end
     or ra3,2
     decf
 

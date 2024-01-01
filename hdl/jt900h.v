@@ -62,13 +62,13 @@ wire [ 4:0] alu_sel;
 wire [ 4:0] cc_sel;
 wire [ 3:0] rmux_sel;
 // memory unit
-wire [23:0] ea, da, pc;
-wire [31:0] mdata;
+wire [23:0] pc;
+wire [31:0] ea, da, mdata;
 wire        mem_busy, nc;
 // ALU
 wire [31:0] op0, op1, op2, rslt;
 wire        div_busy;
-wire        zu,hu,vu,nu,cu,pu;
+wire        zu,hu,vu,su,cu,pu;
 // "Control Registers" (MCU MMR)
 wire [ 7:0] cra;
 wire [31:0] crin;
@@ -134,7 +134,7 @@ jt900h_regs u_regs(
     .zi         ( zu        ),
     .hi         ( hu        ),
     .vi         ( vu        ),
-    .ni         ( nu        ),
+    .si         ( su        ),
     .ci         ( cu        ),
     .pi         ( pu        ),
     .no         ( n         ),
@@ -193,9 +193,9 @@ jt900h_alu u_alu(
     .qs         ( qs        ),
 
     // control
-    .alt        ( alt       ),
     .div        ( div       ),
     .div_busy   ( div_busy  ),
+    .div_sign   ( alt       ),
     .alu_sel    ( alu_sel   ),
     .cx_sel     ( cx_sel    ),
 
@@ -208,7 +208,7 @@ jt900h_alu u_alu(
     .z          ( zu        ),
     .h          ( hu        ),
     .v          ( vu        ),
-    .n          ( nu        ),
+    .s          ( su        ),
     .c          ( cu        ),
     .p          ( pu        ),
     .rslt       ( rslt      )
@@ -224,6 +224,7 @@ jt900h_mem u_mem(
     .bus_din    ( dout      ),
     .bus_we     ( we        ),
     .bus_rd     ( rd        ),
+    .bus_busy   ( busy      ),
     // from ucode
     .fetch_sel  ( fetch_sel ),
     .ea_sel     ( ea_sel    ),

@@ -2,12 +2,12 @@
 
 module test;
 
-localparam AW=12;
+localparam AW=14;
 
 reg         rst, clk;
 reg         cen;
 wire [23:0] ram_addr;
-wire [11:0] ram_a;
+wire [AW-1:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
 wire        ram_rdy;
@@ -97,7 +97,7 @@ initial begin
     dump_rdout=0;
     $display("Simulating up to RAM address %X",`END_RAM);
     #100 rst=0;
-    #1000_000
+    #3000_000
     $display("Time over");
     dump_rdout=1;
 end
@@ -121,9 +121,9 @@ end
 // end
 
 always @(posedge clk) begin
-    `ifdef USECEN
+    // `ifdef USECEN
     cen<=~cen;
-    `endif
+    // `endif
     // update the interrupt register after a certain count
     if( !intcnt[8] ) begin
         intcnt <= intcnt - 1'd1;
@@ -136,7 +136,7 @@ always @(posedge clk) begin
     end
     if( ram_we !=0 ) begin
         mem[ ram_a>>1 ] <= ram_win;
-        case( ram_we )
+        if(cen) case( ram_we ) // cen here is only to limit the lines displayed
             2'b01: $display("RAM: %02X written to %X low  (%X)",ram_win[7:0],  ram_addr&24'hffffe, ram_a>>1 );
             2'b10: $display("RAM: %02X written to %X high (%X)",ram_win[15:8], ram_addr&24'hffffe, ram_a>>1 );
             2'b11: $display("RAM: %04X written to %X word (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );

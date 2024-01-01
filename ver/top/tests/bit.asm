@@ -39,26 +39,6 @@
     jp eq,bad_end
     or de,4
 
-; Long programs have dummy bytes inserted in the
-; assembler object code, so I keep it short
-;    ld wa,8
-;    ld bc,0
-;    bit 3,wa
-;    jp eq,bad_end
-;    or de,8
-;
-;    ld wa,0x10
-;    ld bc,0
-;    bit 4,wa
-;    jp eq,bad_end
-;    or de,0x10
-;
-;    ld wa,0x20
-;    ld bc,0
-;    bit 5,wa
-;    jp eq,bad_end
-;    or de,0x20
-;
     ld wa,0x40
     ld bc,0
     bit 6,wa

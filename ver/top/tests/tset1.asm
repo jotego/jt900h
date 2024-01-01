@@ -26,15 +26,20 @@
     ld (0x101),0x00
     ld (0x102),0x00
     tset 1,(0xff)
+    jp nz,bad_end
     ld xbc,(0xff)
     cp (0xff),0x02
     jp ne,bad_end
 
     ; TSET #3,(#16)
-    ld (0xfff),0x0000
+    ldw (0xfff),0x5678
+    ldw (0xfff+2),0x1234
     tset 0,(0xfff)
+    jp nz,bad_end
     ld xde,(0xfff)
-    cp (0xfff),0x01
+    cp xde,0x12345679
+    jp ne,bad_end
+    cpb (0xfff),0x79
     jp ne,bad_end
 
 end_loop:

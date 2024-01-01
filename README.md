@@ -87,20 +87,22 @@ These instructions may not use memory addressing, may use it just to obtain an a
 
 The _alt_ signal enables an alternative meaning to the signal it goes with:
 
-| signal  | alt=0           | alt=1                    |
-| ------- | --------------- | ------------------------ |
-| a_ld    | read full byte  | set upper nibble to zero |
-| iff_ld  | regular read    | set to 7 if read is zero |
-| div     | unsigned        | signed                   |
-| dst_ral | quick selection | use full 8-bit address   |
-| mul_alu | unsigned        | signed                   |
-| rrd_alu | RLD             | RRD                      |
-| n3_rmux | take only #3    | take 16 if #3==0         |
-| pc_rmux | PC              | interrupt address byte   |
-| sr_rmux | SR              | incoming interrupt level |
-| r32jmp  | read data       | do not read data         |
-| rets    | byte size       | word size                |
-| v_loop  | only V          | V and Z                  |
+| signal       | alt=0           | alt=1                      |
+| ------------ | --------------- | -------------------------- |
+| div          | unsigned        | signed                     |
+| halt         | interrupt wait  | decode error: halt forever |
+| r32jmp       | read data       | do not read data           |
+| rets         | byte size       | word size                  |
+| s_setw       | s used in LDAR  | zz used in (r32+)          |
+| ?_setw       | b/w/q set       | b/w/q set (also in altss)  |
+| v_loop       | only V          | V and Z                    |
+| a_ld         | read full byte  | set upper nibble to zero   |
+| dst_ral      | quick selection | use full 8-bit address     |
+| n3_rmux      | take only #3    | take 16 if #3==0           |
+| pc_rmux      | PC              | interrupt address byte     |
+| sr_rmux      | SR              | incoming interrupt level   |
+| src/dst_rmux | b/w/q gated     | always 32-bit access       |
+| zex & qs     |                 | clear bits [31:24]         |
 
 ## PC at Reset
 
@@ -110,7 +112,7 @@ The NeoGeo Pocket seems to start operation from FF1800, which does not agree wit
 
 Compiled on MiSTer
 
-| Version    | Usage                |
-| ---------- | -------------------- |
-| Old        | ~7000 LE and no BRAM |
-| microcoded | TBD                  |
+| Version    | Usage                 |
+| ---------- | --------------------- |
+| Old        | ~7000 LE and no BRAM  |
+| microcoded | ~2240 LE and 114 M10K |

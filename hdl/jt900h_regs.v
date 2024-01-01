@@ -21,13 +21,13 @@ module jt900h_regs(
     input             clk,
     input             cen,
     // memory unit
-    input      [23:0] ea,
+    input      [31:0] ea,
     input      [31:0] din,      // data from memory controller
     output     [31:0] xsp,
     output reg [31:0] md,
     // ALU
     input      [31:0] rslt,
-    input             zi,hi,vi,ni,ci,pi, // flag updates
+    input             zi,hi,vi,si,ci,pi, // flag updates
     output            no,ho,co,zo,
     // control (from module logic)
     input             cc,
@@ -59,7 +59,7 @@ module jt900h_regs(
     output reg        cr_we,    // cr_rd goes directly from control unit
     // register outputs
     output reg [23:0] pc,
-    output reg [23:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
+    output reg [31:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
     output reg [31:0] op0,
     output reg [31:0] op1,
     output reg [31:0] op2,
@@ -80,7 +80,6 @@ wire [31:0] dmp_mux;
 reg  [ 7:0] r3sel, fsel, sdsel, mulsel,
             src, dst; // RALs (Register Address Latches)
 reg  [ 4:0] sdsh;
-wire [ 7:0] flags_;
 reg         s, z, h, v, n, c,    // flags (main)
             s_,z_,h_,v_,n_,c_;   // flags (alt)
 reg  [ 1:0] rfp;        // Register File Pointer
@@ -88,7 +87,6 @@ wire [15:0] sr;         // status register. lower byte contains the flags
 reg         is_mul;
 
 assign flags   = {s, z, 1'b0,h, 1'b0,v, n, c };
-assign flags_  = {s_,z_,1'b0,h_,1'b0,v_,n_,c_};
 assign sr      = {1'b1,riff,2'b10,rfp,flags};
 assign {no,ho,co,zo} = {n,h,c,z};
 assign xsp     = ptrs[XSP];
@@ -130,7 +128,8 @@ always @* begin
     // Register multiplexer
     sdsel = rmux_sel==DST_RMUX ? dst : src;
     sdmux = sdsel[7] ? ptrs[sdsel[3:2]] : accs[sdsel[5:2]]; // 32-bit registers
-    sdsh  = bs ? {sdsel[1:0],3'd0} : ws ? {sdsel[1],4'd0} : 5'd0; // shift to select byte/word part as data
+    sdsh  = qs | alt ? 5'd0 : bs ? {sdsel[1:0],3'd0} : {sdsel[1],4'd0}; // shift to select byte/word part as data. alt selects long word
+    rmux  = md;
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
         CR_RMUX:  rmux = cr;
@@ -146,7 +145,7 @@ always @* begin
         ZERO_RMUX:rmux = 0;
         SPD_RMUX: rmux = bs ? 1 : ws ? 2 : 4;
 
-        EA_RMUX:  rmux = {8'd0,ea};
+        EA_RMUX:  rmux = ea;
         default:  rmux = md;
     endcase
     // extend the sign
@@ -154,6 +153,7 @@ always @* begin
     if( ws & sex ) rmux[31:16] = {16{rmux[15]}};
     if( bs & zex ) rmux[31: 8] = 0;
     if( ws & zex ) rmux[31:16] = 0;
+    if( qs & zex & alt) rmux[31:24] = 0; // used for loading #24 addresses
 end
 
 always @(posedge clk, posedge rst) begin
@@ -181,27 +181,30 @@ always @(posedge clk, posedge rst) begin
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
+            0:;
+            C_CC:            {          c} <= {               ci       };
+            COR_CC:          {          c} <= {             c|ci       };
             H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
-            N0C_CC:          {        n,c} <= {               1'b0,ci  };
-            SZHVCR_CC:       {s,z,h,v,  c} <= {ni,zi,hi, vi,     c|ci  };
+            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
             H1N1_CC:         {    h,  n  } <= {      1'b1,    1'b1     };
-            SZHVN1C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b1,ci  };
+            N0C_CC:          {        n,c} <= {               1'b0,ci  };
+            SZH0PN0_CC:      {s,z,h,v,n  } <= {si,zi,1'b0, pi,1'b0     };
+            SZH0PN0C0_CC:    {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,1'b0};
+            SZH0PN0C_CC:     {s,z,h,v,n,c} <= {si,zi,1'b0, pi,1'b0,ci  };
+            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {si,zi,1'b1, pi,1'b0,1'b0};
+            SZHN1_CC:        {s,z,h,  n  } <= {si,zi,hi,      1'b1     };
+            SZHP_CC:         {s,z,h,v    } <= {si,zi,hi, pi            };
+            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
+            SZHVN0X_CC:      {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b0     }; // INC on memory
+            SZHVN0C_CC:      {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b0,ci  };
+            SZHVN1C_CC:      {s,z,h,v,n,c} <= {si,zi,hi,   vi,1'b1,ci  };
+            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
+            SZHVN1DX_CC:     {s,z,h,v,n  } <= {si,zi,hi,   vi,1'b1     }; // DEC on memory
+            SZV_CC:          {s,z,  v    } <= {si,zi,    vi            };
             V_CC:            {      v    } <= {          vi            };
             Z2V_CC:          {      v    } <= {               zi       };
-            SZV_CC:          {s,z,  v    } <= {ni,zi,    vi            };
-            C_CC:            {          c} <= {               ci       };
+            Z3V_CC:          {      v    } <= {           ~zi          }; // CPD/CPI
             ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
-            SZHVN0_CC: if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b0     }; // INC, only applies to byte operands
-            SZHVN1_CC:       {s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
-            SZHVN1D_CC:if(bs){s,z,h,v,n  } <= {ni,zi,hi,   vi,1'b1     }; // DEC, only applies to byte operands
-            SZHVN0C_CC:      {s,z,h,v,n,c} <= {ni,zi,hi,   vi,1'b0,ci  };
-            SZH1PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b1, pi,1'b0,1'b0};
-            SZH0PN0C0_CC:    {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,1'b0};
-            SZH0PN0C_CC:     {s,z,h,v,n,c} <= {ni,zi,1'b0, pi,1'b0,ci  };
-            SZH0VN0_CC:      {s,z,h,v,n  } <= {ni,zi,1'b0, vi,1'b0     };
-            H0V3N0_CC:       {    h,v,n  } <= {      1'b0,~zi,1'b0     };
-            Z3V_CC:          {      v    } <= {           ~zi          };
-            default:;
         endcase
         case( fetch_sel )
             VS_FETCH, Q_FETCH: md <= din;
@@ -253,6 +256,7 @@ always @(posedge clk, posedge rst) begin
                         accs[dst[5:2]] <= rslt;
                 end
             end
+            DSTQ_LD: if(dst[7]) ptrs[dst[3:2]] <= rslt; else accs[dst[5:2]] <= rslt;
             RFP_LD: rfp <= rslt[1:0];
             MD_LD:  md  <= rslt;
             A_LD:   begin
@@ -265,10 +269,12 @@ always @(posedge clk, posedge rst) begin
                 if( ws ) {riff,rfp} <= {rslt[14:12],rslt[9:8]};
                 {s,z,h,v,n,c} <= {rslt[7:6],rslt[4],rslt[2:0]};
             end
-            PC_LD:  pc <= rslt[23:0];
-            XSP_LD: ptrs[XSP] <= rslt;
-            IFF_LD: riff <= alt&&rslt[2:0]==0 ? 3'b111 : rslt[2:0];
-            DA_LD:  da <= { qs ? rslt[23:16]:8'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
+            PC_LD:   pc <= rslt[23:0];
+            XSP_LD:  ptrs[XSP] <= rslt;
+            IFF_LD:  riff <= rslt[2:0];
+            IFF7_LD: riff <= rslt[2:0]==0 ? 3'b111 : rslt[2:0];
+            DA_LD:   da   <= rslt;
+            DAS_LD:  da   <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
             CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
             default:;
         endcase

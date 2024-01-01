@@ -1,19 +1,24 @@
 config:
   entries: 1024
   entry_len: 16
+  latch_ucode: true
+  bus_error: decerr
   #  per_chunk_cycles: true
   auto: { min: 0x300, max: 0x3ff }
 constants:
   ADD_CC:  szhvn0c     # ADD,ADC
   AND_CC:  szh1pn0c0   # AND,
   BIT_CC:  zch1n0      # BIT
-  CPD_CC:  szhvn1      # CPD,CPDR,CPI,CPIR,DEC
-  DEC_CC:  szhvn1d     # DEC, only applies to byte operands
-  INC_CC:  szhvn0      # INC, only applies to byte operands
+  CPD_CC:  szhn1       # CPD,CPDR,CPI,CPIR,DEC, V is updated separatedly
+  DEC_CC:  szhvn1d     # DEC,  only applies to byte operands
+  INC_CC:  szhvn0      # INC,  only applies to byte operands
+  DEX_CC:  szhvn1dx    # DECX, applies to all operands
+  INX_CC:  szhvn0x     # INCX, applies to all operands
   LD_CC:   h0v3n0      # LDD, LDDR, LDI, LDIR
   OR_CC:   szh0pn0c0   # OR,XOR
   SH_CC:   szh0pn0c    # RL,RLC,RR,RRC,SLA,SLL,SRA,SRL
   SUB_CC:  szhvn1c     # CP, NEG, SBC, SUB
+  RXD_CC:  szh0pn0     # RLD/RRD
 # alias:
 #   - &LOW3 0x3f8
 # ctrl:
@@ -24,13 +29,13 @@ ops:
   # First byte contains either r or (mem). Second byte is OP and R. Same OP for both addressing modes
   # bit 3 set in OP makes (mem) the destination: OR (mem),R
   # R,r register in lower 3 bits  11zz'1rrr
-  - { name: rzzB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
-  - { name: rzzW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
-  - { name: rzzQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
+  - { name: regB,  op: 0x0c8, mask: 0x3f8, ctl: { setw: b }, cycles: 1 }
+  - { name: regW,  op: 0x0d8, mask: 0x3f8, ctl: { setw: w }, cycles: 1 }
+  - { name: regQ,  op: 0x0e8, mask: 0x3f8, ctl: { setw: q }, cycles: 1 }
   # R,r register in next byte
-  - { name: frzzB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
-  - { name: frzzW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
-  - { name: frzzQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
+  - { name: fregB, op: 0x0c7,              ctl: { setw: b }, cycles: 1 }
+  - { name: fregW, op: 0x0d7,              ctl: { setw: w }, cycles: 1 }
+  - { name: fregQ, op: 0x0e7,              ctl: { setw: q }, cycles: 1 }
 
   # Group 2 R,(mem) and (mem),R
   # R,(mem). Page 43 of 900H CPU Book
@@ -54,12 +59,12 @@ ops:
   - { name: mem_r32,  op: 0x0d3, ctl: { rd: 1, setw: w }}
   - { name: mem_r32,  op: 0x0e3, ctl: { rd: 1, setw: q }}
 
-  - { name: mem_iter, op: 0x0c4, ctl: { rd: 1, alu: SUB, setw: b, adr: SUB }}  # -1--'0100 (-r32)
-  - { name: mem_iter, op: 0x0d4, ctl: { rd: 1, alu: SUB, setw: w, adr: SUB }}
-  - { name: mem_iter, op: 0x0e4, ctl: { rd: 1, alu: SUB, setw: q, adr: SUB }}
-  - { name: mem_iter, op: 0x0c5, ctl: { rd: 1, alu: ADD, setw: b, adr:     }}  # -1--'0100 (r32+)
-  - { name: mem_iter, op: 0x0d5, ctl: { rd: 1, alu: ADD, setw: w, adr:     }}
-  - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, setw: q, adr:     }}
+  - { name: mem_iter, op: 0x0c4, ctl: { rd: 1, alu: SUB, adr: SUB, setw: b } }  # -1--'0100 (-r32) step comes from second byte
+  - { name: mem_iter, op: 0x0c5, ctl: { rd: 1, alu: ADD, adr:    , setw: b } }  # -1--'0100 (r32+)
+  - { name: mem_iter, op: 0x0d4, ctl: { rd: 1, alu: SUB, adr: SUB, setw: w } }  # -1--'0100 (-r32) step comes from second byte
+  - { name: mem_iter, op: 0x0d5, ctl: { rd: 1, alu: ADD, adr:    , setw: w } }  # -1--'0100 (r32+)
+  - { name: mem_iter, op: 0x0e4, ctl: { rd: 1, alu: SUB, adr: SUB, setw: q } }  # -1--'0100 (-r32) step comes from second byte
+  - { name: mem_iter, op: 0x0e5, ctl: { rd: 1, alu: ADD, adr:    , setw: q } }  # -1--'0100 (r32+)
 
   # Group 3 #3,(mem) 1m11'mmmm except RET cc and LDAR
   - { name: mem_reg,  op: 0x0b0, ctl: { rd: 0, setw: , d8: 0 }, mask: 0x3f8, cycles: 5 }
@@ -68,8 +73,8 @@ ops:
   - { name: mem_da,   op: 0x0f1, ctl: { rd: 0, setw: , off16: 1 }}
   - { name: mem_da24, op: 0x0f2, ctl: { rd: 0, setw:            }}
   - { name: mem_r32,  op: 0x0f3, ctl: { rd: 0, setw:            }}
-  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, setw: b, adr: SUB }}  # -1--'0100 (-r32) setw needed for inc/dec
-  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, setw: b, adr:     }}  # -1--'0100 (r32+) is b_setw the good value for all cases?
+  - { name: mem_iter, op: 0x0f4, ctl: { rd: 0, alu: SUB, adr: SUB, setw: }}  # -1--'0100 (-r32) setw comes from second byte
+  - { name: mem_iter, op: 0x0f5, ctl: { rd: 0, alu: ADD, adr:    , setw: }}  # -1--'0100 (r32+)
 
 
   ########### instructions ###################
@@ -130,19 +135,19 @@ ops:
   - { name: CHG,   op: 0x132,ctl: {alu: BXOR,cx: hi, srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
   - { name: CHG,   op: 0x3c0,ctl: {alu: BXOR,cx: hi, srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
   - { name: CP,    op: 0x1cf,ctl: {alu: SUB, cx:   , srca: imm1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # CP r,#
-  - { name: CP,    op: 0x1d8,ctl: {alu: SUB, cx:   , srca: n31p, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # r,#
-  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 }            # R,r
+  - { name: CP,    op: 0x1d8,ctl: {alu: SUB, cx:   , srca: n31p, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP r,#
+  - { name: CP,    op: 0x1f0,ctl: {alu: SUB, cx:   , srca: src1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,r
   - { name: CP,    op: 0x23f,ctl: {alu: SUB, cx:   , srca: imm1, ld:  md,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
-  - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,(mem)
+  - { name: CP,    op: 0x2f0,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP R,(mem)
   - { name: CP,    op: 0x2f8,ctl: {alu: SUB, cx:   , srca: dst1, ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8 } # CP (mem),R
   - { name: CPL,   op: 0x106,ctl: {alu: CPL, cx:   , srca: zero, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h1n1       ,ral:    }} # only byte/word
-  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhvcr     ,ral:    }}
+  - { name: DAA,   op: 0x110,ctl: {alu: ADD, cx:   , srca: daa,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: szhp       ,ral:    }} # carry updated inside daa procedure
   - { name: DEC,   op: 0x168,ctl: {alu: SUB, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # DEC #3,r
-  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: DEC,   op: 0x268,ctl: {alu: SUB, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${DEX_CC}",ral:    }, mask: 0x3f8 } # DEC<w> #3,(mem)
   - { name: DECF,  op: 0x00d,ctl: {alu: SUB, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
   - { name: EI,    op: 0x006,ctl: {alu:    , cx:   , srca: n30pp,ld: iff,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # also serves as DI when operand is 7
   - { name: INC,   op: 0x160,ctl: {alu: ADD, cx:   , srca: n81p, ld: dst,setw:  , rd:  ,wr: 0,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # INC #3,r
-  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INC_CC}",ral:    }, mask: 0x3f8 } # inc<w> #3,(mem)
+  - { name: INC,   op: 0x260,ctl: {alu: ADD, cx:   , srca: n81p, ld:  md,setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${INX_CC}",ral:    }, mask: 0x3f8 } # INC<w> #3,(mem)
   - { name: INCF,  op: 0x00c,ctl: {alu: ADD, cx: hi, srca: rfp,  ld: rfp,setw: b, rd:  ,wr: , swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }}
   - { name: LD,    op: 0x200,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<B> (mem),#
   - { name: LD,    op: 0x202,ctl: {alu:    , cx:   , srca: imm0, ld:  md,setw: b, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral: dst}} # LD<W> (mem),#
@@ -186,7 +191,7 @@ ops:
   - { name: RCF,   op: 0x010,ctl: {alu: BAND,cx:    ,srca: zero, ld:    ,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: h0n0c      ,ral:    }}
   - { name: RES,   op: 0x130,ctl: {alu: BSET,cx:    ,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # #4,r
   - { name: RES,   op: 0x3b0,ctl: {alu: BSET,cx:    ,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: SBC,   op: 0x1b0,ctl: {alu: SUB, cx: cin,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
+  - { name: SBC,   op: 0x1b0,ctl: {alu: SUB, cx: cin,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SBC R,r
   - { name: SBC,   op: 0x1cb,ctl: {alu: SUB, cx: cin,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # SBC r,#
   - { name: SBC,   op: 0x23b,ctl: {alu: SUB, cx: cin,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
   - { name: SBC,   op: 0x2b0,ctl: {alu: SUB, cx: cin,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SBC R,(mem)
@@ -199,10 +204,10 @@ ops:
   - { name: STCF,  op: 0x12c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: dst,setw: b, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # STCF A,r
   - { name: STCF,  op: 0x32c,ctl: {alu: BSET,cx: cin,srca: acc,  ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }} # A,(mem) 1'm11'mmmm
   - { name: STCF,  op: 0x3a0,ctl: {alu: BSET,cx: cin,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8 } # #3,(mem)
-  - { name: SUB,   op: 0x1a0,ctl: {alu: SUB, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # R,r
+  - { name: SUB,   op: 0x1a0,ctl: {alu: SUB, cx:    ,srca: src1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB R,r
   - { name: SUB,   op: 0x1ca,ctl: {alu: SUB, cx:    ,srca: imm1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # SUB r,#
   - { name: SUB,   op: 0x23a,ctl: {alu: SUB, cx:    ,srca: imm1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }} # <W> (mem),#
-  - { name: SUB,   op: 0x2a0,ctl: {alu: SUB, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral: $,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB R,(mem)
+  - { name: SUB,   op: 0x2a0,ctl: {alu: SUB, cx:    ,srca: dst1, ld: dst,setw:  , rd:  ,wr:  ,swp_opnd: $,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB R,(mem)
   - { name: SUB,   op: 0x2a8,ctl: {alu: SUB, cx:    ,srca: dst1, ld: md, setw:  , rd:  ,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${SUB_CC}",ral:    }, mask: 0x3f8, cycles: 1 } # SUB (mem),R
   - { name: TSET,  op: 0x134,ctl: {alu: BSET,cx:  hi,srca: n41pp,ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    }} # #4,r
   - { name: TSET,  op: 0x3a8,ctl: {alu: BSET,cx:  hi,srca: n31p, ld: md, setw: b, rd: 1,wr: 1,swp_opnd:  ,swp_ral:  ,cc: "${BIT_CC}",ral:    },  mask: 0x3f8 } # #3,(mem)
@@ -221,14 +226,14 @@ ops:
   - { name: DIV,   op: 0x250, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt:   }, mask: 0x3f8 } # DIV  RR,(mem)
   - { name: DIVS,  op: 0x158, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  , cc: v, alt: $ },                                          mask: 0x3f8 } # only byte/word
   - { name: DIVS,  op: 0x258, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $, cc: v, alt: $ }, mask: 0x3f8 } # DIVS RR,(mem)
-  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alt:   }, mask: 0x3f8 } # MUL RR,r only byte/word
-  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alt:   }, mask: 0x3f8 } # MUL RR,(mem)
-  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alt: $ }, mask: 0x3f8 } # only byte/word
-  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alt: $ }, mask: 0x3f8 } # MULS RR,(mem)
+  - { name: MUL,   op: 0x140, ctl: { ex: zex, src: src, swp_ral: $, swp_opnd:  ,        alu: MUL  }, mask: 0x3f8 } # MUL RR,r only byte/word
+  - { name: MUL,   op: 0x240, ctl: { ex: zex, src: md,  swp_ral:  , swp_opnd: $,        alu: MUL  }, mask: 0x3f8 } # MUL RR,(mem)
+  - { name: MULS,  op: 0x148, ctl: { ex: sex, src: src, swp_ral: $, swp_opnd:  ,        alu: MULS }, mask: 0x3f8 } # only byte/word
+  - { name: MULS,  op: 0x248, ctl: { ex: sex, src: md,  swp_ral:  , swp_opnd: $,        alu: MULS }, mask: 0x3f8 } # MULS RR,(mem)
   - { name: DIVI,  op: 0x10a, ctl: { ex: zex, cc: v, alt:   }} # r,#
   - { name: DIVSI, op: 0x10b, ctl: { ex: sex, cc: v, alt: $ }} # r,#
-  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alt:   }} # r,#
-  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alt: $ }} # r,#
+  - { name: MULI,  op: 0x108, ctl: { ex: zex,        alu: MUL  }} # r,#
+  - { name: MULSI, op: 0x109, ctl: { ex: sex,        alu: MULS }} # r,#
 
   - { name: MULA,  op: 0x119, ctl: { cc: szv }}
   # group 1 - r
@@ -286,9 +291,9 @@ ops:
   - { name: LDI,   op: 0x210, ctl: { step: ADD, cc: "${LD_CC}" , loop: 0 }} # XDE,XHL or XIX,XIY is based on the first byte
   - { name: LDIR,  op: 0x211, ctl: { step: ADD, cc: "${LD_CC}" , loop: 1 }} # v3, becomes v0 at the end of the instruction
   # group 2 1m00'mmmm limited byte size
-  - { name: RLD,   op: 0x206, ctl: { alt: $, cc: szh0vn0 }} # RLD [A,](mem)
-  - { name: RRD,   op: 0x207, ctl: { alt:  , cc: szh0vn0 }} # RRD [A,](mem)
-  - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem)
+  - { name: RLD,   op: 0x206, ctl: { alu: RLD, cc: "${RXD_CC}" }} # RLD [A,](mem)
+  - { name: RRD,   op: 0x207, ctl: { alu: RRD, cc: "${RXD_CC}" }} # RRD [A,](mem)
+  - { name: LDM2DA,op: 0x219 }              # LD<W> (#16),(mem) byte/word
 
   # group 3 1m11'mmmm
   - { name: RETcc, op: 0x3f0, ctl: { retd: 0, ncc: ncc }, mask: 0x3f0 } # Decoded in control unit directly as a 12-bit OP
@@ -322,7 +327,7 @@ ucode:
       - md_ld, psh_jsr
       - zero_rmux, ld1_opnd
       - sr_rmux, alt, ld0_opnd
-      - add_alu, hi_cx, iff_ld, alt   # sets IFF level to input level+1 (saturates at 7)
+      - add_alu, hi_cx, iff7_ld   # sets IFF level to input level+1 (saturates at 7)
       - pc_rmux, alt, ld0_opnd, intexec_jsr
   - name: swi2pc
     seq:  # interrupt number in op0
@@ -345,132 +350,133 @@ ucode:
     seq:               # (XWA+d8), 8-bit indexing
       - q_setw,
       - dst_ral, s8_fetch
-      - inc_pc, dst_rmux, ld0_opnd, ${d8}?b_setw:q_setw
-      - ${d8}?*, inc_pc, sex, ld1_opnd, q_setw, s8_fetch
-      - ${d8}?add_alu, da_ld, ${setw}_setw
+      - inc_pc, dst_rmux, ld0_opnd, ${d8}?b_setw
+      - ${d8}?*, inc_pc, sex, ld1_opnd, s8_fetch
+      - ${d8}?add_alu, da_ld, ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da ]
     seq:
       - inc_pc, b_setw, s8_fetch      # #8 by default
       - ${off16}?*, inc_pc, w_setw    # #16 if off16 is set
-      - inc_pc, s8_fetch, zex, ld0_opnd, q_setw
+      - inc_pc, s8_fetch, zex, ld0_opnd
       - ${off16}?*, s8_fetch
-      - da_ld, ${setw}_setw
+      - da_ld, ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_da24 ]
     seq:
       - inc_pc, q_setw, s8_fetch
-      - inc_pc, ld0_opnd
+      - inc_pc, zex, alt, ld0_opnd
       - inc_pc, da_ld
       - inc_pc
-      - ${setw}_setw
+      - ${setw}_setw, alt
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - mnemo: [ mem_iter ]
     seq: # pre-decrement / post-increment
+      # It looks like the pointer step size and the operand size may be different
+      # FFB977 LD A,(XHL+)  C5 ED 21     in NGP firmware specifies different sizes
+      # taking the size for the step as the operand size too, creates a bug in the Pocket Menu arrow
+      # I have not tried what happens if you take the operand size as the pointer step
       - inc_pc, q_setw, s8_fetch
-      - inc_pc, dst_ral, alt, s8_fetch
-      - dst_rmux, ld0_opnd, ${setw}_setw
+      - inc_pc, dst_ral, alt
+      - dst_rmux, ld0_opnd, s_setw, alt, s8_fetch
       - spd_rmux, ld1_opnd, q_setw
       - ${alu}_alu, dst_ld
-      - ${adr}_alu, da_ld
-      - ${setw}_setw
+      - ${adr}_alu, da_ld, ${setw}?${setw}_setw:rld_setw
       - ${rd}=1?*, da2ea2md_jsr
       - ${rd}=0?*, da2ea2g3_jsr
   - name: da2ea2md
     seq: # loads operand data in op0, sets ea, and md contains the next op
       - waitmem, q_fetch        # refresh OP data
       - da2ea, md_rmux,ld0_opnd # op-code data is held in op0
-      - m_ea, q_fetch, waitmem  # loads data in md
+      - m_ea, vs_fetch, waitmem # loads data in md
       - ld1_opnd                # operand data in md
       - md_ld, swp_opnd         # restores md to have op code, operand data in op0
       - g2_nxgr, ni
   - name: da2ea2g3
     seq: # sets ea, and md contains the next op
       - waitmem, q_fetch        # refresh OP data
-      - da2ea                   # op-code data is held in op0
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - mnemo: [ mem_r32 ]
     seq: # covers r32', r32'+d16, r32+r8, r32+r16
-      - ${setw}_setw, s8_fetch
+      - ${setw}_setw, alt, s8_fetch
       - ${rd}=0?*, inc_pc, r32jmp, alt   # inc_pc as last instruction improves fetcher performance
       - ${rd}=1?*, inc_pc, r32jmp,       # r32 jump is based on lower bits
   - name: r32_00
     seq:
-      - inc_pc, swp_setw
-      - alt, dst_ral, q_setw
+      - inc_pc, dst_ral, alt
       - dst_rmux, ld0_opnd
       - da_ld
       - r32com_jsr
   - name: r32_00_nord
     seq:
-      - inc_pc, alt, dst_ral, q_setw
+      - inc_pc, dst_ral, alt, q_setw
       - dst_rmux, ld0_opnd
       - da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_01
     seq:
-      - inc_pc, swp_setw
-      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, q_setw
+      - inc_pc, dst_ral, alt, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
-      -         sex, md_rmux, ld1_opnd, q_setw
+      -         sex, md_rmux, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_01_nord
     seq:
-      - inc_pc, alt, dst_ral, q_setw, s8_fetch
+      - inc_pc, dst_ral, alt, s8_fetch
       - inc_pc, dst_rmux, ld0_opnd, w_setw
-      - inc_pc, sex, md_rmux, ld1_opnd, q_setw
+      - inc_pc, sex, md_rmux, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_8 # 2nd memory addressing byte code: 0000'0011
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, b_setw
-      - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_16 # 2nd memory addressing byte code: 0000'0111
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, w_setw
-      - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld
       - r32com_jsr
   - name: r32_8_nord # 2nd memory addressing byte code: 0000'0011
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, b_setw
-      - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_16_nord # 2nd memory addressing byte code: 0000'0111
     seq:
-      - inc_pc, swp_setw
+      - inc_pc
       - inc_pc, s8_fetch, q_setw
-      - inc_pc, s8_fetch, alt, dst_ral
+      - inc_pc, s8_fetch, dst_ral, alt
       -         dst_rmux, ld0_opnd, w_setw
-      - alt, dst_ral
-      - dst_rmux, ld1_opnd
+      - dst_ral, alt
+      - dst_rmux, sex, ld1_opnd
       - add_alu, da_ld, waitmem, q_fetch
-      - g3_nxgr, ni
+      - da2ea, g3_nxgr, ni
   - name: r32_ldar  # 2nd byte: 0001'0011, don't increment PC and jump to LDAR
     seq:
       - g3_nxgr, ni
   - name: r32com
     seq:
-      - da2ea, swp_setw
+      - da2ea, rld_setw
       - m_ea, q_fetch, waitmem
       - ld0_opnd
       - waitmem, q_fetch
@@ -537,7 +543,7 @@ ucode:
       - zero_rmux, ld1_opnd, ret_jsr
   - name: daa
     seq:
-      - inc_pc, daa_alu, md_ld
+      - inc_pc, daa_alu, md_ld, cor_cc
       - ld1_opnd, ret_jsr
   - name: cc0
     seq:
@@ -561,7 +567,7 @@ ucode:
       - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr
   - name: n81p # #3 -> op1, pc+=1, but if #3 == 0, then 8 is set instead (INC/DEC)
     seq:
-      - inc_pc, n3_rmux, ld1_opnd, s8_fetch, ret_jsr, alt
+      - inc_pc, n3_rmux, alt, ld1_opnd, s8_fetch, ret_jsr
   - name: n30pp # #3 -> op0, pc+=2
     seq:
       - inc_pc, s8_fetch
@@ -592,10 +598,10 @@ ucode:
       - sp_ea, wr, ret_jsr
   - name: dir16
     seq: # loads data from 16-bit address into MD. Does not set EA
-      - s8_fetch, swp_setw      # load direct address from 16-bit immediate value
+      - s8_fetch                # load direct address from 16-bit immediate value
       - inc_pc, w_setw
       - inc_pc, zex, ld0_opnd
-      - inc_pc, da_ld, swp_setw
+      - inc_pc, das_ld, rld_setw
       - da_ea, waitmem, vs_fetch
       - ret_jsr
   - name: ea0
@@ -603,25 +609,25 @@ ucode:
       - inc_pc, ea_rmux, ld0_opnd, ret_jsr
   ########################################################
   # Load op0 operand (destination)
-  - mnemo: [ rzzB, rzzW, rzzQ ]
+  - mnemo: [ regB, regW, regQ ]
     seq:
       - inc_pc, ${setw}_setw, mulcheck
       - dst_ral
       - waitmem, q_fetch
-      - g1_nxgr, ni, dst_rmux, ld0_opnd
-  - mnemo: [ frzzB, frzzW, frzzQ ]
+      - g1_nxgr, ni, zex, dst_rmux, ld0_opnd
+  - mnemo: [ fregB, fregW, fregQ ]
     seq:
       - inc_pc, ${setw}_setw, s8_fetch
       - inc_pc, alt, dst_ral, s8_fetch
       - waitmem, q_fetch
-      - g1_nxgr, ni, dst_rmux, ld0_opnd
+      - g1_nxgr, ni, zex, dst_rmux, ld0_opnd
 # instructions
   - mnemo: [  ADC, ADD, AND, ANDCF, BIT, CCF, CHG, CP, CPL,
               DAA, DEC, DECF, EI, INC, INCF, LD, LDA, LDC, LDCF, LDF,
               MIRR, NEG, NOP, OR, ORCF, PAA, RCF, RES,
               SBC, SCC, SCF, SET, STCF, SUB, TSET, XOR, XORCF, ZCF ]
     seq:
-      - ${setw}_setw
+      - ${setw}_setw, alt
       - ${ral}_ral, ${srca}_jsr
       - ${rd}?*, m_ea, vs_fetch, waitmem
       - ${swp_opnd}, ${swp_ral}, ${rd}?ld0_opnd
@@ -633,34 +639,31 @@ ucode:
   # compare data and count up/down BC
   - mnemo: [ CPD, CPDR, CPI, CPIR ]
     seq:
-      - dst_rmux, ld0_opnd
-      - da_ld, spd_rmux, ld1_opnd, swp_setw,         # SRC pointer inc/dec in parallel
-      - q_setw,
-      - ${step}_alu, dst_ld, swp_setw,               # variable-size fetch (byte or word)
-      - a_ral
-      - src_rmux, ld0_opnd                    da_ea, vs_fetch, waitmem
-      - md_rmux,  ld1_opnd,                   da_ea
-      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd, da_ea  # prepare for BC--
-      - zero_rmux, ld1_opnd,                  da_ea
-      - sub_alu, hi_cx, bc_ld, z3v_cc,        da_ea  # v = ~z
-      - ${loop}?*, alt, v_loop                da_ea  # loops while !z && v
+      - dst_rmux, alt, ld0_opnd,                 da_ea
+      - da_ld, spd_rmux, ld1_opnd,               da_ea            # SRC pointer inc/dec in parallel
+      - ${step}_alu, dstq_ld, a_ral,             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - src_rmux, ld0_opnd,                      da_ea, vs_fetch, waitmem
+      - md_rmux,  ld1_opnd,                      da_ea
+      - sub_alu, ${cc}_cc, bc_rmux, ld0_opnd,    da_ea  # prepare for BC--
+      - zero_rmux, ld1_opnd, w_setw,             da_ea  # w needed for flags in BC--
+      - sub_alu, hi_cx, bc_ld, z3v_cc, rld_setw, da_ea  # v = ~z
+      - ${loop}?*, alt, v_loop                   da_ea  # loops while !z && v
       - inc_pc
       - waitmem, q_fetch
       - ni
   # copy data scanning a table up or down while counting down on BC
   - mnemo: [ LDD, LDDR, LDI, LDIR ]
     seq: # "src" used as destination and vice versa, because of how the instruction is encoded
-      - dst_rmux, ld0_opnd, xsrc_ral
-      - da_ld, spd_rmux, ld1_opnd               swp_setw  # SRC pointer inc/dec in parallel
-      - q_setw,
-      - ${step}_alu, dst_ld,                    swp_setw  # variable-size fetch (byte or word)
-      - src_rmux, ld0_opnd,              da_ea, vs_fetch, waitmem
+      - dst_rmux,alt, ld0_opnd, xsrc_ral,da_ea, rld_setw
+      - da_ld, spd_rmux, ld1_opnd,       da_ea, vs_fetch  # SRC pointer inc/dec in parallel
+      - ${step}_alu, dstq_ld             da_ea, vs_fetch  # variable-size fetch (byte or word)
+      - src_rmux,alt, ld0_opnd,          da_ea, vs_fetch, waitmem
       - da_ld, swp_ral,                  da_ea            # data remains in MD, no need to pass it through ALU
-      - ${step}_alu, dst_ld, swp_ral     da_ea, wr
-      - zero_rmux, ld1_opnd,             da_ea
-      - bc_rmux, ld0_opnd                da_ea # prepare for BC--
+      -                                  da_ea, wr
+      - ${step}_alu, dstq_ld, swp_ral,   da_ea, zero_rmux, ld1_opnd
+      - bc_rmux, ld0_opnd,     w_setw,   da_ea # prepare for BC--
       - sub_alu, hi_cx, bc_ld, ${cc}_cc, da_ea # v = ~z
-      - ${loop}?*, v_loop                da_ea # loops while v
+      - ${loop}?*, v_loop, rld_setw      da_ea # loops while v
       - inc_pc
       - waitmem, q_fetch
       - ni
@@ -735,7 +738,7 @@ ucode:
     seq:
       - inc_pc, b_setw, s8_fetch      # load direct address from 8-bit immediate value
       - ld0_opnd
-      - da_ld
+      - das_ld
       - ${setw}_setw, imm1_jsr
       - waitmem
       - da_ea, wr
@@ -746,7 +749,7 @@ ucode:
       - inc_pc, swp_opnd              # moves (mem) from op0 to op1
       - inc_pc, s8_fetch, w_setw      # load direct address from 16-bit immediate value
       - inc_pc, zex, ld0_opnd
-      - da_ld, swp_opnd               # restores (mem)
+      - das_ld, swp_opnd, rld_setw     # restores (mem)
       - waitmem, md_ld
       - da_ea, wr
       - waitmem, q_fetch
@@ -871,8 +874,8 @@ ucode:
     seq:
       - inc_pc, a_ral
       - src_rmux, ld1_opnd
-      - rrd_alu, ${alt}, ${cc}_cc, a_ld
-      - rrd_alu, ${alt}, md_ld
+      - ${alu}_alu, ${cc}_cc, a_ld
+      - ${alu}_alu, md_ld
       - s8_fetch  # get the upper part of the ALU results
       - m_ea, wr
       - waitmem
@@ -884,14 +887,14 @@ ucode:
       - inc_pc, mulsel, dst_ral, ${swp_opnd}, md_ld
       - ${ex}, dst_rmux,    ld0_opnd
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw
-      - mul_alu, dst_ld, ${alt}
+      - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ MULI, MULSI ]
     seq:
       - immsex0_jsr
       - ${ex}, dst_rmux, ld1_opnd, widen_setw
-      - mul_alu, dst_ld, ${alt}
+      - ${alu}_alu, dst_ld
       - waitmem, q_fetch
       - ni
   - mnemo: [ DIV, DIVS ]
@@ -917,8 +920,8 @@ ucode:
     seq:
       - inc_pc, s8_fetch
       - inc_pc, s8_fetch
-      - inc_pc, ld0_opnd
-      - inc_pc, da_ld, b_setw
+      - inc_pc, ld0_opnd, b_setw
+      - inc_pc, das_ld
       - waitmem, vs_fetch       # get only the next byte in (PC) for now
       - inc_pc, da_ea, wr
       - inc_pc
@@ -959,16 +962,16 @@ ucode:
       - ni
   - mnemo: [ MULA ]
     seq:
-      - xde_ral, w_setw               # SRC = XDE
+      - xde_ral, w_setw                 # SRC = XDE
       - src_rmux, ld0_opnd, xhl_ral
-      - da_ld, src_rmux, ld0_opnd     # SRC = XHL
+      - da_ld, src_rmux, ld0_opnd       # SRC = XHL
       - da_ea, vs_fetch, waitmem
-      - da_ea, da_ld, ld0_opnd        # OP0 = (XDE)
+      - da_ea, da_ld, ld0_opnd          # OP0 = (XDE)
       - da_ea, vs_fetch, waitmem
-      - inc_pc, ld1_opnd, q_setw      # OP1 = (XHL)
-      - mul_alu, alt, md_ld, ${cc}_cc, dst_rmux, ld0_opnd
+      - inc_pc, ld1_opnd, q_setw        # OP1 = (XHL)
+      - muls_alu, md_ld, dst_rmux, ld0_opnd
       - md_rmux, ld1_opnd
-      - add_alu, dst_ld, swp_ral, w_setw  # R=(XDE)*(XHL)+R, DST = XHL
+      - add_alu, dst_ld, ${cc}_cc, swp_ral, w_setw  # R=(XDE)*(XHL)+R, DST = XHL
       - spd_rmux, ld1_opnd, q_setw
       - dst_rmux, ld0_opnd
       - sub_alu, dst_ld
@@ -1001,3 +1004,7 @@ ucode:
       - sp_ea, pc_ld
       - waitmem, q_fetch
       - ni
+  - name: decerr
+    start: -1
+    seq:  # decode error, halt forever
+      - halt, alt

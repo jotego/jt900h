@@ -29,7 +29,7 @@ module jt900h_ctrl(
     output reg        ws,
     output reg        qs,
     output reg        cc,       // condition code
-    output            dec_err,  // decode error
+    output reg        dec_err,  // decode error, will halt forever
     // interrupts
     input             irq,
     output reg        irq_ack,
@@ -78,12 +78,11 @@ wire  [2:0] setw_sel;
 wire        ni, r32jmp, rets,
             waitmem;
 
-assign still   = div_busy | (waitmem & mem_busy) | halt;
+assign still   = div_busy | (waitmem & mem_busy) | halt | dec_err;
 assign nx_ualo = uaddr[3:0] + 4'd1;
-assign dec_err = 0;     // temptative
 assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
 assign newa    = irq_en ? INTPSH_SEQA : { nxgr_sel, md[7:0], 4'd0 };
-assign irq_en  = irq && int_lvl>riff;
+assign irq_en  = irq && int_lvl>=riff && nxgr_sel==0; // it looks like the manual, which points to a > comparison, is wrong
 
 always @* begin
     case( md[3:0] )                                 // 4-bit cc conditions
@@ -114,15 +113,19 @@ always @(posedge clk, posedge rst) begin
         stack_bsy  <= 1;
         {bs,ws,qs} <= 0;
         altss      <= 0;
+        dec_err    <= 0;
     end else if(cen) begin
+        if( halt && alt ) dec_err <= 1;
         case( setw_sel )
-            B_SETW:     {qs,ws,bs} <= 3'b001;
-            W_SETW:     {qs,ws,bs} <= 3'b010;
-            Q_SETW:     {qs,ws,bs} <= 3'b100;
+            // can modify altss
+            B_SETW:     begin {qs,ws,bs} <= 3'b001; if(alt) altss <= 3'b001; end
+            W_SETW:     begin {qs,ws,bs} <= 3'b010; if(alt) altss <= 3'b010; end
+            Q_SETW:     begin {qs,ws,bs} <= 3'b100; if(alt) altss <= 3'b100; end
+            S_SETW:     {altss,qs,ws,bs} <= {2{alt ? 3'b001 << md[1:0] : md[4] ? 3'b100 : 3'b010}};
+            // only modify working ss
             WIDEN_SETW: {qs,ws,bs} <= {qs,ws,bs}<<1;
             SHRTN_SETW: {qs,ws,bs} <= {qs,ws,bs}>>1;
-            SWP_SETW:   {altss,qs,ws,bs}<={qs,ws,bs,altss};
-            S_SETW:     {qs,ws,bs} <= md[4] ? 3'b100 : 3'b010;
+            RLD_SETW:   {qs,ws,bs} <= altss;
             default:;
         endcase
         if( !still ) uaddr[3:0] <= nx_ualo;
@@ -131,10 +134,11 @@ always @(posedge clk, posedge rst) begin
             (loop_sel== V_LOOP && (flags[FV] && (!alt || !flags[FZ]))) ) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni|(halt&irq_en)) begin
-            irq_ack   <= irq_en;
+            irq_ack   <= stack_bsy; // delay irq_ack until IFF has been loaded
+            stack_bsy <= irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
-            stack_bsy <= 0;
+            // $display("uA = %X",newa>>4);
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
         if( rets&(alt?ws:bs) ) uaddr <= jsr_ret;
@@ -152,7 +156,7 @@ always @(posedge clk, posedge rst) begin
                     1: uaddr <= alt ? R32_16_NORD_SEQA : R32_16_SEQA;
                     4: uaddr <= R32_LDAR_SEQA;
                 endcase
-                default: $stop;   // to do: signal a decode error
+                default: `ifdef SIMULATION $stop `endif ;   // to do: signal a decode error
             endcase
         end
     end
