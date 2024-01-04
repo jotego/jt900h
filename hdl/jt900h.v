@@ -35,6 +35,7 @@ module jt900h(
     input      [ 7:0] int_addr,     // the external device sets the vector address except for SWI
     // Register dump
     output            dec_err,
+    output            halted,
     input      [ 7:0] dmp_addr,     // dump
     output     [ 7:0] dmp_dout
     // Debug
@@ -71,12 +72,9 @@ wire        div_busy;
 wire        zu,hu,vu,su,cu,pu;
 // "Control Registers" (MCU MMR)
 wire [ 7:0] cra;
-wire [31:0] crin;
-wire [31:0] cr;
-wire        cr_we;    // cr_rd goes directly from control unit
-
-// To do
-assign cr = 0;
+wire [31:0] crin, crout;
+wire        crwe,    // cr_rd goes directly from control unit
+            nstdec;
 
 jt900h_ctrl u_ctrl(
     .rst        ( rst       ),
@@ -92,9 +90,11 @@ jt900h_ctrl u_ctrl(
     .qs         ( qs        ),
     .cc         ( cc        ),       // condition code
     .dec_err    ( dec_err   ),
+    .halt       ( halted    ),
     // interrupt controller
     .irq        ( irq       ),
     .irq_ack    ( irq_ack   ),
+    .nstdec     ( nstdec    ),
     .int_lvl    ( int_lvl   ),
     .riff       ( riff      ),
     // signals from ucode
@@ -167,8 +167,8 @@ jt900h_regs u_regs(
     // "Control Registers" (MCU MMR)
     .cra        ( cra       ),
     .crin       ( crin      ),
-    .cr         ( cr        ),
-    .cr_we      ( cr_we     ),    // cr_rd goes directly from control unit
+    .crout      ( crout     ),
+    .crwe       ( crwe      ),    // cr_rd goes directly from control unit
     // register outputs
     .pc         ( pc        ),
     .da         ( da        ),  // direct memory address from OP, like #8 in LD<W> (#8),#
@@ -244,6 +244,23 @@ jt900h_mem u_mem(
     .ea         ( ea        ),
     .mdata      ( mdata     ),
     .busy       ( mem_busy  )
+);
+
+jt900h_udma udma(
+    .rst        ( rst       ),
+    .clk        ( clk       ),
+    .cen        ( cen       ),
+    // Register access
+    .din        ( crin      ),
+    .dout       ( crout     ),
+    .addr       ( cra[5:0]  ),
+    .we         ( crwe      ),
+    .qs         ( qs        ),
+    .ws         ( ws        ),
+    .bs         ( bs        ),
+    // interrupt nesting counter
+    .nstinc     ( irq_ack   ),
+    .nstdec     ( nstdec    )
 );
 
 endmodule

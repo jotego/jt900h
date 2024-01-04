@@ -4,7 +4,7 @@ here:
   - ../hdl/jt900h_div.v
   - ../hdl/jt900h_mem.v
   - ../hdl/jt900h_regs.v
-  # - ../hdl/jt900h_udma.v
+  - ../hdl/jt900h_udma.v
   - ../hdl/jt900h.v
 ucode:
   jt900h: { src: "900h.yaml" }

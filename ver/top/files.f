@@ -4,3 +4,4 @@
 ../../hdl/jt900h_div.v
 ../../hdl/jt900h_mem.v
 ../../hdl/jt900h_regs.v
+../../hdl/jt900h_udma.v

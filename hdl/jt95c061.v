@@ -36,6 +36,7 @@ module jt95c061(
     output     [ 1:0]     we,
     output                rd,
     input                 bus_busy,
+    output                halted,
 
     output reg [ 3:0]     map_cs, // cs[0] used as flash chip 0, cs[1] chip 1
                                   // cs[2/3] used for BIOS ROM
@@ -145,7 +146,7 @@ assign din_mux = port_cs ? {mmr[{addr[6:1],1'b1}], mmr[{addr[6:1],1'b0}]} : din;
 assign porta_dout = { mmr[PAFC][3] ? tout[3] : mmr[PA][3],
                       mmr[PAFC][2] ? tout[1] : mmr[PA][2], mmr[PA][1:0] };
 assign addr[0]=0;
-assign st_dout={7'd0,buserror};
+assign st_dout={3'd0,halted,3'd0,buserror};
 
 always @* begin
     pre_map_cs[0]=&{addr[23:21]^mmr[MSAR0][7:5],
@@ -483,6 +484,7 @@ jt900h u_cpu(
     .int_addr   ( iaddr     ),
     // Register dump
     .dec_err    ( buserror  ),
+    .halted     ( halted    ),
     .dmp_addr   (           ),     // dump
     .dmp_dout   (           )
     // .op_start   (           )

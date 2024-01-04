@@ -55,8 +55,8 @@ module jt900h_regs(
     // "Control Registers" (MCU MMR)
     output reg [ 7:0] cra,
     output reg [31:0] crin,
-    input      [31:0] cr,
-    output reg        cr_we,    // cr_rd goes directly from control unit
+    input      [31:0] crout,
+    output reg        crwe,    // cr_rd goes directly from control unit
     // register outputs
     output reg [23:0] pc,
     output reg [31:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
@@ -132,7 +132,7 @@ always @* begin
     rmux  = md;
     case( rmux_sel )
         BC_RMUX:  rmux = {16'd0, accs[{rfp,BC}][15:0]};
-        CR_RMUX:  rmux = cr;
+        CR_RMUX:  rmux = crout;
         SR_RMUX:  rmux = alt ? {29'd0, int_lvl  } : { 16'd0, sr };
         PC_RMUX:  rmux = alt ? {24'd0, int_addr } : {  8'd0, pc };
         RFP_RMUX: rmux[1:0] = rfp;
@@ -168,7 +168,7 @@ always @(posedge clk, posedge rst) begin
         pc    <= 0;
         da    <= 0;
         riff  <= 7;
-        cr_we <= 0;
+        crwe <= 0;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
@@ -177,7 +177,7 @@ always @(posedge clk, posedge rst) begin
         {s, z, h, v, n, c } <= 0;
         {s_,z_,h_,v_,n_,c_} <= 0;
     end else if(cen) begin
-        cr_we <= 0;
+        crwe <= 0;
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
         if(inc_pc) pc <= pc + 24'd1;
         case( cc_sel )
@@ -275,7 +275,7 @@ always @(posedge clk, posedge rst) begin
             IFF7_LD: riff <= rslt[2:0]==0 ? 3'b111 : rslt[2:0];
             DA_LD:   da   <= rslt;
             DAS_LD:  da   <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
-            CR_LD:  begin cra <= md[7:0]; crin <= rslt; cr_we <= 1; end
+            CR_LD:  begin cra <= md[7:0]; crin <= rslt; crwe <= 1; end
             default:;
         endcase
     end

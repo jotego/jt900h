@@ -30,9 +30,11 @@ module jt900h_ctrl(
     output reg        qs,
     output reg        cc,       // condition code
     output reg        dec_err,  // decode error, will halt forever
+    output            halt,
     // interrupts
     input             irq,
     output reg        irq_ack,
+    output reg        nstdec,
     input       [2:0] int_lvl,      // interrupt level
     input       [2:0] riff,
     // signals from ucode
@@ -66,7 +68,7 @@ localparam FS=7, FZ=6, FH=4, FV=2, FN=1, FC=0; // Flag bits
 wire [ 4:0] jsr_sel;
 reg  [ 2:0] iv_sel;
 reg  [ 2:0] altss;
-wire        halt, swi, still;
+wire        swi, still;
 reg         nmi_l;
 wire [ 3:0] nx_ualo;
 reg         stack_bsy;
@@ -114,6 +116,7 @@ always @(posedge clk, posedge rst) begin
         {bs,ws,qs} <= 0;
         altss      <= 0;
         dec_err    <= 0;
+        nstdec     <= 0;
     end else if(cen) begin
         if( halt && alt ) dec_err <= 1;
         case( setw_sel )
@@ -138,6 +141,7 @@ always @(posedge clk, posedge rst) begin
             stack_bsy <= irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
+            nstdec    <= newa == 14'h0070; // RETI ucode address
             // $display("uA = %X",newa>>4);
             if( nxgr_sel==0 ) {bs,ws,qs} <= 0;
         end
