@@ -87,22 +87,25 @@ These instructions may not use memory addressing, may use it just to obtain an a
 
 The _alt_ signal enables an alternative meaning to the signal it goes with:
 
-| signal       | alt=0           | alt=1                      |
-| ------------ | --------------- | -------------------------- |
-| div          | unsigned        | signed                     |
-| halt         | interrupt wait  | decode error: halt forever |
-| r32jmp       | read data       | do not read data           |
-| rets         | byte size       | word size                  |
-| s_setw       | s used in LDAR  | zz used in (r32+)          |
-| ?_setw       | b/w/q set       | b/w/q set (also in altss)  |
-| v_loop       | only V          | V and Z                    |
-| a_ld         | read full byte  | set upper nibble to zero   |
-| dst_ral      | quick selection | use full 8-bit address     |
-| n3_rmux      | take only #3    | take 16 if #3==0           |
-| pc_rmux      | PC              | interrupt address byte     |
-| sr_rmux      | SR              | incoming interrupt level   |
-| src/dst_rmux | b/w/q gated     | always 32-bit access       |
-| zex & qs     |                 | clear bits [31:24]         |
+| signal       | alt=0            | alt=1                                      |
+| ------------ | ---------------  | ------------------------------------------ |
+| div          | unsigned         | signed                                     |
+| halt         | interrupt wait   | decode error: halt forever                 |
+| r32jmp       | read data        | do not read data                           |
+| rets         | byte size        | word size                                  |
+| widen_setw   | expand op size   | load uDMA operand size                     |
+| s_setw       | s used in LDAR   | zz used in (r32+)                          |
+| ?_setw       | b/w/q set        | b/w/q set (also in altss)                  |
+| v_loop       | only V           | V and Z                                    |
+| a_ld         | read full byte   | set upper nibble to zero                   |
+| dst_ral      | quick selection  | use full 8-bit address                     |
+| n3_rmux      | take only #3     | take 16 if #3==0                           |
+| pc_rmux      | PC               | interrupt address byte                     |
+| sr_rmux      | SR               | incoming interrupt level                   |
+| src/dst_rmux | b/w/q gated      | always 32-bit access                       |
+| zex & qs     |                  | clear bits [31:24]                         |
+| cr_ld        | update CR        | update CR and set dma_en if ALU's z is set |
+
 
 ## PC at Reset
 

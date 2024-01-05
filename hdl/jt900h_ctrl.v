@@ -37,8 +37,9 @@ module jt900h_ctrl(
     output reg        nstdec,
     input       [2:0] int_lvl,      // interrupt level
     input       [2:0] riff,
+    input       [4:0] mode,
+    input             dmaen,
     // signals from ucode
-    output            cr_rd,
     output            da2ea,
     output            div,
     output            exff,
@@ -49,7 +50,8 @@ module jt900h_ctrl(
     output            sex,
     output            wr,
     output            zex,
-    output      [1:0] ea_sel,
+    output      [2:0] cra_sel,
+    output      [2:0] ea_sel,
     output      [1:0] opnd_sel,
     output      [2:0] cx_sel,
     output      [1:0] fetch_sel,
@@ -77,13 +79,13 @@ wire [13:0] newa;
 // signals from ucode
 wire  [1:0] nxgr_sel, loop_sel;
 wire  [2:0] setw_sel;
-wire        ni, r32jmp, rets,
+wire        ni, r32jmp, udmajmp, rets,
             waitmem;
 
 assign still   = div_busy | (waitmem & mem_busy) | halt | dec_err;
 assign nx_ualo = uaddr[3:0] + 4'd1;
 assign dis_jsr = (jsr_sel==NCC_JSR && cc) || (jsr_sel==ZNI_JSR && !zu);
-assign newa    = irq_en ? INTPSH_SEQA : { nxgr_sel, md[7:0], 4'd0 };
+assign newa    = irq_en ? (dmaen ? UDMABASE_SEQA : INTPSH_SEQA) : {nxgr_sel, md[7:0], 4'd0};
 assign irq_en  = irq && int_lvl>=riff && nxgr_sel==0; // it looks like the manual, which points to a > comparison, is wrong
 
 always @* begin
@@ -126,7 +128,7 @@ always @(posedge clk, posedge rst) begin
             Q_SETW:     begin {qs,ws,bs} <= 3'b100; if(alt) altss <= 3'b100; end
             S_SETW:     {altss,qs,ws,bs} <= {2{alt ? 3'b001 << md[1:0] : md[4] ? 3'b100 : 3'b010}};
             // only modify working ss
-            WIDEN_SETW: {qs,ws,bs} <= {qs,ws,bs}<<1;
+            WIDEN_SETW: {qs,ws,bs} <= alt ? 3'b001 << mode[1:0] : {qs,ws,bs}<<1;
             SHRTN_SETW: {qs,ws,bs} <= {qs,ws,bs}>>1;
             RLD_SETW:   {qs,ws,bs} <= altss;
             default:;
@@ -137,8 +139,8 @@ always @(posedge clk, posedge rst) begin
             (loop_sel== V_LOOP && (flags[FV] && (!alt || !flags[FZ]))) ) begin
             uaddr[3:0] <= jsr_ret[3:0];
         end else if(ni|(halt&irq_en)) begin
-            irq_ack   <= stack_bsy; // delay irq_ack until IFF has been loaded
-            stack_bsy <= irq_en;
+            irq_ack   <= dmaen ? irq_en : stack_bsy; // delay irq_ack until IFF has been loaded
+            stack_bsy <= ~dmaen & irq_en;
             uaddr     <= newa; // relies on nxgr specific values (!)
             jsr_ret   <= newa;
             nstdec    <= newa == 14'h0070; // RETI ucode address
@@ -160,7 +162,20 @@ always @(posedge clk, posedge rst) begin
                     1: uaddr <= alt ? R32_16_NORD_SEQA : R32_16_SEQA;
                     4: uaddr <= R32_LDAR_SEQA;
                 endcase
-                default: `ifdef SIMULATION $stop `endif ;   // to do: signal a decode error
+                default: dec_err <= 1;
+            endcase
+        end
+        if( udmajmp ) begin
+            jsr_ret      <= uaddr;
+            jsr_ret[3:0] <= nx_ualo;
+            case( mode[4:2] )   // DMA mode register must be selected
+                0: uaddr <= UDMA00_SEQA;
+                1: uaddr <= UDMA01_SEQA;
+                2: uaddr <= UDMA10_SEQA;
+                3: uaddr <= UDMA11_SEQA;
+                4: uaddr <= UDMAFIX_SEQA;
+                5: uaddr <= UDMACNT_SEQA;
+                default: dec_err <= 1;
             endcase
         end
     end

@@ -35,6 +35,7 @@ module jt900h_regs(
     output reg  [2:0] riff,      // IFF
     input      [ 2:0] int_lvl,
     input      [ 7:0] int_addr,
+    output reg        dma_done,
     // control (from ucode)
     input             bs,
     input             exff,
@@ -48,6 +49,7 @@ module jt900h_regs(
     input             zex,
     input       [1:0] opnd_sel,
     input       [1:0] fetch_sel,
+    input       [2:0] cra_sel,
     input       [2:0] ral_sel,
     input       [3:0] ld_sel,
     input       [4:0] cc_sel,
@@ -56,7 +58,8 @@ module jt900h_regs(
     output reg [ 7:0] cra,
     output reg [31:0] crin,
     input      [31:0] crout,
-    output reg        crwe,    // cr_rd goes directly from control unit
+    input      [ 1:0] dmach,
+    output reg        crwe,
     // register outputs
     output reg [23:0] pc,
     output reg [31:0] da,       // direct memory address from OP, like #8 in LD<W> (#8),#
@@ -168,7 +171,8 @@ always @(posedge clk, posedge rst) begin
         pc    <= 0;
         da    <= 0;
         riff  <= 7;
-        crwe <= 0;
+        crwe  <= 0;
+        dma_done <= 0;
         accs[ 0] <= 0; accs[ 1] <= 0; accs[ 2] <= 0; accs[ 3] <= 0;
         accs[ 4] <= 0; accs[ 5] <= 0; accs[ 6] <= 0; accs[ 7] <= 0;
         accs[ 8] <= 0; accs[ 9] <= 0; accs[10] <= 0; accs[11] <= 0;
@@ -177,11 +181,19 @@ always @(posedge clk, posedge rst) begin
         {s, z, h, v, n, c } <= 0;
         {s_,z_,h_,v_,n_,c_} <= 0;
     end else if(cen) begin
-        crwe <= 0;
+        crwe     <= 0;
+        dma_done <= 0;
         if(exff) {s_,z_,h_,v_,n_,c_,s,z,h,v,n,c} <= {s,z,h,v,n,c,s_,z_,h_,v_,n_,c_};
-        if(inc_pc) pc <= pc + 24'd1;
+        if(inc_pc) pc  <= pc + 24'd1;
+        case( cra_sel )
+            LD_CRA:  cra <= md[7:0];
+            SRC_CRA: cra <= { 4'd0, dmach, 2'd0 };
+            DST_CRA: cra <= { 4'd1, dmach, 2'd0 };
+            CNT_CRA: cra <= { 4'd2, dmach, 2'd0 };
+            MOD_CRA: cra <= { 4'd2, dmach, 2'd2 };
+            default:;
+        endcase
         case( cc_sel )
-            0:;
             C_CC:            {          c} <= {               ci       };
             COR_CC:          {          c} <= {             c|ci       };
             H0N0C_CC:        {    h,  n,c} <= {      1'b0,    1'b0,ci  };
@@ -205,6 +217,7 @@ always @(posedge clk, posedge rst) begin
             Z2V_CC:          {      v    } <= {               zi       };
             Z3V_CC:          {      v    } <= {           ~zi          }; // CPD/CPI
             ZCH1N0_CC:       {  z,h,  n  } <= {   ci,1'b1,    1'b0     }; // ci -> zi
+            default:;
         endcase
         case( fetch_sel )
             VS_FETCH, Q_FETCH: md <= din;
@@ -275,7 +288,11 @@ always @(posedge clk, posedge rst) begin
             IFF7_LD: riff <= rslt[2:0]==0 ? 3'b111 : rslt[2:0];
             DA_LD:   da   <= rslt;
             DAS_LD:  da   <= { qs ? rslt[31:16]:16'd0, (qs|ws) ? rslt[15:8]:8'd0, rslt[7:0] };
-            CR_LD:  begin cra <= md[7:0]; crin <= rslt; crwe <= 1; end
+            CR_LD:  begin
+                crin <= rslt;
+                crwe <= 1;
+                if( alt && zi ) dma_done <= 1;
+            end
             default:;
         endcase
     end

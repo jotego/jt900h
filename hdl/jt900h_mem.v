@@ -29,12 +29,14 @@ module jt900h_mem(
     output reg        bus_rd,
     // from ucode
     input       [1:0] fetch_sel,
-    input       [1:0] ea_sel,
+    input       [2:0] ea_sel,
     input             da2ea,
     input             wr,
     input             inc_pc,       // only read memory for PC address if inc_pc is stable
     // from control unit
     input             bs, ws, qs,
+    // from DMA
+    input      [31:0] dma,
     // from register unit
     input      [31:0] da,
     input      [23:0] pc,
@@ -69,6 +71,7 @@ always @* begin
         DA_EA:   nx_addr = da[23:0];
         SP_EA:   nx_addr = xsp[23:0];
         M_EA:    nx_addr = ea[23:0];
+        DMA_EA:  nx_addr = dma[23:0];
         default: nx_addr = pc;
     endcase
 end

@@ -1,0 +1,242 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Fri Jan  5 07:30:03 2024
+[*]
+[dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/top/test.lxt"
+[dumpfile_mtime] "Fri Jan  5 07:28:12 2024"
+[dumpfile_size] 85104
+[savefile] "/home/jtejada/jtcores/modules/jt900h/ver/top/dma.gtkw"
+[timestart] 13525000
+[size] 1920 1052
+[pos] -1 -1
+*-16.429001 -1 13716000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] test.
+[treeopen] test.uut.
+[treeopen] test.uut.u_alu.
+[sst_width] 223
+[signals_width] 260
+[sst_expanded] 1
+[sst_vpaned_height] 336
+@22
+test.uut.u_regs.pc[23:0]
+[color] 2
+test.uut.u_ctrl.uaddr[13:0]
+@2022
+^1 /home/jtejada/jtcores/modules/jt900h/ver/top/NXGR.st
+test.uut.u_ctrl.nxgr_sel[1:0]
+@28
+[color] 1
+test.uut.u_ctrl.ni[0]
+test.uut.u_ctrl.irq[0]
+@200
+-
+@28
+test.uut.u_regs.sex[0]
+@24
+[color] 5
+test.uut.u_regs.rfp[1:0]
+@c00022
+[color] 2
+test.uut.u_regs.xwa0[31:0]
+@28
+[color] 2
+(0)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(1)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(2)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(3)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(4)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(5)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(6)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(7)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(8)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(9)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(10)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(11)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(12)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(13)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(14)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(15)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(16)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(17)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(18)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(19)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(20)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(21)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(22)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(23)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(24)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(25)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(26)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(27)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(28)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(29)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(30)test.uut.u_regs.xwa0[31:0]
+[color] 2
+(31)test.uut.u_regs.xwa0[31:0]
+@1401200
+-group_end
+@c00022
+test.uut.u_regs.xbc0[31:0]
+@28
+(0)test.uut.u_regs.xbc0[31:0]
+(1)test.uut.u_regs.xbc0[31:0]
+(2)test.uut.u_regs.xbc0[31:0]
+(3)test.uut.u_regs.xbc0[31:0]
+(4)test.uut.u_regs.xbc0[31:0]
+(5)test.uut.u_regs.xbc0[31:0]
+(6)test.uut.u_regs.xbc0[31:0]
+(7)test.uut.u_regs.xbc0[31:0]
+(8)test.uut.u_regs.xbc0[31:0]
+(9)test.uut.u_regs.xbc0[31:0]
+(10)test.uut.u_regs.xbc0[31:0]
+(11)test.uut.u_regs.xbc0[31:0]
+(12)test.uut.u_regs.xbc0[31:0]
+(13)test.uut.u_regs.xbc0[31:0]
+(14)test.uut.u_regs.xbc0[31:0]
+(15)test.uut.u_regs.xbc0[31:0]
+(16)test.uut.u_regs.xbc0[31:0]
+(17)test.uut.u_regs.xbc0[31:0]
+(18)test.uut.u_regs.xbc0[31:0]
+(19)test.uut.u_regs.xbc0[31:0]
+(20)test.uut.u_regs.xbc0[31:0]
+(21)test.uut.u_regs.xbc0[31:0]
+(22)test.uut.u_regs.xbc0[31:0]
+(23)test.uut.u_regs.xbc0[31:0]
+(24)test.uut.u_regs.xbc0[31:0]
+(25)test.uut.u_regs.xbc0[31:0]
+(26)test.uut.u_regs.xbc0[31:0]
+(27)test.uut.u_regs.xbc0[31:0]
+(28)test.uut.u_regs.xbc0[31:0]
+(29)test.uut.u_regs.xbc0[31:0]
+(30)test.uut.u_regs.xbc0[31:0]
+(31)test.uut.u_regs.xbc0[31:0]
+@1401200
+-group_end
+@c00022
+test.uut.u_regs.xde0[31:0]
+@28
+(0)test.uut.u_regs.xde0[31:0]
+(1)test.uut.u_regs.xde0[31:0]
+(2)test.uut.u_regs.xde0[31:0]
+(3)test.uut.u_regs.xde0[31:0]
+(4)test.uut.u_regs.xde0[31:0]
+(5)test.uut.u_regs.xde0[31:0]
+(6)test.uut.u_regs.xde0[31:0]
+(7)test.uut.u_regs.xde0[31:0]
+(8)test.uut.u_regs.xde0[31:0]
+(9)test.uut.u_regs.xde0[31:0]
+(10)test.uut.u_regs.xde0[31:0]
+(11)test.uut.u_regs.xde0[31:0]
+(12)test.uut.u_regs.xde0[31:0]
+(13)test.uut.u_regs.xde0[31:0]
+(14)test.uut.u_regs.xde0[31:0]
+(15)test.uut.u_regs.xde0[31:0]
+(16)test.uut.u_regs.xde0[31:0]
+(17)test.uut.u_regs.xde0[31:0]
+(18)test.uut.u_regs.xde0[31:0]
+(19)test.uut.u_regs.xde0[31:0]
+(20)test.uut.u_regs.xde0[31:0]
+(21)test.uut.u_regs.xde0[31:0]
+(22)test.uut.u_regs.xde0[31:0]
+(23)test.uut.u_regs.xde0[31:0]
+(24)test.uut.u_regs.xde0[31:0]
+(25)test.uut.u_regs.xde0[31:0]
+(26)test.uut.u_regs.xde0[31:0]
+(27)test.uut.u_regs.xde0[31:0]
+(28)test.uut.u_regs.xde0[31:0]
+(29)test.uut.u_regs.xde0[31:0]
+(30)test.uut.u_regs.xde0[31:0]
+(31)test.uut.u_regs.xde0[31:0]
+@1401200
+-group_end
+@22
+test.uut.u_regs.xhl0[31:0]
+[color] 3
+test.uut.udma.DMAC0[15:0]
+[color] 3
+test.uut.udma.DREG0[31:0]
+[color] 3
+test.uut.udma.SREG0[31:0]
+[color] 3
+test.uut.udma.DMAM0[7:0]
+test.uut.u_regs.xix[31:0]
+test.uut.u_regs.xiy[31:0]
+test.uut.u_regs.xsp[31:0]
+@200
+-
+@22
+test.uut.u_ctrl.mode[4:0]
+@2022
+^2 /home/jtejada/jtcores/modules/jt900h/ver/top/OPND.st
+test.uut.u_regs.opnd_sel[1:0]
+^3 /home/jtejada/jtcores/modules/jt900h/ver/top/LD.st
+test.uut.u_regs.ld_sel[3:0]
+^4 /home/jtejada/jtcores/modules/jt900h/ver/top/RMUX.st
+test.uut.u_regs.rmux_sel[3:0]
+[color] 1
+^5 /home/jtejada/jtcores/modules/jt900h/ver/top/ALU.st
+test.uut.u_alu.alu_sel[4:0]
+@200
+-
+@22
+test.uut.u_mem.bus_addr[23:0]
+@28
+test.uut.u_mem.bus_we[1:0]
+@200
+-
+@22
+test.uut.u_mem.md[31:0]
+@28
+[color] 3
+test.uut.u_mem.bs[0]
+[color] 3
+test.uut.u_mem.ws[0]
+[color] 3
+test.uut.u_mem.qs[0]
+@200
+-
+@22
+test.uut.u_regs.op0[31:0]
+test.uut.u_regs.op1[31:0]
+test.uut.u_regs.op2[31:0]
+[color] 2
+test.uut.u_regs.rslt[31:0]
+@200
+-
+@2025
+^6 /home/jtejada/jtcores/modules/jt900h/ver/top/CRA.st
+test.uut.u_regs.cra_sel[2:0]
+@22
+test.uut.u_regs.cra[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

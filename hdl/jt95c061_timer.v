@@ -19,6 +19,7 @@
 module jt95c061_timer(
     input                 rst,
     input                 clk,
+    input                 halt,
     input           [3:0] clk_muxin,
     input           [1:0] clk_muxsel,
     input           [3:0] ff_ctrl,
@@ -47,23 +48,25 @@ always @(posedge clk, posedge rst) begin
     end else begin
         tclk_l <= tclk;
         over <= 0;
-        if( tclk & ~tclk_l ) begin
-            if( nx_tcnt == cntmax ) begin
-                over <= 1;
-                tcnt <= 0;
-            end else begin
-                tcnt   <= nx_tcnt;
+        if( !halt ) begin
+            if( tclk & ~tclk_l ) begin
+                if( nx_tcnt == cntmax ) begin
+                    over <= 1;
+                    tcnt <= 0;
+                end else begin
+                    tcnt   <= nx_tcnt;
+                end
             end
+            if( !run ) tcnt <= 0;
+            case( ff_ctrl[3:2] )
+                0: tout <= ~tout;
+                1: tout <= 1;
+                2: tout <= 0;
+                default:
+                    if( ff_ctrl[1] && (ff_ctrl[0] ? over : daisy_over) )
+                        tout <= ~tout;
+            endcase
         end
-        if( !run ) tcnt <= 0;
-        case( ff_ctrl[3:2] )
-            0: tout <= ~tout;
-            1: tout <= 1;
-            2: tout <= 0;
-            default:
-                if( ff_ctrl[1] && (ff_ctrl[0] ? over : daisy_over) )
-                    tout <= ~tout;
-        endcase
     end
 end
 

@@ -10,10 +10,10 @@ wire [23:0] ram_addr;
 wire [AW-1:0] ram_a;
 wire [15:0] ram_dout, ram_din, ram_win;
 wire [ 1:0] ram_we;
-wire        ram_rdy;
+wire        ram_rdy, halted;
 reg  [15:0] mem[0:2**AW-1];
 
-reg  [ 8:0] intcnt=9'h1ff; // count-down for an interrupt
+reg  [ 8:0] intcnt=9'h1ff, intrld; // count-down for an interrupt
 reg  [ 2:0] int_lvl=0;
 reg         irq=0;
 wire        irq_ack;
@@ -24,6 +24,9 @@ reg  [7:0] dmp_buf[0:255];
 reg        dump_rdout, dump_2file;
 
 reg        simctrl_cs, intctrl_cs;
+wire       dma_done;
+reg  [1:0] dmach=0;
+reg        dmaen=0;
 // CPU registers
 // wire [31:0] sim_xix = uut.u_regs.xix;
 // wire [31:0] sim_xiy = uut.u_regs.xiy;
@@ -112,13 +115,13 @@ always @(posedge uut.u_ctrl.dec_err ) begin
     #100 $finish;
 end
 
-// always @(posedge uut.u_ctrl.halted ) begin
-//     $display("CPU Halted");
-// end
+always @(posedge halted ) begin
+    $display("CPU Halted");
+end
 
-// always @(negedge uut.u_ctrl.halted ) begin
-//     if( !rst ) $display("Halt released");
-// end
+always @(negedge halted ) begin
+    if( !rst ) $display("Halt released");
+end
 
 always @(posedge clk) begin
     // `ifdef USECEN
@@ -129,7 +132,12 @@ always @(posedge clk) begin
         intcnt <= intcnt - 1'd1;
         if( intcnt==0 ) begin
             irq <= 1;
+            if(dmaen) intcnt <= intrld;
         end
+    end
+    if( dma_done ) begin
+        intrld <= 0;
+        intcnt[8] <= 1;
     end
     if( irq_ack ) begin
         irq <= 0;
@@ -142,11 +150,13 @@ always @(posedge clk) begin
             2'b11: $display("RAM: %04X written to %X word (%X)",ram_win, ram_addr&24'hffffe, ram_a>>1 );
         endcase
         // trigger interrupts in the test bench
-        if( intctrl_cs && ram_we[0] ) begin
+        if( intctrl_cs && ram_we!=0 ) begin
             // write 0 to $fff0 to clear the interrupt
             // write $aa0n to cause interrupt level n after aa cycles
+            {dmaen,dmach} <= {ram_din[7],ram_din[5:4]};
             intcnt  <= {1'd0, ram_din[15:8]};
-            int_lvl <= ram_din[2:0];
+            intrld  <= {1'd0, ram_din[15:8]};
+            int_lvl <= ram_din[7] ? 3'd6 : ram_din[2:0];
             irq     <= 0;
         end
 
@@ -185,11 +195,15 @@ jt900h uut(
     .we         ( ram_we    ),
     .rd         (           ),
     .busy       ( 1'b0      ),
+    .halted     ( halted    ),
 
     .irq        ( irq       ),
     .irq_ack    ( irq_ack   ),
     .int_lvl    ( int_lvl   ),
     .int_addr   ({ 3'd1, int_lvl, 2'd0 }), // interrupt vectors at 0xffff20 upwards
+    .dmach      ( dmach     ),
+    .dmaen      ( dmaen     ),
+    .dma_done   ( dma_done  ),
 
     .dec_err    (           ),
     .dmp_addr   ( dmp_addr  ),

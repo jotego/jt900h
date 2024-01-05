@@ -27,6 +27,7 @@ module jt900h_udma(
     input             qs, ws, bs,
     input             we,
     // Nested interrupts
+    input      [ 7:0] int_addr,
     input             nstinc,
     input             nstdec
 );
@@ -52,11 +53,12 @@ assign regwe = {3{we}} & {qs,ws,bs};
 
 // output register mux
 always @(posedge clk) if(cen) begin
+    dout <= 0;
     case( addr[5:4] )
         0: dout <= sreg[addr[3:2]];
         1: dout <= dreg[addr[3:2]];
         2: dout <= addr[1] ? {24'd0, dmam[addr[3:2]]} : { 8'd0, dmam[addr[3:2]], dmac[addr[3:2]] };
-        3: dout <= { 16'd0, intnest };
+        3: if( addr[3:0]==4'hc ) dout[15:0] <= intnest;
     endcase
 end
 

@@ -168,7 +168,7 @@ ops:
   - { name: LD,    op: 0x360,ctl: {alu:    , cx:   , srca: src1, ld: md, setw: q, rd:  ,wr: 1,swp_opnd: $,swp_ral:  ,cc:            ,ral:    }, mask: 0x3f8, cycles: 4 } # LD (mem),R
   - { name: LDA,   op: 0x320,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: w, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 4 }
   - { name: LDA,   op: 0x330,ctl: {alu:    , cx:   , srca: ea0,  ld: dst,setw: q, rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral: dst}, mask: 0x3f8, cycles: 4 }
-  - { name: LDC,   op: 0x12e,ctl: {alu:    , cx:   , srca: cr1,  ld: cr ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LDC cr,r
+  - { name: LDC,   op: 0x12e,ctl: {alu:    , cx:   , srca: crmd, ld: cr ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LDC cr,r
   - { name: LDC,   op: 0x12f,ctl: {alu:    , cx:   , srca: cr0,  ld: dst,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc:            ,ral:    }, cycles: 3 } # LDC r,cr
   - { name: LDCF,  op: 0x12b,ctl: {alu: BOR, cx:   , srca: acc,  ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # A,r
   - { name: LDCF,  op: 0x123,ctl: {alu: BOR, cx:   , srca: n41pp,ld:    ,setw:  , rd:  ,wr:  ,swp_opnd:  ,swp_ral:  ,cc: c          ,ral:    }, cycles: 3 } # #4,r
@@ -481,48 +481,35 @@ ucode:
       - ld0_opnd
       - waitmem, q_fetch
       - g2_nxgr, ni
-  - name: src0
-    seq: # Load op0 operand from source
+  - name: src
+    range: [ { name: dst, values: [0,1] } ]
+    seq: # Load op0/1 operand from source
       - inc_pc
       - src_ral, s8_fetch
-      - src_rmux, ld0_opnd, ret_jsr
-  - name: src1
-    seq: # Load op1 operand from source
-      - inc_pc
-      - src_ral, s8_fetch
-      - src_rmux, ld1_opnd, ret_jsr
-  - name: dst0
-    seq: # Load op0 operand from destination
+      - src_rmux, ld${dst}_opnd, ret_jsr
+  - name: dst
+    range: [ { name: dst, values: [0,1] } ]
+    seq: # Load op0/1 operand from destination
       - inc_pc
       - dst_ral, s8_fetch
-      - dst_rmux, ld0_opnd, ret_jsr
-  - name: dst1
-    seq: # Load op1 operand from destination
-      - inc_pc
-      - dst_ral, s8_fetch
-      - dst_rmux, ld1_opnd, ret_jsr
+      - dst_rmux, ld${dst}_opnd, ret_jsr
   - name: cr0
     seq:
       - inc_pc, s8_fetch
-      - inc_pc, cr_rd
+      - inc_pc, ld_cra
+      -
       - cr_rmux, ld0_opnd, ret_jsr  # loaded into op0 because it is used for a transfer only
-  - name: cr1
+  - name: crmd
     seq:
       - inc_pc, s8_fetch
-      - inc_pc, ret_jsr  # loaded into md
-  - name: imm0
+      - inc_pc, ld_cra
+      - ret_jsr  # operand was already loaded into md
+  - name: imm
+    range: [ { name: dst, values: [0,1] } ]
     seq:
       - inc_pc
       - waitmem, q_fetch               # guarantees that the data will be valid in all cases
-      - inc_pc, rets, zex, ld0_opnd    # conditional return on byte size
-      - inc_pc, rets, alt              # conditional return on word size
-      - inc_pc
-      - inc_pc, ret_jsr
-  - name: imm1
-    seq:
-      - inc_pc
-      - waitmem, q_fetch               # guarantees that the data will be valid in all cases
-      - inc_pc, rets, zex, ld1_opnd    # conditional return on byte size
+      - inc_pc, rets, zex, ld${dst}_opnd    # conditional return on byte size
       - inc_pc, rets, alt              # conditional return on word size
       - inc_pc
       - inc_pc, ret_jsr
@@ -607,6 +594,52 @@ ucode:
   - name: ea0
     seq: # moves EA to op0 and increases PC
       - inc_pc, ea_rmux, ld0_opnd, ret_jsr
+  - name: udmabase
+    seq:
+      - mod_cra       # load byte size for uDMA
+      - # mod_cra needs an extra cycle
+      - widen_setw, alt, udmajmp
+      - cnt_cra, zero_rmux, ld1_opnd, w_setw # decrease the count and check the count end
+      - # cnt_cra needs an extra cycle
+      - cr_rmux, ld0_opnd
+      - sub_alu, hi_cx, cr_ld, alt # notify DMA end if Z is set
+      - waitmem, q_fetch
+      - ni
+  - name: udma    # Mode register set to 000xx, (DMADn+) <- (DMASn)
+    cycles: 8     # 12 for 32-bit transfers
+    range:
+      - { name: rstep, values: [ dst, src ] }
+      - { name: alu,   values: [ add, sub ] }
+    seq:
+      - src_cra
+      - # scr_cra needs an extra cycle
+      - dma_ea, waitmem, vs_fetch
+      - dma_ea, dst_cra
+      - dma_ea
+      - dma_ea, wr
+      - ${rstep}_cra, spd_rmux, ld1_opnd
+      - # *_cra needs an extra cycle
+      - cr_rmux, ld0_opnd, q_setw  # DST+
+      - ${alu}_alu, cr_ld
+      - ret_jsr
+  - name: udmafix # Copy data without modifying the pointer registers
+    cycles: 8     # 12 for 32-bit transfers
+    seq:
+      - src_cra
+      - # scr_cra needs an extra cycle
+      - dma_ea, waitmem, vs_fetch
+      - dma_ea, dst_cra
+      - dma_ea
+      - dma_ea, wr
+      - ret_jsr
+  - name: udmacnt   # increase the source register but do not copy data
+    cycles: 5
+    seq:
+      - src_cra, spd_rmux, ld1_opnd
+      - # scr_cra needs an extra cycle
+      - cr_rmux, ld0_opnd  # DST+
+      - add_alu, cr_ld
+      - ret_jsr
   ########################################################
   # Load op0 operand (destination)
   - mnemo: [ regB, regW, regQ ]

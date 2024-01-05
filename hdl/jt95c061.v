@@ -24,6 +24,7 @@ module jt95c061(
     input                 cen,
     input                 phi1_cen, // 12.5 MHz, phi1 and phi2 on TMP95C061.pdf page 73
 
+    input                 ti0,      // timer 0 pin
     input                 int4,
     input                 int5,
     input                 nmi,
@@ -50,7 +51,6 @@ reg  [ 7:0] mmr[0:127];
 reg  [ 3:0] pre_map_cs;
 
 // interrupts
-wire [ 2:0] intrq;
 reg  [ 2:0] nx_ilvl, ilvl;
 reg  [ 7:0] nx_iaddr, iaddr;
 reg  [21:0] act, nx_act;
@@ -63,6 +63,10 @@ reg  [9:0] prescaler;
 reg  [5:0] adj;         // frequency adjustment for prescaler to match MAME results
                         // instead of the TMP95C061 datasheet
 wire [3:0] tout, tover;
+// DMA
+reg  [1:0] dmach, nx_dmach;
+reg        dmaen, nx_dmaen;
+wire       dma_done;
 // ADC
 wire adc_bsy, adc_end;
 reg  adc_go;
@@ -136,11 +140,14 @@ localparam [6:0]
                  INTET67 = 7'h76,
                  INTES0  = 7'h77,
                  INTES1  = 7'h78,
-                 INTTC01 = 7'h79,
-                 INTTC23 = 7'h7A;
+                 INTTC01 = 7'h79,   // transfer completion interrupts (DMA)
+                 INTTC23 = 7'h7A,
+                 DMA0V   = 7'h7C,
+                 DMA1V   = 7'h7D,
+                 DMA2V   = 7'h7E,
+                 DMA3V   = 7'h7F;
 
 assign port_cs = addr[23:7]==0;
-assign intrq = 0;
 assign {adc_end, adc_bsy} = mmr[ADMOD][7:6];
 assign din_mux = port_cs ? {mmr[{addr[6:1],1'b1}], mmr[{addr[6:1],1'b0}]} : din;
 assign porta_dout = { mmr[PAFC][3] ? tout[3] : mmr[PA][3],
@@ -199,11 +206,11 @@ if( inttc3& mmr[INTTC23][7] )
     wire [2:0] inttc2_lvl =  mmr[INTTC23][2:0];
     wire [2:0] inttc1_lvl =  mmr[INTTC01][6:4];
     wire [2:0] inttc0_lvl =  mmr[INTTC01][2:0];
-    wire [2:0] inte0ad_lvl =  mmr[INTE0AD][6:4];
-    wire [2:0] intetx1_lvl  =  mmr[INTES1 ][6:4];
-    wire [2:0] interx1_lvl  =  mmr[INTES1 ][2:0];
-    wire [2:0] intetx0_lvl  =  mmr[INTES0 ][6:4];
-    wire [2:0] interx0_lvl  =  mmr[INTES0 ][2:0];
+    wire [2:0] inte0ad_lvl = mmr[INTE0AD][6:4];
+    wire [2:0] intetx1_lvl = mmr[INTES1 ][6:4];
+    wire [2:0] interx1_lvl = mmr[INTES1 ][2:0];
+    wire [2:0] intetx0_lvl = mmr[INTES0 ][6:4];
+    wire [2:0] interx0_lvl = mmr[INTES0 ][2:0];
     wire [2:0] intet7_lvl =  mmr[INTET67][6:4];
     wire [2:0] intet6_lvl =  mmr[INTET67][2:0];
     wire [2:0] intet5_lvl =  mmr[INTET45][6:4];
@@ -244,6 +251,10 @@ if( inttc3& mmr[INTTC23][7] )
     wire [7:0] trun   = mmr[TRUN];
     wire [7:0] tffcr  = mmr[TFFCR];
     wire [7:0] admod  = mmr[ADMOD];
+    wire [4:0] dma0v  = mmr[DMA0V][4:0];
+    wire [4:0] dma1v  = mmr[DMA1V][4:0];
+    wire [4:0] dma2v  = mmr[DMA2V][4:0];
+    wire [4:0] dma3v  = mmr[DMA3V][4:0];
     reg [21:0] act_l;
     always @(posedge clk) begin
         act_l <= act;
@@ -290,14 +301,14 @@ always @* begin // TMP95C061.pdf pages 12, 19
     if( mmr[INTET67][3] && mmr[INTET67][2:0]>nx_ilvl && mmr[INTET67][2:0]!=7 ) { nx_act[10], nx_iaddr, nx_ilvl } = { 1'b1, 8'h58, mmr[INTET67][2:0] }; else
     if( mmr[INTET45][7] && mmr[INTET45][6:4]>nx_ilvl && mmr[INTET45][6:4]!=7 ) { nx_act[11], nx_iaddr, nx_ilvl } = { 1'b1, 8'h54, mmr[INTET45][6:4] }; else
     if( mmr[INTET45][3] && mmr[INTET45][2:0]>nx_ilvl && mmr[INTET45][2:0]!=7 ) { nx_act[12], nx_iaddr, nx_ilvl } = { 1'b1, 8'h50, mmr[INTET45][2:0] }; else
-    if( mmr[INTET23][7] && mmr[INTET23][6:4]>nx_ilvl && mmr[INTET23][6:4]!=7 ) { nx_act[13], nx_iaddr, nx_ilvl } = { 1'b1, 8'h4C, mmr[INTET23][6:4] }; else
-    if( mmr[INTET23][3] && mmr[INTET23][2:0]>nx_ilvl && mmr[INTET23][2:0]!=7 ) { nx_act[14], nx_iaddr, nx_ilvl } = { 1'b1, 8'h48, mmr[INTET23][2:0] }; else
-    if( mmr[INTET01][7] && mmr[INTET01][6:4]>nx_ilvl && mmr[INTET01][6:4]!=7 ) { nx_act[15], nx_iaddr, nx_ilvl } = { 1'b1, 8'h44, mmr[INTET01][6:4] }; else
-    if( mmr[INTET01][3] && mmr[INTET01][2:0]>nx_ilvl && mmr[INTET01][2:0]!=7 ) { nx_act[16], nx_iaddr, nx_ilvl } = { 1'b1, 8'h40, mmr[INTET01][2:0] }; else
+    if( mmr[INTET23][7] && mmr[INTET23][6:4]>nx_ilvl && mmr[INTET23][6:4]!=7 ) { nx_act[13], nx_iaddr, nx_ilvl } = { 1'b1, 8'h4C, mmr[INTET23][6:4] }; else // timer interrupts
+    if( mmr[INTET23][3] && mmr[INTET23][2:0]>nx_ilvl && mmr[INTET23][2:0]!=7 ) { nx_act[14], nx_iaddr, nx_ilvl } = { 1'b1, 8'h48, mmr[INTET23][2:0] }; else // timer interrupts
+    if( mmr[INTET01][7] && mmr[INTET01][6:4]>nx_ilvl && mmr[INTET01][6:4]!=7 ) { nx_act[15], nx_iaddr, nx_ilvl } = { 1'b1, 8'h44, mmr[INTET01][6:4] }; else // timer interrupts
+    if( mmr[INTET01][3] && mmr[INTET01][2:0]>nx_ilvl && mmr[INTET01][2:0]!=7 ) { nx_act[16], nx_iaddr, nx_ilvl } = { 1'b1, 8'h40, mmr[INTET01][2:0] }; else // timer interrupts
     if( mmr[INTE67 ][7] && mmr[INTE67 ][6:4]>nx_ilvl && mmr[INTE67 ][6:4]!=7 ) { nx_act[17], nx_iaddr, nx_ilvl } = { 1'b1, 8'h38, mmr[INTE67 ][6:4] }; else
     if( mmr[INTE67 ][3] && mmr[INTE67 ][2:0]>nx_ilvl && mmr[INTE67 ][2:0]!=7 ) { nx_act[18], nx_iaddr, nx_ilvl } = { 1'b1, 8'h34, mmr[INTE67 ][2:0] }; else
     if( mmr[INTE45 ][7] && mmr[INTE45 ][6:4]>nx_ilvl && mmr[INTE45 ][6:4]!=7 ) { nx_act[19], nx_iaddr, nx_ilvl } = { 1'b1, 8'h30, mmr[INTE45 ][6:4] }; else
-    if( mmr[INTE45 ][3] && mmr[INTE45 ][2:0]>nx_ilvl && mmr[INTE45 ][2:0]!=7 ) { nx_act[20], nx_iaddr, nx_ilvl } = { 1'b1, 8'h2c, mmr[INTE45 ][2:0] }; else
+    if( mmr[INTE45 ][3] && mmr[INTE45 ][2:0]>nx_ilvl && mmr[INTE45 ][2:0]!=7 ) { nx_act[20], nx_iaddr, nx_ilvl } = { 1'b1, 8'h2C, mmr[INTE45 ][2:0] }; else
     if( mmr[INTE0AD][3] && mmr[INTE0AD][2:0]>nx_ilvl && mmr[INTE0AD][2:0]!=7 ) { nx_act[21], nx_iaddr, nx_ilvl } = { 1'b1, 8'h28, mmr[INTE0AD][2:0] };
     // NMI
     if( nmi_rq ) begin
@@ -305,9 +316,19 @@ always @* begin // TMP95C061.pdf pages 12, 19
         nx_act  = 0;
         nx_iaddr  = 'h20;
     end
+    // DMA
+    nx_dmaen = 0;
+    nx_dmach = dmach;
+    if( iaddr[7:2]>=6'ha && iaddr[7:2]!=6'hf && iaddr[7:2]<=6'h1c ) begin
+        if( mmr[DMA3V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd3};   // keep order
+        if( mmr[DMA2V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd2};
+        if( mmr[DMA1V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd1};
+        if( mmr[DMA0V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd0};
+    end
     if( irq_ack ) begin
-        nx_act  = 0;
-        nx_ilvl = 0;
+        nx_act   = 0;
+        nx_ilvl  = 0;
+        nx_dmaen = 0;
     end
 end
 
@@ -317,11 +338,15 @@ always @(posedge clk, posedge rst) begin
         iaddr <= 0;
         act   <= 0;
         irq   <= 0;
+        dmach <= 0;
+        dmaen <= 0;
     end else begin
-        ilvl  <= nx_ilvl;
+        ilvl  <= nx_dmaen ? 3'd6 : nx_ilvl;
         iaddr <= nx_iaddr;
         act   <= nx_act;
         irq   <= |{ nx_act, nmi_rq };
+        dmach <= nx_dmach;
+        dmaen <= nx_dmaen;
     end
 end
 
@@ -342,10 +367,11 @@ end
 jt95c061_timer u_timers[3:0](
     .rst        ( rst       ),
     .clk        ( clk       ),
+    .halt       ( halted    ),
     .clk_muxin  ( { prescaler[T256], prescaler[T16], prescaler[T1], tover[2], // timer 3
                     prescaler[T16],  prescaler[T4],  prescaler[T1], 1'b0,     // timer 2
                     prescaler[T256], prescaler[T16], prescaler[T1], tover[0], // timer 1
-                    prescaler[T16],  prescaler[T4],  prescaler[T1], 1'b0 /* pin TI0 */ } ), // timer 0
+                    prescaler[T16],  prescaler[T4],  prescaler[T1], ti0 } ), // timer 0
     .clk_muxsel ( {mmr[T23MOD][3:0],mmr[T01MOD][3:0] }          ),
     .ff_ctrl    ( {mmr[TFFCR][7:4],4'd0,mmr[TFFCR][3:0],4'd0}   ),
     .cntmax     ( {mmr[TREG3],mmr[TREG2],mmr[TREG1],mmr[TREG0]} ),
@@ -438,8 +464,17 @@ always @(posedge clk, posedge rst) begin
             if( act[21] ) mmr[INTE0AD][3] <= 0;
         end
         // interrupt set
-        if( int4 ) mmr[INTE45][3] <= 1;
-        if( int5 ) mmr[INTE45][7] <= 1;
+        if( int4     ) mmr[INTE45][3]  <= 1;
+        if( int5     ) mmr[INTE45][7]  <= 1;
+        if( tover[0] ) mmr[INTET01][3] <= 1;
+        if( tover[1] ) mmr[INTET01][7] <= 1;
+        if( tover[2] ) mmr[INTET23][3] <= 1;
+        if( tover[3] ) mmr[INTET23][7] <= 1;
+        if( dma_done ) begin
+            mmr[{DMA0V[6:2],dmach}] <= 0; // clear the DMA vector
+            if( !dmach[1] ) mmr[INTTC01][{dmach[0],2'b11}] <= 1; // set bit 3 or 7
+            if(  dmach[1] ) mmr[INTTC23][{dmach[0],2'b11}] <= 1;
+        end
         // ADC
         if( adc_go &&  !adc_bsy ) begin
             adc_go <= 0;
@@ -456,14 +491,6 @@ always @(posedge clk, posedge rst) begin
         end
     end
 end
-
-// To do: jt900h should read the reset vector
-// the rst vectors for NGP and NGPC are different
-`ifndef NVRAM
-localparam NGP_RST=32'hFF1DE8; // NGP reset
-`else
-localparam NGP_RST=32'hFF1800; // NVRAM loaded - bypasses power button
-`endif
 
 jt900h u_cpu(
     .rst        ( rst       ),
@@ -482,12 +509,14 @@ jt900h u_cpu(
     .irq_ack    ( irq_ack   ),
     .int_lvl    ( ilvl      ),
     .int_addr   ( iaddr     ),
+    .dmach      ( dmach     ),
+    .dmaen      ( dmaen     ),
+    .dma_done   ( dma_done  ),
     // Register dump
     .dec_err    ( buserror  ),
     .halted     ( halted    ),
     .dmp_addr   (           ),     // dump
     .dmp_dout   (           )
-    // .op_start   (           )
     // .st_addr    ( debug_bus ),
     // .st_dout    ( st_dout   )
 );

@@ -33,6 +33,9 @@ module jt900h(
     output            irq_ack,
     input      [ 2:0] int_lvl,      // interrupt level
     input      [ 7:0] int_addr,     // the external device sets the vector address except for SWI
+    input      [ 1:0] dmach,
+    input             dmaen,
+    output            dma_done,
     // Register dump
     output            dec_err,
     output            halted,
@@ -51,17 +54,12 @@ wire [ 7:0] flags;
 wire        n,h,c,z;
 wire [ 2:0] riff;
 // from ucode
-wire        cr_rd, da2ea, div, exff, alt, inc_pc,
+wire        da2ea, div, exff, alt, inc_pc,
             mulcheck, sex, wr, zex;
-wire [ 1:0] ea_sel;
-wire [ 1:0] opnd_sel;
-wire [ 2:0] cx_sel;
-wire [ 1:0] fetch_sel;
-wire [ 2:0] ral_sel;
-wire [ 3:0] ld_sel;
-wire [ 4:0] alu_sel;
-wire [ 4:0] cc_sel;
-wire [ 3:0] rmux_sel;
+wire [ 1:0] opnd_sel, fetch_sel;
+wire [ 2:0] ea_sel, cra_sel, cx_sel, ral_sel;
+wire [ 3:0] ld_sel, rmux_sel;
+wire [ 4:0] alu_sel, cc_sel;
 // memory unit
 wire [23:0] pc;
 wire [31:0] ea, da, mdata;
@@ -70,10 +68,10 @@ wire        mem_busy, nc;
 wire [31:0] op0, op1, op2, rslt;
 wire        div_busy;
 wire        zu,hu,vu,su,cu,pu;
-// "Control Registers" (MCU MMR)
+// DMA (MCU MMR)
 wire [ 7:0] cra;
 wire [31:0] crin, crout;
-wire        crwe,    // cr_rd goes directly from control unit
+wire        crwe,
             nstdec;
 
 jt900h_ctrl u_ctrl(
@@ -97,8 +95,9 @@ jt900h_ctrl u_ctrl(
     .nstdec     ( nstdec    ),
     .int_lvl    ( int_lvl   ),
     .riff       ( riff      ),
+    .mode       ( crout[4:0]),
+    .dmaen      ( dmaen     ),
     // signals from ucode
-    .cr_rd      ( cr_rd     ),
     .da2ea      ( da2ea     ),
     .div        ( div       ),
     .exff       ( exff      ),
@@ -109,6 +108,7 @@ jt900h_ctrl u_ctrl(
     .sex        ( sex       ),
     .wr         ( wr        ),
     .zex        ( zex       ),
+    .cra_sel    ( cra_sel   ),
     .ea_sel     ( ea_sel    ),
     .opnd_sel   ( opnd_sel  ),
     .cx_sel     ( cx_sel    ),
@@ -147,6 +147,7 @@ jt900h_regs u_regs(
     .riff       ( riff      ),
     .int_lvl    ( int_lvl   ),
     .int_addr   ( int_addr  ),
+    .dma_done   ( dma_done  ),
     // control (from ucode)
     .bs         ( bs        ),
     .exff       ( exff      ),
@@ -164,11 +165,13 @@ jt900h_regs u_regs(
     .ld_sel     ( ld_sel    ),
     .cc_sel     ( cc_sel    ),
     .rmux_sel   ( rmux_sel  ),
+    .cra_sel    ( cra_sel   ),
     // "Control Registers" (MCU MMR)
     .cra        ( cra       ),
     .crin       ( crin      ),
     .crout      ( crout     ),
-    .crwe       ( crwe      ),    // cr_rd goes directly from control unit
+    .crwe       ( crwe      ),
+    .dmach      ( dmach     ),
     // register outputs
     .pc         ( pc        ),
     .da         ( da        ),  // direct memory address from OP, like #8 in LD<W> (#8),#
@@ -225,6 +228,8 @@ jt900h_mem u_mem(
     .bus_we     ( we        ),
     .bus_rd     ( rd        ),
     .bus_busy   ( busy      ),
+    // from DMA
+    .dma        ( crout     ),
     // from ucode
     .fetch_sel  ( fetch_sel ),
     .ea_sel     ( ea_sel    ),
@@ -258,7 +263,8 @@ jt900h_udma udma(
     .qs         ( qs        ),
     .ws         ( ws        ),
     .bs         ( bs        ),
-    // interrupt nesting counter
+    // interrupts
+    .int_addr   ( int_addr  ),
     .nstinc     ( irq_ack   ),
     .nstdec     ( nstdec    )
 );
