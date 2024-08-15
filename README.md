@@ -15,7 +15,9 @@ You can show your appreciation through
 * [model](model) C files of DPI model
 * [ver](ver) verification files, ver/top for top-level verification
 
-Only source files are included in this repository. Binary files can be obtained by compiling the sources.
+Only source files are included in this repository. Binary files can be obtained by compiling the sources. The 900h.yaml is converted to verilog source code by running:
+
+`jtframe ucode jt900h 900h -l`
 
 ## Decoding
 
