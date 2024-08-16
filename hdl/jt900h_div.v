@@ -55,7 +55,7 @@ always @* begin
     end
     // final remainder
     nx_rem = larger ? rslt[15:0] : sub[15:0];
-    if( rsi ) nx_rem = -nx_rem;
+    if( sign && sign0 ) nx_rem = -nx_rem;
 end
 
 always @(posedge clk or posedge rst) begin
@@ -87,9 +87,13 @@ always @(posedge clk or posedge rst) begin
             st <= st+1'd1;
             if( &st ) begin
                 busy <= 0;
-                rem   <= nx_rem;
-                if( rsi ) fullq <= ~nx_quot+1'd1;
-                if( len ? nx_quot[31:16]!=0 : nx_quot[15:8]!=0 ) v <= 1;
+                rem  <= nx_rem;
+                if( rsi ) fullq <= -nx_quot;
+                if( sign ) begin
+                    if( len ? nx_quot[31:16]!={16{nx_quot[15]}} : nx_quot[15:8]!={8{nx_quot[7]}} ) v <= 1;
+                end else begin
+                    if( len ? nx_quot[31:16]!=0 : nx_quot[15:8]!=0 ) v <= 1;
+                end
             end
         end
     end

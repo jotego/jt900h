@@ -936,6 +936,7 @@ ucode:
       - inc_pc, mulsel, dst_ral, widen_setw, ${swp_opnd}, md_ld
       - ${ex}, dst_rmux,    ld0_opnd, shrtn_setw
       - ${ex}, ${src}_rmux, ld1_opnd, widen_setw  # dst(q/w)÷src(w/b)
+      - ${alt}  # the sign must be set one cycle before starting
       - div_alu, ${alt}, div
       - div_alu, ${alt}, dst_ld, ${cc}_cc # ctrl logic will automatically wait for the ALU
       - waitmem, q_fetch

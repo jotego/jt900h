@@ -1,0 +1,177 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Fri Aug 16 09:28:14 2024
+[*]
+[dumpfile] "/home/jtejada/jtcores/modules/jt900h/ver/divxx/test.lxt"
+[dumpfile_mtime] "Fri Aug 16 08:59:22 2024"
+[dumpfile_size] 1416
+[savefile] "/home/jtejada/jtcores/modules/jt900h/ver/divs/test.gtkw"
+[timestart] 0
+[size] 2532 1005
+[pos] 1893 -24
+*-6.156960 719 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] test.
+[sst_width] 40
+[signals_width] 305
+[sst_expanded] 0
+[sst_vpaned_height] 70
+@28
+test.uut.busy[0]
+@c00420
+test.uut.op0[31:0]
+@28
+(0)test.uut.op0[31:0]
+(1)test.uut.op0[31:0]
+(2)test.uut.op0[31:0]
+(3)test.uut.op0[31:0]
+(4)test.uut.op0[31:0]
+(5)test.uut.op0[31:0]
+(6)test.uut.op0[31:0]
+(7)test.uut.op0[31:0]
+(8)test.uut.op0[31:0]
+(9)test.uut.op0[31:0]
+(10)test.uut.op0[31:0]
+(11)test.uut.op0[31:0]
+(12)test.uut.op0[31:0]
+(13)test.uut.op0[31:0]
+(14)test.uut.op0[31:0]
+(15)test.uut.op0[31:0]
+(16)test.uut.op0[31:0]
+(17)test.uut.op0[31:0]
+(18)test.uut.op0[31:0]
+(19)test.uut.op0[31:0]
+(20)test.uut.op0[31:0]
+(21)test.uut.op0[31:0]
+(22)test.uut.op0[31:0]
+(23)test.uut.op0[31:0]
+(24)test.uut.op0[31:0]
+(25)test.uut.op0[31:0]
+(26)test.uut.op0[31:0]
+(27)test.uut.op0[31:0]
+(28)test.uut.op0[31:0]
+(29)test.uut.op0[31:0]
+(30)test.uut.op0[31:0]
+(31)test.uut.op0[31:0]
+@1401200
+-group_end
+@c00024
+test.uut.op0_unsig[31:0]
+@28
+(0)test.uut.op0_unsig[31:0]
+(1)test.uut.op0_unsig[31:0]
+(2)test.uut.op0_unsig[31:0]
+(3)test.uut.op0_unsig[31:0]
+(4)test.uut.op0_unsig[31:0]
+(5)test.uut.op0_unsig[31:0]
+(6)test.uut.op0_unsig[31:0]
+(7)test.uut.op0_unsig[31:0]
+(8)test.uut.op0_unsig[31:0]
+(9)test.uut.op0_unsig[31:0]
+(10)test.uut.op0_unsig[31:0]
+(11)test.uut.op0_unsig[31:0]
+(12)test.uut.op0_unsig[31:0]
+(13)test.uut.op0_unsig[31:0]
+(14)test.uut.op0_unsig[31:0]
+(15)test.uut.op0_unsig[31:0]
+(16)test.uut.op0_unsig[31:0]
+(17)test.uut.op0_unsig[31:0]
+(18)test.uut.op0_unsig[31:0]
+(19)test.uut.op0_unsig[31:0]
+(20)test.uut.op0_unsig[31:0]
+(21)test.uut.op0_unsig[31:0]
+(22)test.uut.op0_unsig[31:0]
+(23)test.uut.op0_unsig[31:0]
+(24)test.uut.op0_unsig[31:0]
+(25)test.uut.op0_unsig[31:0]
+(26)test.uut.op0_unsig[31:0]
+(27)test.uut.op0_unsig[31:0]
+(28)test.uut.op0_unsig[31:0]
+(29)test.uut.op0_unsig[31:0]
+(30)test.uut.op0_unsig[31:0]
+(31)test.uut.op0_unsig[31:0]
+@1401200
+-group_end
+@420
+[color] 2
+test.uut.op1[15:0]
+@24
+[color] 2
+test.uut.op1_unsig[15:0]
+@420
+[color] 2
+test.uut.divor[15:0]
+@200
+-
+@420
+test.uut.divend[31:0]
+@421
+test.uut.fullq[31:0]
+@28
+test.uut.larger[0]
+test.uut.len[0]
+@22
+test.uut.nx_quot[31:0]
+test.uut.nx_rem[15:0]
+@420
+test.uut.quot[15:0]
+test.uut.rem[15:0]
+@28
+test.uut.rsi[0]
+@22
+test.uut.rslt[31:0]
+@28
+test.uut.rst[0]
+@22
+test.uut.st[4:0]
+@28
+test.uut.start[0]
+test.uut.start_l[0]
+@c00022
+test.uut.sub[31:0]
+@28
+(0)test.uut.sub[31:0]
+(1)test.uut.sub[31:0]
+(2)test.uut.sub[31:0]
+(3)test.uut.sub[31:0]
+(4)test.uut.sub[31:0]
+(5)test.uut.sub[31:0]
+(6)test.uut.sub[31:0]
+(7)test.uut.sub[31:0]
+(8)test.uut.sub[31:0]
+(9)test.uut.sub[31:0]
+(10)test.uut.sub[31:0]
+(11)test.uut.sub[31:0]
+(12)test.uut.sub[31:0]
+(13)test.uut.sub[31:0]
+(14)test.uut.sub[31:0]
+(15)test.uut.sub[31:0]
+(16)test.uut.sub[31:0]
+(17)test.uut.sub[31:0]
+(18)test.uut.sub[31:0]
+(19)test.uut.sub[31:0]
+(20)test.uut.sub[31:0]
+(21)test.uut.sub[31:0]
+(22)test.uut.sub[31:0]
+(23)test.uut.sub[31:0]
+(24)test.uut.sub[31:0]
+(25)test.uut.sub[31:0]
+(26)test.uut.sub[31:0]
+(27)test.uut.sub[31:0]
+(28)test.uut.sub[31:0]
+(29)test.uut.sub[31:0]
+(30)test.uut.sub[31:0]
+(31)test.uut.sub[31:0]
+@1401200
+-group_end
+@200
+-
+@28
+test.uut.sign0[0]
+test.uut.sign[0]
+test.uut.sign1[0]
+@200
+-
+@28
+test.uut.v[0]
+[pattern_trace] 1
+[pattern_trace] 0
