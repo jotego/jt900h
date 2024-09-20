@@ -325,6 +325,7 @@ always @* begin // TMP95C061.pdf pages 12, 19
         if( mmr[DMA1V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd1};
         if( mmr[DMA0V][5:0]==iaddr[7:2] ) {nx_dmaen, nx_dmach} = {1'd1,2'd0};
     end
+    if( nx_act==0 ) nx_dmaen = 0;
     if( irq_ack ) begin
         nx_act   = 0;
         nx_ilvl  = 0;
