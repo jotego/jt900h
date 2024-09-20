@@ -37,6 +37,7 @@ reg  [15:0] dmac[0:3];
 reg  [ 7:0] dmam[0:3];
 reg  [15:0] intnest;
 wire [ 2:0] regwe;
+reg         nstinc_l, nstdec_l;
 
 `ifdef SIMULATION
 wire [31:0] SREG0 = sreg[0], SREG1 = sreg[1],
@@ -62,7 +63,7 @@ always @(posedge clk) if(cen) begin
     endcase
 end
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk) begin
     if( rst ) begin
         sreg[0] <= 0; sreg[1] <= 0; sreg[2] <= 0; sreg[3] <= 0;
         dreg[0] <= 0; dreg[1] <= 0; dreg[2] <= 0; dreg[3] <= 0;
@@ -70,8 +71,10 @@ always @(posedge clk, posedge rst) begin
         dmam[0] <= 0; dmam[1] <= 0; dmam[2] <= 0; dmam[3] <= 0;
         intnest <= 0;
     end else if( cen ) begin
-        if( nstinc ) intnest <= intnest + 1'd1;
-        if( nstdec ) intnest <= intnest - 1'd1;
+        nstinc_l <= nstinc;
+        nstdec_l <= nstdec;
+        if( nstinc && !nstinc_l ) intnest <= intnest + 1'd1;
+        if( nstdec && !nstdec_l ) intnest <= intnest - 1'd1;
         case( addr[5:4] )
             0: begin
                 if( regwe[2] ) sreg[addr[3:2]] <= din;
