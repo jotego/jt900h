@@ -1,0 +1,11 @@
+jt900h:
+  - get:
+    - jt900h_alu.v
+    - jt900h_ctrl.v
+    - jt900h_div.v
+    - jt900h_mem.v
+    - jt900h_regs.v
+    - jt900h_udma.v
+    - jt900h.v
+  - ucode:
+    jt900h: { src: "900h.yaml" }
