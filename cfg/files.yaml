@@ -7,5 +7,5 @@ jt900h:
     - jt900h_regs.v
     - jt900h_udma.v
     - jt900h.v
-  - ucode:
-    jt900h: { src: "900h.yaml" }
+    ucode:
+      src: "900h.yaml"
